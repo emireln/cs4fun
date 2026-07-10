@@ -128,7 +128,7 @@ function AppShell() {
       <AnimatePresence mode="wait">
         <motion.main
           key={screen + (room?.code || '')}
-          className="flex min-h-0 flex-1 flex-col"
+          className={showFooter ? 'flex min-h-0 flex-1 flex-col' : 'min-h-0'}
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0 }}

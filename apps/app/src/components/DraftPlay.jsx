@@ -105,8 +105,8 @@ export default function DraftPlay({
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <div className="panel rounded-lg p-4 sm:p-5">
+      <div className="grid items-start gap-6 lg:grid-cols-2">
+        <div className="panel h-fit rounded-lg p-4 sm:p-5">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="font-display text-xs font-bold tracking-[0.22em] text-cs-gold uppercase">
@@ -129,7 +129,7 @@ export default function DraftPlay({
           )}
 
           {!currentRoster ? (
-            <div className="flex min-h-[180px] flex-col items-center justify-center rounded border border-dashed border-cs-border bg-cs-bg/40 text-cs-muted sm:min-h-[220px]">
+            <div className="flex min-h-[160px] flex-col items-center justify-center rounded border border-dashed border-cs-border bg-cs-bg/40 text-cs-muted sm:min-h-[180px]">
               <Radar className="mb-3 h-10 w-10 opacity-40" />
               <p className="font-display text-xs tracking-[0.2em] uppercase">{t('draft.awaiting')}</p>
               <p className="mt-1 text-sm">{t('draft.awaitingHint')}</p>

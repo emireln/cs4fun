@@ -9,6 +9,9 @@ Push to `main` → GitHub Actions builds and deploys:
 - Windows installer → `/var/www/cs4fun/download/cs4fun-Setup.exe`
 - Supabase → `supabase db push` (migrations in `supabase/migrations/`)
 
+Installer version auto-bumps on each Deploy (`apps/app/package.json`):
+`1.0.0 → 1.0.1 → … → 1.0.9 → 1.1.0 → …` (patch rolls at 10). Commits use `[skip ci]` so they don’t re-trigger the workflow.
+
 Manual run: Actions → **Deploy** → **Run workflow**.
 
 ## GitHub secrets (required)
