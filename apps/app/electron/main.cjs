@@ -1,4 +1,4 @@
-const { app, BrowserWindow, shell, Tray, Menu, nativeImage } = require('electron')
+const { app, BrowserWindow, shell, Tray, Menu, nativeImage, dialog } = require('electron')
 const path = require('node:path')
 
 const isDev = Boolean(process.env.ELECTRON_DEV) || !app.isPackaged
@@ -19,6 +19,7 @@ function trayIconPath() {
 }
 
 let tray = null
+let mainWindow = null
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -80,6 +81,10 @@ function createTray(win) {
           win.focus()
         },
       },
+      {
+        label: 'Check for updates',
+        click: () => checkForUpdates({ manual: true }),
+      },
       { type: 'separator' },
       { label: 'Quit', click: () => app.quit() },
     ]),
@@ -90,11 +95,120 @@ function createTray(win) {
   })
 }
 
+function setupAutoUpdater() {
+  if (isDev || !app.isPackaged) return
+
+  let autoUpdater
+  try {
+    ;({ autoUpdater } = require('electron-updater'))
+  } catch (err) {
+    console.error('electron-updater missing', err)
+    return
+  }
+
+  autoUpdater.autoDownload = true
+  autoUpdater.autoInstallOnAppQuit = true
+
+  autoUpdater.on('error', (err) => {
+    console.error('autoUpdater error', err)
+  })
+
+  autoUpdater.on('update-available', (info) => {
+    const parent = BrowserWindow.getFocusedWindow() || mainWindow
+    dialog
+      .showMessageBox(parent || undefined, {
+        type: 'info',
+        title: 'Update available',
+        message: `cs4fun ${info.version} is available`,
+        detail: 'Downloading the update in the background. You can keep playing.',
+        buttons: ['OK'],
+        defaultId: 0,
+        noLink: true,
+      })
+      .catch(() => {})
+  })
+
+  autoUpdater.on('update-downloaded', (info) => {
+    const parent = BrowserWindow.getFocusedWindow() || mainWindow
+    dialog
+      .showMessageBox(parent || undefined, {
+        type: 'info',
+        title: 'Update ready',
+        message: `Version ${info.version} is ready to install`,
+        detail: 'Restart now to apply the update, or choose Later and it will install when you quit.',
+        buttons: ['Restart now', 'Later'],
+        defaultId: 0,
+        cancelId: 1,
+        noLink: true,
+      })
+      .then(({ response }) => {
+        if (response === 0) autoUpdater.quitAndInstall(false, true)
+      })
+      .catch(() => {})
+  })
+
+  // Expose for tray "Check for updates"
+  global.__cs4funAutoUpdater = autoUpdater
+  checkForUpdates({ manual: false })
+}
+
+function checkForUpdates({ manual }) {
+  const autoUpdater = global.__cs4funAutoUpdater
+  if (!autoUpdater) {
+    if (manual) {
+      dialog
+        .showMessageBox(mainWindow || undefined, {
+          type: 'info',
+          title: 'Updates',
+          message: 'Update checks are only available in the installed app.',
+          buttons: ['OK'],
+        })
+        .catch(() => {})
+    }
+    return
+  }
+
+  autoUpdater
+    .checkForUpdates()
+    .then((result) => {
+      if (!manual) return
+      const version = result?.updateInfo?.version
+      const current = app.getVersion()
+      if (!version || version === current) {
+        dialog
+          .showMessageBox(mainWindow || undefined, {
+            type: 'info',
+            title: 'Up to date',
+            message: `You're on the latest version (${current}).`,
+            buttons: ['OK'],
+          })
+          .catch(() => {})
+      }
+    })
+    .catch((err) => {
+      console.error('checkForUpdates failed', err)
+      if (manual) {
+        dialog
+          .showMessageBox(mainWindow || undefined, {
+            type: 'warning',
+            title: 'Update check failed',
+            message: 'Could not check for updates right now.',
+            detail: String(err?.message || err),
+            buttons: ['OK'],
+          })
+          .catch(() => {})
+      }
+    })
+}
+
 app.whenReady().then(() => {
-  const win = createWindow()
-  createTray(win)
+  mainWindow = createWindow()
+  createTray(mainWindow)
+  setupAutoUpdater()
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+    if (BrowserWindow.getAllWindows().length === 0) {
+      mainWindow = createWindow()
+    }
   })
 })
 

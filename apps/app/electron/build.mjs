@@ -32,19 +32,28 @@ await run('npx', [
   'electron-builder',
   '--win',
   'nsis',
+  '--publish',
+  'never',
   `--config.directories.output=${outDir}`,
 ])
 
 fs.mkdirSync(releaseDir, { recursive: true })
-const setups = fs
-  .readdirSync(outDir)
-  .filter((name) => name.toLowerCase().endsWith('.exe') && !name.includes('unpacked'))
+const copyNames = fs.readdirSync(outDir).filter((name) => {
+  const lower = name.toLowerCase()
+  if (lower.includes('unpacked')) return false
+  return (
+    lower.endsWith('.exe') ||
+    lower.endsWith('.blockmap') ||
+    lower === 'latest.yml' ||
+    lower === 'latest.yaml'
+  )
+})
 
-if (setups.length === 0) {
+if (!copyNames.some((n) => n.toLowerCase().endsWith('.exe'))) {
   throw new Error(`No setup .exe found in ${outDir}`)
 }
 
-for (const name of setups) {
+for (const name of copyNames) {
   const from = path.join(outDir, name)
   const to = path.join(releaseDir, name)
   fs.copyFileSync(from, to)

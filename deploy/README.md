@@ -12,6 +12,8 @@ Push to `main` → GitHub Actions builds and deploys:
 Installer version auto-bumps on each Deploy (`apps/app/package.json`):
 `1.0.0 → 1.0.1 → … → 1.0.9 → 1.1.0 → …` (patch rolls at 10). Commits use `[skip ci]` so they don’t re-trigger the workflow.
 
+Auto-updates (desktop): each build also uploads `latest.yml` (+ `.blockmap`) to `/download/`. Packaged apps check that feed on launch and show an update dialog when a newer version exists (tray → **Check for updates**).
+
 Manual run: Actions → **Deploy** → **Run workflow**.
 
 ## GitHub secrets (required)

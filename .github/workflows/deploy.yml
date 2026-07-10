@@ -173,7 +173,11 @@ jobs:
             Select-Object -First 1
           if (-not $exe) { throw "No cs4fun-Setup-*.exe found in $release" }
           Copy-Item $exe.FullName (Join-Path $release "cs4fun-Setup.exe") -Force
-          Write-Host "Prepared $($exe.Name) + cs4fun-Setup.exe (v${{ steps.bump.outputs.version }})"
+          if (-not (Test-Path (Join-Path $release "latest.yml"))) {
+            throw "latest.yml missing — electron-builder publish/generic config required for auto-updates"
+          }
+          Write-Host "Prepared $($exe.Name) + cs4fun-Setup.exe + latest.yml (v${{ steps.bump.outputs.version }})"
+          Get-ChildItem $release | Select-Object Name, Length
 
       - name: Upload installer artifact
         uses: actions/upload-artifact@v4
@@ -182,6 +186,8 @@ jobs:
           path: |
             apps/app/release/cs4fun-Setup.exe
             apps/app/release/cs4fun-Setup-*.exe
+            apps/app/release/cs4fun-Setup-*.exe.blockmap
+            apps/app/release/latest.yml
           if-no-files-found: error
           retention-days: 14
 
@@ -218,12 +224,26 @@ jobs:
           VPS_USER: ${{ secrets.VPS_USER }}
         run: |
           shopt -s nullglob
-          files=(installer/cs4fun-Setup.exe installer/cs4fun-Setup-*.exe)
-          if [[ ${#files[@]} -eq 0 ]]; then
+          files=(
+            installer/cs4fun-Setup.exe
+            installer/cs4fun-Setup-*.exe
+            installer/cs4fun-Setup-*.exe.blockmap
+            installer/latest.yml
+          )
+          # Drop globs that didn't match
+          upload=()
+          for f in "${files[@]}"; do
+            [[ -f "$f" ]] && upload+=("$f")
+          done
+          if [[ ${#upload[@]} -eq 0 ]]; then
             echo "No installer files in artifact" >&2
             ls -laR installer || true
             exit 1
           fi
+          if [[ ! -f installer/latest.yml ]]; then
+            echo "latest.yml missing — auto-update feed required" >&2
+            exit 1
+          fi
           scp -i ~/.ssh/deploy_key -P "${VPS_PORT}" -o IdentitiesOnly=yes \
-            "${files[@]}" \
+            "${upload[@]}" \
             "${VPS_USER}@${VPS_HOST}:/var/www/cs4fun/download/"
