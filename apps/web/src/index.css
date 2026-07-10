@@ -1,0 +1,166 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Orbitron", sans-serif;
+  --font-body: "Rajdhani", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  --color-cs-bg: #0a0c10;
+  --color-cs-panel: #11151c;
+  --color-cs-panel2: #161b24;
+  --color-cs-border: #2a3344;
+  --color-cs-muted: #8b95a8;
+  --color-cs-text: #e8edf5;
+  --color-cs-gold: #e8c547;
+  --color-cs-gold-dim: #b8942e;
+  --color-cs-accent: #f0d56a;
+  --color-cs-win: #3dd68c;
+  --color-cs-loss: #f07178;
+  --color-cs-info: #5bb8ff;
+  --color-cs-warn: #ffb454;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  height: 100%;
+  max-width: 100%;
+  overflow-x: clip;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  touch-action: manipulation;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  min-height: 100dvh;
+}
+
+body {
+  margin: 0;
+  max-width: 100%;
+  overflow-x: clip;
+  overscroll-behavior-x: none;
+  font-family: var(--font-body);
+  background: var(--color-cs-bg);
+  color: var(--color-cs-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+  height: auto;
+}
+
+/* iOS Safari zooms focused fields under 16px — keep layout scale static while typing */
+@media (max-width: 639px) {
+  input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']):not([type='color']):not([type='hidden']),
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
+.carbon-bg {
+  background-color: #0a0c10;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(232, 197, 71, 0.08), transparent),
+    radial-gradient(ellipse 60% 40% at 100% 100%, rgba(91, 184, 255, 0.04), transparent),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(255, 255, 255, 0.015) 2px,
+      rgba(255, 255, 255, 0.015) 4px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 2px,
+      rgba(255, 255, 255, 0.015) 2px,
+      rgba(255, 255, 255, 0.015) 4px
+    );
+}
+
+.gold-text {
+  color: var(--color-cs-gold);
+  text-shadow: 0 0 24px rgba(232, 197, 71, 0.25);
+}
+
+.btn-gold {
+  background: linear-gradient(180deg, #f0d56a, #c9a227);
+  color: #12141a;
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+  box-shadow: 0 0 20px rgba(232, 197, 71, 0.25);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-gold:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+  box-shadow: 0 0 28px rgba(232, 197, 71, 0.4);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--color-cs-text);
+  border: 1px solid var(--color-cs-border);
+  font-family: var(--font-body);
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-ghost:hover {
+  border-color: var(--color-cs-gold);
+  color: var(--color-cs-gold);
+  background: rgba(232, 197, 71, 0.06);
+}
+
+/* Themed scrollbars (Firefox + Chromium) */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #3d4a5e #11151c;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: #11151c;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #3d4a5e, #2a3344);
+  border-radius: 4px;
+  border: 1px solid #1a2030;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #e8c547aa, #b8942e99);
+}
+
+*::-webkit-scrollbar-corner {
+  background: #11151c;
+}

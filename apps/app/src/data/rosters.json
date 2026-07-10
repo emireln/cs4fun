@@ -1,0 +1,5682 @@
+[
+  {
+    "id": "nip-cologne-2014",
+    "team": "Ninjas in Pyjamas",
+    "shortName": "NiP",
+    "event": "ESL One Cologne 2014",
+    "year": 2014,
+    "region": "EU",
+    "achievement": "Major Champions",
+    "mapPoolBias": [
+      "Dust2",
+      "Inferno",
+      "Nuke",
+      "Mirage",
+      "Overpass",
+      "Cache",
+      "Cobblestone"
+    ],
+    "players": [
+      {
+        "id": "f0rest-2014",
+        "name": "f0rest",
+        "realName": "Patrik Lindberg",
+        "role": "Rifler",
+        "rating": 1.22,
+        "bestMaps": [
+          "Dust2",
+          "Inferno",
+          "Nuke"
+        ]
+      },
+      {
+        "id": "getright-2014",
+        "name": "GeT_RiGhT",
+        "realName": "Christopher Alesund",
+        "role": "Lurker",
+        "rating": 1.18,
+        "bestMaps": [
+          "Inferno",
+          "Nuke",
+          "Overpass"
+        ]
+      },
+      {
+        "id": "xizt-2014",
+        "name": "Xizt",
+        "realName": "Richard Landström",
+        "role": "IGL",
+        "rating": 1.05,
+        "bestMaps": [
+          "Dust2",
+          "Mirage",
+          "Cache"
+        ]
+      },
+      {
+        "id": "friberg-2014",
+        "name": "friberg",
+        "realName": "Adam Friberg",
+        "role": "Entry",
+        "rating": 1.08,
+        "bestMaps": [
+          "Dust2",
+          "Inferno",
+          "Cobblestone"
+        ]
+      },
+      {
+        "id": "fifflaren-2014",
+        "name": "Fifflaren",
+        "realName": "Robin Johansson",
+        "role": "Support",
+        "rating": 0.98,
+        "bestMaps": [
+          "Nuke",
+          "Overpass",
+          "Cache"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "vp-katowice-2014",
+    "team": "Virtus.pro",
+    "shortName": "VP",
+    "event": "EMS One Katowice 2014",
+    "year": 2014,
+    "region": "EU",
+    "achievement": "Major Champions",
+    "mapPoolBias": [
+      "Inferno",
+      "Mirage",
+      "Nuke",
+      "Dust2",
+      "Overpass",
+      "Cache",
+      "Train"
+    ],
+    "players": [
+      {
+        "id": "snax-2014",
+        "name": "Snax",
+        "realName": "Janusz Pogorzelski",
+        "role": "Rifler",
+        "rating": 1.2,
+        "bestMaps": [
+          "Inferno",
+          "Mirage",
+          "Cache"
+        ]
+      },
+      {
+        "id": "neo-2014",
+        "name": "NEO",
+        "realName": "Filip Kubski",
+        "role": "IGL",
+        "rating": 1.08,
+        "bestMaps": [
+          "Inferno",
+          "Nuke",
+          "Train"
+        ]
+      },
+      {
+        "id": "pasha-2014",
+        "name": "pashaBiceps",
+        "realName": "Jarosław Jarząbkowski",
+        "role": "Entry",
+        "rating": 1.15,
+        "bestMaps": [
+          "Dust2",
+          "Mirage",
+          "Cache"
+        ]
+      },
+      {
+        "id": "taz-2014",
+        "name": "TaZ",
+        "realName": "Wiktor Wojtas",
+        "role": "Support",
+        "rating": 1.02,
+        "bestMaps": [
+          "Inferno",
+          "Nuke",
+          "Overpass"
+        ]
+      },
+      {
+        "id": "byali-2014",
+        "name": "byali",
+        "realName": "Paweł Bieliński",
+        "role": "Lurker",
+        "rating": 1.12,
+        "bestMaps": [
+          "Mirage",
+          "Dust2",
+          "Train"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "fnatic-cologne-2015",
+    "team": "Fnatic",
+    "shortName": "FNC",
+    "event": "ESL One Cologne 2015",
+    "year": 2015,
+    "region": "EU",
+    "achievement": "Major Champions",
+    "mapPoolBias": [
+      "Cobblestone",
+      "Inferno",
+      "Dust2",
+      "Mirage",
+      "Cache",
+      "Overpass",
+      "Train"
+    ],
+    "players": [
+      {
+        "id": "olof-2015",
+        "name": "olofmeister",
+        "realName": "Olof Kajbjer",
+        "role": "Rifler",
+        "rating": 1.32,
+        "bestMaps": [
+          "Cobblestone",
+          "Inferno",
+          "Dust2"
+        ]
+      },
+      {
+        "id": "flusha-2015",
+        "name": "flusha",
+        "realName": "Robin Rönnquist",
+        "role": "IGL",
+        "rating": 1.21,
+        "bestMaps": [
+          "Mirage",
+          "Cache",
+          "Inferno"
+        ]
+      },
+      {
+        "id": "krimz-2015",
+        "name": "KRIMZ",
+        "realName": "Freddy Johansson",
+        "role": "Support",
+        "rating": 1.16,
+        "bestMaps": [
+          "Cobblestone",
+          "Overpass",
+          "Train"
+        ]
+      },
+      {
+        "id": "jw-2015",
+        "name": "JW",
+        "realName": "Jesper Wecksell",
+        "role": "AWPer",
+        "rating": 1.14,
+        "bestMaps": [
+          "Dust2",
+          "Mirage",
+          "Cache"
+        ]
+      },
+      {
+        "id": "pronax-2015",
+        "name": "pronax",
+        "realName": "Markus Wallsten",
+        "role": "Entry",
+        "rating": 0.97,
+        "bestMaps": [
+          "Inferno",
+          "Cobblestone",
+          "Overpass"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "envyus-cluj-2015",
+    "team": "Team EnVyUs",
+    "shortName": "nV",
+    "event": "DreamHack Open Cluj-Napoca 2015",
+    "year": 2015,
+    "region": "EU",
+    "achievement": "Major Champions",
+    "mapPoolBias": [
+      "Dust2",
+      "Inferno",
+      "Cobblestone",
+      "Mirage",
+      "Cache",
+      "Overpass",
+      "Train"
+    ],
+    "players": [
+      {
+        "id": "kennys-2015",
+        "name": "kennyS",
+        "realName": "Kenny Schrub",
+        "role": "AWPer",
+        "rating": 1.28,
+        "bestMaps": [
+          "Dust2",
+          "Mirage",
+          "Cache"
+        ]
+      },
+      {
+        "id": "happy-2015",
+        "name": "Happy",
+        "realName": "Vincent Schopenhauer",
+        "role": "IGL",
+        "rating": 1.1,
+        "bestMaps": [
+          "Inferno",
+          "Cobblestone",
+          "Overpass"
+        ]
+      },
+      {
+        "id": "nbk-2015",
+        "name": "NBK-",
+        "realName": "Nathan Schmitt",
+        "role": "Lurker",
+        "rating": 1.14,
+        "bestMaps": [
+          "Inferno",
+          "Dust2",
+          "Train"
+        ]
+      },
+      {
+        "id": "apex-2015",
+        "name": "apEX",
+        "realName": "Dan Madesclaire",
+        "role": "Entry",
+        "rating": 1.12,
+        "bestMaps": [
+          "Cobblestone",
+          "Cache",
+          "Mirage"
+        ]
+      },
+      {
+        "id": "kio-2015",
+        "name": "kioShiMa",
+        "realName": "Fabien Fiey",
+        "role": "Support",
+        "rating": 1.08,
+        "bestMaps": [
+          "Overpass",
+          "Train",
+          "Inferno"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "lg-columbus-2016",
+    "team": "Luminosity Gaming",
+    "shortName": "LG",
+    "event": "MLG Columbus 2016",
+    "year": 2016,
+    "region": "SA",
+    "achievement": "Major Champions",
+    "mapPoolBias": [
+      "Mirage",
+      "Train",
+      "Dust2",
+      "Cache",
+      "Overpass",
+      "Cobblestone",
+      "Inferno"
+    ],
+    "players": [
+      {
+        "id": "coldzera-2016",
+        "name": "coldzera",
+        "realName": "Marcelo David",
+        "role": "Rifler",
+        "rating": 1.35,
+        "bestMaps": [
+          "Mirage",
+          "Train",
+          "Dust2"
+        ]
+      },
+      {
+        "id": "fallen-2016",
+        "name": "FalleN",
+        "realName": "Gabriel Toledo",
+        "role": "IGL",
+        "rating": 1.21,
+        "bestMaps": [
+          "Mirage",
+          "Cache",
+          "Overpass"
+        ]
+      },
+      {
+        "id": "fer-2016",
+        "name": "fer",
+        "realName": "Fernando Alvarenga",
+        "role": "Entry",
+        "rating": 1.17,
+        "bestMaps": [
+          "Dust2",
+          "Train",
+          "Cobblestone"
+        ]
+      },
+      {
+        "id": "fnx-2016",
+        "name": "fnx",
+        "realName": "Lincoln Lau",
+        "role": "Lurker",
+        "rating": 1.19,
+        "bestMaps": [
+          "Mirage",
+          "Cache",
+          "Inferno"
+        ]
+      },
+      {
+        "id": "taco-2016",
+        "name": "TACO",
+        "realName": "Epitácio de Melo",
+        "role": "Support",
+        "rating": 1.06,
+        "bestMaps": [
+          "Overpass",
+          "Train",
+          "Cobblestone"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "sk-cologne-2016",
+    "team": "SK Gaming",
+    "shortName": "SK",
+    "event": "ESL One Cologne 2016",
+    "year": 2016,
+    "region": "SA",
+    "achievement": "Major Champions",
+    "mapPoolBias": [
+      "Mirage",
+      "Train",
+      "Dust2",
+      "Cache",
+      "Cobblestone",
+      "Overpass",
+      "Nuke"
+    ],
+    "players": [
+      {
+        "id": "coldzera-2016c",
+        "name": "coldzera",
+        "realName": "Marcelo David",
+        "role": "Rifler",
+        "rating": 1.33,
+        "bestMaps": [
+          "Mirage",
+          "Train",
+          "Dust2"
+        ]
+      },
+      {
+        "id": "fallen-2016c",
+        "name": "FalleN",
+        "realName": "Gabriel Toledo",
+        "role": "IGL",
+        "rating": 1.19,
+        "bestMaps": [
+          "Mirage",
+          "Cache",
+          "Nuke"
+        ]
+      },
+      {
+        "id": "fer-2016c",
+        "name": "fer",
+        "realName": "Fernando Alvarenga",
+        "role": "Entry",
+        "rating": 1.16,
+        "bestMaps": [
+          "Dust2",
+          "Cobblestone",
+          "Train"
+        ]
+      },
+      {
+        "id": "fnx-2016c",
+        "name": "fnx",
+        "realName": "Lincoln Lau",
+        "role": "Lurker",
+        "rating": 1.15,
+        "bestMaps": [
+          "Mirage",
+          "Cache",
+          "Overpass"
+        ]
+      },
+      {
+        "id": "taco-2016c",
+        "name": "TACO",
+        "realName": "Epitácio de Melo",
+        "role": "Support",
+        "rating": 1.04,
+        "bestMaps": [
+          "Train",
+          "Overpass",
+          "Nuke"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "astralis-atlanta-2017",
+    "team": "Astralis",
+    "shortName": "AST",
+    "event": "ELEAGUE Major Atlanta 2017",
+    "year": 2017,
+    "region": "EU",
+    "achievement": "Major Champions",
+    "mapPoolBias": [
+      "Overpass",
+      "Train",
+      "Nuke",
+      "Inferno",
+      "Mirage",
+      "Cache",
+      "Cobblestone"
+    ],
+    "players": [
+      {
+        "id": "device-2017",
+        "name": "device",
+        "realName": "Nicolai Reedtz",
+        "role": "AWPer",
+        "rating": 1.3,
+        "bestMaps": [
+          "Overpass",
+          "Nuke",
+          "Train"
+        ]
+      },
+      {
+        "id": "dupreeh-2017",
+        "name": "dupreeh",
+        "realName": "Peter Rasmussen",
+        "role": "Entry",
+        "rating": 1.18,
+        "bestMaps": [
+          "Inferno",
+          "Mirage",
+          "Cache"
+        ]
+      },
+      {
+        "id": "xyp9x-2017",
+        "name": "Xyp9x",
+        "realName": "Andreas Højsleth",
+        "role": "Support",
+        "rating": 1.14,
+        "bestMaps": [
+          "Overpass",
+          "Train",
+          "Nuke"
+        ]
+      },
+      {
+        "id": "kjaerbye-2017",
+        "name": "Kjaerbye",
+        "realName": "Markus Kjærbye",
+        "role": "Rifler",
+        "rating": 1.21,
+        "bestMaps": [
+          "Mirage",
+          "Cache",
+          "Inferno"
+        ]
+      },
+      {
+        "id": "gla1ve-2017",
+        "name": "gla1ve",
+        "realName": "Lukas Rossander",
+        "role": "IGL",
+        "rating": 1.06,
+        "bestMaps": [
+          "Train",
+          "Nuke",
+          "Overpass"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "gambit-krakow-2017",
+    "team": "Gambit Esports",
+    "shortName": "GMB",
+    "event": "PGL Major Kraków 2017",
+    "year": 2017,
+    "region": "CIS",
+    "achievement": "Major Champions",
+    "mapPoolBias": [
+      "Train",
+      "Overpass",
+      "Nuke",
+      "Mirage",
+      "Inferno",
+      "Cache",
+      "Cobblestone"
+    ],
+    "players": [
+      {
+        "id": "hobbit-2017",
+        "name": "Hobbit",
+        "realName": "Abay Khassenov",
+        "role": "Rifler",
+        "rating": 1.24,
+        "bestMaps": [
+          "Train",
+          "Mirage",
+          "Inferno"
+        ]
+      },
+      {
+        "id": "dosia-2017",
+        "name": "Dosia",
+        "realName": "Mikhail Stolyarov",
+        "role": "Support",
+        "rating": 1.08,
+        "bestMaps": [
+          "Overpass",
+          "Nuke",
+          "Cache"
+        ]
+      },
+      {
+        "id": "mou-2017",
+        "name": "mou",
+        "realName": "Rustem Telepov",
+        "role": "AWPer",
+        "rating": 1.16,
+        "bestMaps": [
+          "Train",
+          "Mirage",
+          "Nuke"
+        ]
+      },
+      {
+        "id": "adren-2017",
+        "name": "AdreN",
+        "realName": "Dauren Kystaubayev",
+        "role": "Entry",
+        "rating": 1.12,
+        "bestMaps": [
+          "Inferno",
+          "Cache",
+          "Cobblestone"
+        ]
+      },
+      {
+        "id": "zeus-2017",
+        "name": "Zeus",
+        "realName": "Danylo Teslenko",
+        "role": "IGL",
+        "rating": 0.99,
+        "bestMaps": [
+          "Overpass",
+          "Train",
+          "Nuke"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "cloud9-boston-2018",
+    "team": "Cloud9",
+    "shortName": "C9",
+    "event": "ELEAGUE Major Boston 2018",
+    "year": 2018,
+    "region": "NA",
+    "achievement": "Major Champions",
+    "mapPoolBias": [
+      "Overpass",
+      "Mirage",
+      "Inferno",
+      "Cache",
+      "Train",
+      "Nuke",
+      "Cobblestone"
+    ],
+    "players": [
+      {
+        "id": "tarik-2018",
+        "name": "tarik",
+        "realName": "Tarik Celik",
+        "role": "Rifler",
+        "rating": 1.24,
+        "bestMaps": [
+          "Overpass",
+          "Mirage",
+          "Inferno"
+        ]
+      },
+      {
+        "id": "skadoodle-2018",
+        "name": "Skadoodle",
+        "realName": "Tyler Latham",
+        "role": "AWPer",
+        "rating": 1.19,
+        "bestMaps": [
+          "Mirage",
+          "Cache",
+          "Nuke"
+        ]
+      },
+      {
+        "id": "stewie-2018",
+        "name": "Stewie2K",
+        "realName": "Jake Yip",
+        "role": "Entry",
+        "rating": 1.15,
+        "bestMaps": [
+          "Inferno",
+          "Overpass",
+          "Train"
+        ]
+      },
+      {
+        "id": "autimatic-2018",
+        "name": "autimatic",
+        "realName": "Timothy Ta",
+        "role": "Lurker",
+        "rating": 1.17,
+        "bestMaps": [
+          "Cache",
+          "Mirage",
+          "Cobblestone"
+        ]
+      },
+      {
+        "id": "rush-2018",
+        "name": "RUSH",
+        "realName": "Will Wierzba",
+        "role": "Support",
+        "rating": 1.09,
+        "bestMaps": [
+          "Overpass",
+          "Train",
+          "Nuke"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "astralis-london-2018",
+    "team": "Astralis",
+    "shortName": "AST",
+    "event": "FACEIT Major London 2018",
+    "year": 2018,
+    "region": "EU",
+    "achievement": "Major Champions",
+    "mapPoolBias": [
+      "Nuke",
+      "Inferno",
+      "Overpass",
+      "Dust2",
+      "Train",
+      "Mirage",
+      "Cache"
+    ],
+    "players": [
+      {
+        "id": "device-2018",
+        "name": "device",
+        "realName": "Nicolai Reedtz",
+        "role": "AWPer",
+        "rating": 1.31,
+        "bestMaps": [
+          "Nuke",
+          "Overpass",
+          "Dust2"
+        ]
+      },
+      {
+        "id": "magisk-2018",
+        "name": "Magisk",
+        "realName": "Emil Reif",
+        "role": "Rifler",
+        "rating": 1.23,
+        "bestMaps": [
+          "Inferno",
+          "Mirage",
+          "Cache"
+        ]
+      },
+      {
+        "id": "dupreeh-2018",
+        "name": "dupreeh",
+        "realName": "Peter Rasmussen",
+        "role": "Entry",
+        "rating": 1.16,
+        "bestMaps": [
+          "Inferno",
+          "Dust2",
+          "Train"
+        ]
+      },
+      {
+        "id": "xyp9x-2018",
+        "name": "Xyp9x",
+        "realName": "Andreas Højsleth",
+        "role": "Support",
+        "rating": 1.13,
+        "bestMaps": [
+          "Nuke",
+          "Overpass",
+          "Train"
+        ]
+      },
+      {
+        "id": "gla1ve-2018",
+        "name": "gla1ve",
+        "realName": "Lukas Rossander",
+        "role": "IGL",
+        "rating": 1.07,
+        "bestMaps": [
+          "Nuke",
+          "Inferno",
+          "Overpass"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "liquid-2019",
+    "team": "Team Liquid",
+    "shortName": "TL",
+    "event": "IEM Katowice 2019",
+    "year": 2019,
+    "region": "NA",
+    "achievement": "Major Finalists / #1 Ranked",
+    "mapPoolBias": [
+      "Dust2",
+      "Mirage",
+      "Inferno",
+      "Nuke",
+      "Overpass",
+      "Train",
+      "Vertigo"
+    ],
+    "players": [
+      {
+        "id": "elige-2019",
+        "name": "EliGE",
+        "realName": "Jonathan Jablonowski",
+        "role": "Rifler",
+        "rating": 1.27,
+        "bestMaps": [
+          "Dust2",
+          "Mirage",
+          "Inferno"
+        ]
+      },
+      {
+        "id": "naf-2019",
+        "name": "NAF",
+        "realName": "Keith Markovic",
+        "role": "Lurker",
+        "rating": 1.22,
+        "bestMaps": [
+          "Nuke",
+          "Overpass",
+          "Train"
+        ]
+      },
+      {
+        "id": "twistzz-2019",
+        "name": "Twistzz",
+        "realName": "Russel Van Dulken",
+        "role": "Entry",
+        "rating": 1.19,
+        "bestMaps": [
+          "Mirage",
+          "Inferno",
+          "Dust2"
+        ]
+      },
+      {
+        "id": "stewie-2019",
+        "name": "Stewie2K",
+        "realName": "Jake Yip",
+        "role": "Support",
+        "rating": 1.11,
+        "bestMaps": [
+          "Inferno",
+          "Overpass",
+          "Vertigo"
+        ]
+      },
+      {
+        "id": "nitro-2019",
+        "name": "nitr0",
+        "realName": "Nick Cannella",
+        "role": "IGL",
+        "rating": 1.04,
+        "bestMaps": [
+          "Nuke",
+          "Train",
+          "Dust2"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "astralis-berlin-2019",
+    "team": "Astralis",
+    "shortName": "AST",
+    "event": "StarLadder Berlin Major 2019",
+    "year": 2019,
+    "region": "EU",
+    "achievement": "Major Champions (4th Major)",
+    "mapPoolBias": [
+      "Nuke",
+      "Inferno",
+      "Dust2",
+      "Overpass",
+      "Train",
+      "Mirage",
+      "Vertigo"
+    ],
+    "players": [
+      {
+        "id": "device-2019",
+        "name": "device",
+        "realName": "Nicolai Reedtz",
+        "role": "AWPer",
+        "rating": 1.29,
+        "bestMaps": [
+          "Nuke",
+          "Dust2",
+          "Overpass"
+        ]
+      },
+      {
+        "id": "magisk-2019",
+        "name": "Magisk",
+        "realName": "Emil Reif",
+        "role": "Rifler",
+        "rating": 1.2,
+        "bestMaps": [
+          "Inferno",
+          "Mirage",
+          "Train"
+        ]
+      },
+      {
+        "id": "dupreeh-2019",
+        "name": "dupreeh",
+        "realName": "Peter Rasmussen",
+        "role": "Entry",
+        "rating": 1.15,
+        "bestMaps": [
+          "Inferno",
+          "Dust2",
+          "Vertigo"
+        ]
+      },
+      {
+        "id": "xyp9x-2019",
+        "name": "Xyp9x",
+        "realName": "Andreas Højsleth",
+        "role": "Support",
+        "rating": 1.14,
+        "bestMaps": [
+          "Nuke",
+          "Overpass",
+          "Train"
+        ]
+      },
+      {
+        "id": "gla1ve-2019",
+        "name": "gla1ve",
+        "realName": "Lukas Rossander",
+        "role": "IGL",
+        "rating": 1.08,
+        "bestMaps": [
+          "Nuke",
+          "Inferno",
+          "Overpass"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "navi-stockholm-2021",
+    "team": "Natus Vincere",
+    "shortName": "NAVI",
+    "event": "PGL Major Stockholm 2021",
+    "year": 2021,
+    "region": "CIS",
+    "achievement": "Major Champions",
+    "mapPoolBias": [
+      "Dust2",
+      "Mirage",
+      "Nuke",
+      "Inferno",
+      "Ancient",
+      "Overpass",
+      "Vertigo"
+    ],
+    "players": [
+      {
+        "id": "s1mple-2021",
+        "name": "s1mple",
+        "realName": "Oleksandr Kostyliev",
+        "role": "AWPer",
+        "rating": 1.33,
+        "bestMaps": [
+          "Dust2",
+          "Mirage",
+          "Nuke"
+        ]
+      },
+      {
+        "id": "b1t-2021",
+        "name": "b1t",
+        "realName": "Valeriy Vakhovskiy",
+        "role": "Rifler",
+        "rating": 1.22,
+        "bestMaps": [
+          "Inferno",
+          "Ancient",
+          "Overpass"
+        ]
+      },
+      {
+        "id": "electronic-2021",
+        "name": "electroNic",
+        "realName": "Denis Sharipov",
+        "role": "Entry",
+        "rating": 1.16,
+        "bestMaps": [
+          "Dust2",
+          "Mirage",
+          "Vertigo"
+        ]
+      },
+      {
+        "id": "perfecto-2021",
+        "name": "Perfecto",
+        "realName": "Ilya Zalutskiy",
+        "role": "Support",
+        "rating": 1.05,
+        "bestMaps": [
+          "Nuke",
+          "Overpass",
+          "Ancient"
+        ]
+      },
+      {
+        "id": "boombl4-2021",
+        "name": "Boombl4",
+        "realName": "Kirill Mikhailov",
+        "role": "IGL",
+        "rating": 1.01,
+        "bestMaps": [
+          "Inferno",
+          "Vertigo",
+          "Dust2"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "faze-antwerp-2022",
+    "team": "FaZe Clan",
+    "shortName": "FaZe",
+    "event": "PGL Major Antwerp 2022",
+    "year": 2022,
+    "region": "INT",
+    "achievement": "Major Champions (1st International)",
+    "mapPoolBias": [
+      "Nuke",
+      "Mirage",
+      "Ancient",
+      "Inferno",
+      "Overpass",
+      "Dust2",
+      "Vertigo"
+    ],
+    "players": [
+      {
+        "id": "rain-2022",
+        "name": "rain",
+        "realName": "Håvard Nygaard",
+        "role": "Entry",
+        "rating": 1.22,
+        "bestMaps": [
+          "Nuke",
+          "Inferno",
+          "Overpass"
+        ]
+      },
+      {
+        "id": "ropz-2022",
+        "name": "ropz",
+        "realName": "Robin Kool",
+        "role": "Lurker",
+        "rating": 1.2,
+        "bestMaps": [
+          "Mirage",
+          "Ancient",
+          "Dust2"
+        ]
+      },
+      {
+        "id": "broky-2022",
+        "name": "broky",
+        "realName": "Helvijs Saukants",
+        "role": "AWPer",
+        "rating": 1.18,
+        "bestMaps": [
+          "Nuke",
+          "Mirage",
+          "Vertigo"
+        ]
+      },
+      {
+        "id": "twistzz-2022",
+        "name": "Twistzz",
+        "realName": "Russel Van Dulken",
+        "role": "Rifler",
+        "rating": 1.15,
+        "bestMaps": [
+          "Inferno",
+          "Ancient",
+          "Overpass"
+        ]
+      },
+      {
+        "id": "karrigan-2022",
+        "name": "karrigan",
+        "realName": "Finn Andersen",
+        "role": "IGL",
+        "rating": 0.98,
+        "bestMaps": [
+          "Nuke",
+          "Mirage",
+          "Dust2"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "outsiders-rio-2022",
+    "team": "Outsiders",
+    "shortName": "OUT",
+    "event": "IEM Rio Major 2022",
+    "year": 2022,
+    "region": "CIS",
+    "achievement": "Major Champions",
+    "mapPoolBias": [
+      "Mirage",
+      "Inferno",
+      "Nuke",
+      "Overpass",
+      "Ancient",
+      "Dust2",
+      "Vertigo"
+    ],
+    "players": [
+      {
+        "id": "jame-2022",
+        "name": "Jame",
+        "realName": "Dzhami Ali",
+        "role": "AWPer",
+        "rating": 1.21,
+        "bestMaps": [
+          "Mirage",
+          "Nuke",
+          "Overpass"
+        ]
+      },
+      {
+        "id": "fl1t-2022",
+        "name": "FL1T",
+        "realName": "Evgeny Lebedev",
+        "role": "Rifler",
+        "rating": 1.17,
+        "bestMaps": [
+          "Inferno",
+          "Ancient",
+          "Dust2"
+        ]
+      },
+      {
+        "id": "qikert-2022",
+        "name": "qikert",
+        "realName": "Aleksei Golubev",
+        "role": "Entry",
+        "rating": 1.12,
+        "bestMaps": [
+          "Mirage",
+          "Vertigo",
+          "Inferno"
+        ]
+      },
+      {
+        "id": "fame-2022",
+        "name": "fame",
+        "realName": "Petr Bolyshev",
+        "role": "Lurker",
+        "rating": 1.14,
+        "bestMaps": [
+          "Nuke",
+          "Overpass",
+          "Ancient"
+        ]
+      },
+      {
+        "id": "n0rb3r7-2022",
+        "name": "n0rb3r7",
+        "realName": "David Danielyan",
+        "role": "Support",
+        "rating": 1.08,
+        "bestMaps": [
+          "Inferno",
+          "Dust2",
+          "Mirage"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "vitality-paris-2023",
+    "team": "Team Vitality",
+    "shortName": "VIT",
+    "event": "BLAST.tv Paris Major 2023",
+    "year": 2023,
+    "region": "EU",
+    "achievement": "Major Champions (Final CS:GO Major)",
+    "mapPoolBias": [
+      "Inferno",
+      "Nuke",
+      "Overpass",
+      "Anubis",
+      "Mirage",
+      "Ancient",
+      "Vertigo"
+    ],
+    "players": [
+      {
+        "id": "zywoo-2023",
+        "name": "ZywOo",
+        "realName": "Mathieu Herbaut",
+        "role": "AWPer",
+        "rating": 1.38,
+        "bestMaps": [
+          "Inferno",
+          "Nuke",
+          "Overpass"
+        ]
+      },
+      {
+        "id": "spinx-2023",
+        "name": "Spinx",
+        "realName": "Lotan Giladi",
+        "role": "Entry",
+        "rating": 1.21,
+        "bestMaps": [
+          "Anubis",
+          "Mirage",
+          "Ancient"
+        ]
+      },
+      {
+        "id": "magisk-2023",
+        "name": "Magisk",
+        "realName": "Emil Reif",
+        "role": "Rifler",
+        "rating": 1.11,
+        "bestMaps": [
+          "Inferno",
+          "Overpass",
+          "Vertigo"
+        ]
+      },
+      {
+        "id": "dupreeh-2023",
+        "name": "dupreeh",
+        "realName": "Peter Rasmussen",
+        "role": "Support",
+        "rating": 1.06,
+        "bestMaps": [
+          "Nuke",
+          "Anubis",
+          "Mirage"
+        ]
+      },
+      {
+        "id": "apex-2023",
+        "name": "apEX",
+        "realName": "Dan Madesclaire",
+        "role": "IGL",
+        "rating": 0.96,
+        "bestMaps": [
+          "Inferno",
+          "Ancient",
+          "Vertigo"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "g2-2023",
+    "team": "G2 Esports",
+    "shortName": "G2",
+    "event": "IEM Cologne 2023",
+    "year": 2023,
+    "region": "EU",
+    "achievement": "IEM Cologne Champions",
+    "mapPoolBias": [
+      "Inferno",
+      "Mirage",
+      "Nuke",
+      "Ancient",
+      "Overpass",
+      "Anubis",
+      "Vertigo"
+    ],
+    "players": [
+      {
+        "id": "m0nesy-2023",
+        "name": "m0NESY",
+        "realName": "Ilya Osipov",
+        "role": "AWPer",
+        "rating": 1.32,
+        "bestMaps": [
+          "Mirage",
+          "Nuke",
+          "Overpass"
+        ]
+      },
+      {
+        "id": "niko-2023",
+        "name": "NiKo",
+        "realName": "Nikola Kovač",
+        "role": "Rifler",
+        "rating": 1.26,
+        "bestMaps": [
+          "Inferno",
+          "Ancient",
+          "Anubis"
+        ]
+      },
+      {
+        "id": "hunter-2023",
+        "name": "huNter-",
+        "realName": "Nemanja Kovač",
+        "role": "Entry",
+        "rating": 1.14,
+        "bestMaps": [
+          "Inferno",
+          "Mirage",
+          "Vertigo"
+        ]
+      },
+      {
+        "id": "jks-2023",
+        "name": "jks",
+        "realName": "Justin Savage",
+        "role": "Support",
+        "rating": 1.1,
+        "bestMaps": [
+          "Nuke",
+          "Overpass",
+          "Anubis"
+        ]
+      },
+      {
+        "id": "hades-2023",
+        "name": "HooXi",
+        "realName": "Rasmus Nielsen",
+        "role": "IGL",
+        "rating": 0.92,
+        "bestMaps": [
+          "Ancient",
+          "Vertigo",
+          "Inferno"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "navi-copenhagen-2024",
+    "team": "Natus Vincere",
+    "shortName": "NAVI",
+    "event": "PGL Major Copenhagen 2024",
+    "year": 2024,
+    "region": "EU",
+    "achievement": "Major Champions (CS2)",
+    "mapPoolBias": [
+      "Ancient",
+      "Mirage",
+      "Nuke",
+      "Anubis",
+      "Inferno",
+      "Dust2",
+      "Vertigo"
+    ],
+    "players": [
+      {
+        "id": "jl-2024",
+        "name": "jL",
+        "realName": "Justinas Lekavicius",
+        "role": "Rifler",
+        "rating": 1.3,
+        "bestMaps": [
+          "Ancient",
+          "Mirage",
+          "Anubis"
+        ]
+      },
+      {
+        "id": "wonderful-2024",
+        "name": "w0nderful",
+        "realName": "Ihor Zhdanov",
+        "role": "AWPer",
+        "rating": 1.21,
+        "bestMaps": [
+          "Nuke",
+          "Dust2",
+          "Mirage"
+        ]
+      },
+      {
+        "id": "im-2024",
+        "name": "iM",
+        "realName": "Mihai Ivan",
+        "role": "Entry",
+        "rating": 1.17,
+        "bestMaps": [
+          "Inferno",
+          "Anubis",
+          "Vertigo"
+        ]
+      },
+      {
+        "id": "b1t-2024",
+        "name": "b1t",
+        "realName": "Valeriy Vakhovskiy",
+        "role": "Lurker",
+        "rating": 1.14,
+        "bestMaps": [
+          "Ancient",
+          "Nuke",
+          "Dust2"
+        ]
+      },
+      {
+        "id": "aleksib-2024",
+        "name": "Aleksib",
+        "realName": "Aleksi Virolainen",
+        "role": "IGL",
+        "rating": 0.97,
+        "bestMaps": [
+          "Mirage",
+          "Inferno",
+          "Vertigo"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "spirit-shanghai-2024",
+    "team": "Team Spirit",
+    "shortName": "TS",
+    "event": "Perfect World Shanghai Major 2024",
+    "year": 2024,
+    "region": "CIS",
+    "achievement": "Major Champions",
+    "mapPoolBias": [
+      "Dust2",
+      "Ancient",
+      "Anubis",
+      "Mirage",
+      "Nuke",
+      "Inferno",
+      "Vertigo"
+    ],
+    "players": [
+      {
+        "id": "donk-2024",
+        "name": "donk",
+        "realName": "Danil Kryshkovets",
+        "role": "Entry",
+        "rating": 1.41,
+        "bestMaps": [
+          "Dust2",
+          "Anubis",
+          "Mirage"
+        ]
+      },
+      {
+        "id": "sh1ro-2024",
+        "name": "sh1ro",
+        "realName": "Dmitry Sokolov",
+        "role": "AWPer",
+        "rating": 1.26,
+        "bestMaps": [
+          "Ancient",
+          "Nuke",
+          "Inferno"
+        ]
+      },
+      {
+        "id": "magixx-2024",
+        "name": "magixx",
+        "realName": "Boris Vorobiev",
+        "role": "Support",
+        "rating": 1.09,
+        "bestMaps": [
+          "Anubis",
+          "Vertigo",
+          "Dust2"
+        ]
+      },
+      {
+        "id": "zont1x-2024",
+        "name": "zont1x",
+        "realName": "Myroslav Plakhotia",
+        "role": "Lurker",
+        "rating": 1.11,
+        "bestMaps": [
+          "Mirage",
+          "Ancient",
+          "Nuke"
+        ]
+      },
+      {
+        "id": "chopper-2024",
+        "name": "chopper",
+        "realName": "Leonid Vishnyakov",
+        "role": "IGL",
+        "rating": 0.94,
+        "bestMaps": [
+          "Inferno",
+          "Vertigo",
+          "Anubis"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "vitality-austin-2025",
+    "team": "Team Vitality",
+    "shortName": "VIT",
+    "event": "BLAST.tv Austin Major 2025",
+    "year": 2025,
+    "region": "EU",
+    "achievement": "Major Champions",
+    "mapPoolBias": [
+      "Inferno",
+      "Nuke",
+      "Dust2",
+      "Mirage",
+      "Ancient",
+      "Anubis",
+      "Train"
+    ],
+    "players": [
+      {
+        "id": "zywoo-2025",
+        "name": "ZywOo",
+        "realName": "Mathieu Herbaut",
+        "role": "AWPer",
+        "rating": 1.36,
+        "bestMaps": [
+          "Inferno",
+          "Nuke",
+          "Dust2"
+        ]
+      },
+      {
+        "id": "ropz-2025",
+        "name": "ropz",
+        "realName": "Robin Kool",
+        "role": "Lurker",
+        "rating": 1.22,
+        "bestMaps": [
+          "Mirage",
+          "Ancient",
+          "Anubis"
+        ]
+      },
+      {
+        "id": "mezii-2025",
+        "name": "mezii",
+        "realName": "William Merriman",
+        "role": "Rifler",
+        "rating": 1.15,
+        "bestMaps": [
+          "Dust2",
+          "Train",
+          "Inferno"
+        ]
+      },
+      {
+        "id": "flamez-2025",
+        "name": "flameZ",
+        "realName": "Shahar Shushan",
+        "role": "Entry",
+        "rating": 1.18,
+        "bestMaps": [
+          "Anubis",
+          "Mirage",
+          "Nuke"
+        ]
+      },
+      {
+        "id": "apex-2025",
+        "name": "apEX",
+        "realName": "Dan Madesclaire",
+        "role": "IGL",
+        "rating": 0.98,
+        "bestMaps": [
+          "Inferno",
+          "Ancient",
+          "Train"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "mouz-2024",
+    "team": "MOUZ",
+    "shortName": "MOUZ",
+    "event": "IEM Katowice 2024",
+    "year": 2024,
+    "region": "EU",
+    "achievement": "IEM Katowice Finalists",
+    "mapPoolBias": [
+      "Ancient",
+      "Mirage",
+      "Anubis",
+      "Nuke",
+      "Inferno",
+      "Vertigo",
+      "Dust2"
+    ],
+    "players": [
+      {
+        "id": "torzsi-2024",
+        "name": "torzsi",
+        "realName": "Ádám Torzsás",
+        "role": "AWPer",
+        "rating": 1.24,
+        "bestMaps": [
+          "Ancient",
+          "Nuke",
+          "Mirage"
+        ]
+      },
+      {
+        "id": "xertioN-2024",
+        "name": "xertioN",
+        "realName": "Dorian Buchegger",
+        "role": "Entry",
+        "rating": 1.19,
+        "bestMaps": [
+          "Anubis",
+          "Inferno",
+          "Dust2"
+        ]
+      },
+      {
+        "id": "siuhy-2024",
+        "name": "siuhy",
+        "realName": "Kamil Szkaradek",
+        "role": "IGL",
+        "rating": 1.02,
+        "bestMaps": [
+          "Mirage",
+          "Vertigo",
+          "Ancient"
+        ]
+      },
+      {
+        "id": "jimpphat-2024",
+        "name": "Jimpphat",
+        "realName": "Jimi Salo",
+        "role": "Rifler",
+        "rating": 1.16,
+        "bestMaps": [
+          "Anubis",
+          "Nuke",
+          "Inferno"
+        ]
+      },
+      {
+        "id": "brollan-2024",
+        "name": "Brollan",
+        "realName": "Ludvig Brolin",
+        "role": "Support",
+        "rating": 1.1,
+        "bestMaps": [
+          "Dust2",
+          "Vertigo",
+          "Mirage"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "heroic-2022",
+    "team": "Heroic",
+    "shortName": "HER",
+    "event": "PGL Major Antwerp 2022",
+    "year": 2022,
+    "region": "EU",
+    "achievement": "Major Finalists",
+    "mapPoolBias": [
+      "Inferno",
+      "Overpass",
+      "Nuke",
+      "Mirage",
+      "Ancient",
+      "Dust2",
+      "Vertigo"
+    ],
+    "players": [
+      {
+        "id": "stavn-2022",
+        "name": "stavn",
+        "realName": "Martin Lund",
+        "role": "Rifler",
+        "rating": 1.23,
+        "bestMaps": [
+          "Inferno",
+          "Mirage",
+          "Dust2"
+        ]
+      },
+      {
+        "id": "cadiaN-2022",
+        "name": "cadiaN",
+        "realName": "Casper Møller",
+        "role": "IGL",
+        "rating": 1.12,
+        "bestMaps": [
+          "Overpass",
+          "Nuke",
+          "Ancient"
+        ]
+      },
+      {
+        "id": "jabbi-2022",
+        "name": "jabbi",
+        "realName": "Jakob Nygaard",
+        "role": "Entry",
+        "rating": 1.14,
+        "bestMaps": [
+          "Inferno",
+          "Vertigo",
+          "Mirage"
+        ]
+      },
+      {
+        "id": "sjuush-2022",
+        "name": "sjuush",
+        "realName": "Rasmus Beck",
+        "role": "Support",
+        "rating": 1.08,
+        "bestMaps": [
+          "Overpass",
+          "Nuke",
+          "Dust2"
+        ]
+      },
+      {
+        "id": "teses-2022",
+        "name": "TeSeS",
+        "realName": "René Madsen",
+        "role": "Lurker",
+        "rating": 1.11,
+        "bestMaps": [
+          "Ancient",
+          "Mirage",
+          "Inferno"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "furia-2022",
+    "team": "FURIA",
+    "shortName": "FUR",
+    "event": "IEM Rio Major 2022",
+    "year": 2022,
+    "region": "SA",
+    "achievement": "Major Semifinalists (Home Crowd)",
+    "mapPoolBias": [
+      "Mirage",
+      "Nuke",
+      "Overpass",
+      "Inferno",
+      "Ancient",
+      "Vertigo",
+      "Dust2"
+    ],
+    "players": [
+      {
+        "id": "kscerato-2022",
+        "name": "KSCERATO",
+        "realName": "Kaike Cerato",
+        "role": "Lurker",
+        "rating": 1.25,
+        "bestMaps": [
+          "Mirage",
+          "Nuke",
+          "Overpass"
+        ]
+      },
+      {
+        "id": "yuurih-2022",
+        "name": "yuurih",
+        "realName": "Yuri Santos",
+        "role": "Rifler",
+        "rating": 1.18,
+        "bestMaps": [
+          "Inferno",
+          "Ancient",
+          "Dust2"
+        ]
+      },
+      {
+        "id": "arT-2022",
+        "name": "arT",
+        "realName": "Andrei Piovezan",
+        "role": "IGL",
+        "rating": 1.05,
+        "bestMaps": [
+          "Vertigo",
+          "Mirage",
+          "Nuke"
+        ]
+      },
+      {
+        "id": "drop-2022",
+        "name": "drop",
+        "realName": "André Abreu",
+        "role": "Support",
+        "rating": 1.07,
+        "bestMaps": [
+          "Overpass",
+          "Inferno",
+          "Ancient"
+        ]
+      },
+      {
+        "id": "saffe-2022",
+        "name": "saffe",
+        "realName": "Rafael Costa",
+        "role": "AWPer",
+        "rating": 1.09,
+        "bestMaps": [
+          "Nuke",
+          "Dust2",
+          "Mirage"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "tyloo-2018",
+    "team": "TYLOO",
+    "shortName": "TYL",
+    "event": "IEM Katowice 2018",
+    "year": 2018,
+    "region": "AS",
+    "achievement": "Major Contender",
+    "mapPoolBias": [
+      "Mirage",
+      "Inferno",
+      "Overpass",
+      "Cache",
+      "Train",
+      "Dust2",
+      "Nuke"
+    ],
+    "players": [
+      {
+        "id": "somebody-2018",
+        "name": "somebody",
+        "realName": "Xu Haowen",
+        "role": "Rifler",
+        "rating": 1.12,
+        "bestMaps": [
+          "Mirage",
+          "Inferno",
+          "Cache"
+        ]
+      },
+      {
+        "id": "attacker-2018",
+        "name": "Attacker",
+        "realName": "Wang Jingjie",
+        "role": "AWPer",
+        "rating": 1.1,
+        "bestMaps": [
+          "Dust2",
+          "Mirage",
+          "Train"
+        ]
+      },
+      {
+        "id": "captainmo-2018",
+        "name": "captainMo",
+        "realName": "Ye Qing",
+        "role": "IGL",
+        "rating": 0.98,
+        "bestMaps": [
+          "Inferno",
+          "Overpass",
+          "Nuke"
+        ]
+      },
+      {
+        "id": "dd-2018",
+        "name": "DD",
+        "realName": "Wu Tao",
+        "role": "Entry",
+        "rating": 1.05,
+        "bestMaps": [
+          "Cache",
+          "Mirage",
+          "Dust2"
+        ]
+      },
+      {
+        "id": "bnte-2018",
+        "name": "BnTeT",
+        "realName": "Hansel Ferdinand",
+        "role": "Support",
+        "rating": 1.14,
+        "bestMaps": [
+          "Mirage",
+          "Train",
+          "Overpass"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "renegades-2019",
+    "team": "Renegades",
+    "shortName": "RNG",
+    "event": "IEM Katowice 2019",
+    "year": 2019,
+    "region": "OC",
+    "achievement": "Major Contender",
+    "mapPoolBias": [
+      "Mirage",
+      "Inferno",
+      "Dust2",
+      "Overpass",
+      "Train",
+      "Nuke",
+      "Vertigo"
+    ],
+    "players": [
+      {
+        "id": "jks-2019",
+        "name": "jks",
+        "realName": "Justin de Leon",
+        "role": "Rifler",
+        "rating": 1.16,
+        "bestMaps": [
+          "Mirage",
+          "Inferno",
+          "Dust2"
+        ]
+      },
+      {
+        "id": "azia-2019",
+        "name": "AZR",
+        "realName": "Aaron Ward",
+        "role": "Entry",
+        "rating": 1.05,
+        "bestMaps": [
+          "Dust2",
+          "Train",
+          "Nuke"
+        ]
+      },
+      {
+        "id": "jkaem-2019",
+        "name": "jkaem",
+        "realName": "Joakim Myrbostad",
+        "role": "Lurker",
+        "rating": 1.08,
+        "bestMaps": [
+          "Overpass",
+          "Mirage",
+          "Inferno"
+        ]
+      },
+      {
+        "id": "gratisfaction-2019",
+        "name": "Gratisfaction",
+        "realName": "Sean Kaiwai",
+        "role": "AWPer",
+        "rating": 1.11,
+        "bestMaps": [
+          "Dust2",
+          "Mirage",
+          "Train"
+        ]
+      },
+      {
+        "id": "liazz-2019",
+        "name": "Liazz",
+        "realName": "Jay Tregillgas",
+        "role": "Support",
+        "rating": 1.04,
+        "bestMaps": [
+          "Inferno",
+          "Overpass",
+          "Nuke"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "ence-katowice-2019",
+    "team": "ENCE",
+    "shortName": "ENCE",
+    "event": "IEM Katowice 2019",
+    "year": 2019,
+    "region": "EU",
+    "achievement": "Major Finalist",
+    "mapPoolBias": [
+      "Inferno",
+      "Train",
+      "Dust2",
+      "Overpass",
+      "Nuke",
+      "Mirage",
+      "Vertigo"
+    ],
+    "players": [
+      {
+        "id": "allu-2019",
+        "name": "allu",
+        "realName": "Aleksi Jalli",
+        "role": "AWPer",
+        "rating": 1.12,
+        "bestMaps": [
+          "Dust2",
+          "Train",
+          "Mirage"
+        ]
+      },
+      {
+        "id": "sergej-2019",
+        "name": "sergej",
+        "realName": "Jere Salo",
+        "role": "Rifler",
+        "rating": 1.18,
+        "bestMaps": [
+          "Inferno",
+          "Overpass",
+          "Nuke"
+        ]
+      },
+      {
+        "id": "aerial-2019",
+        "name": "Aerial",
+        "realName": "Jussi Jaatinen",
+        "role": "Entry",
+        "rating": 1.08,
+        "bestMaps": [
+          "Inferno",
+          "Dust2",
+          "Train"
+        ]
+      },
+      {
+        "id": "xseveN-2019",
+        "name": "xseveN",
+        "realName": "Jesse Vainikka",
+        "role": "Support",
+        "rating": 1.02,
+        "bestMaps": [
+          "Nuke",
+          "Overpass",
+          "Mirage"
+        ]
+      },
+      {
+        "id": "aleksib-2019",
+        "name": "AleksiB",
+        "realName": "Aleksi Virolainen",
+        "role": "IGL",
+        "rating": 1,
+        "bestMaps": [
+          "Inferno",
+          "Train",
+          "Overpass"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "mibr-2018",
+    "team": "MIBR",
+    "shortName": "MIBR",
+    "event": "FACEIT Major London 2018",
+    "year": 2018,
+    "region": "SA",
+    "achievement": "Major Contender",
+    "mapPoolBias": [
+      "Mirage",
+      "Inferno",
+      "Cache",
+      "Overpass",
+      "Train",
+      "Dust2",
+      "Nuke"
+    ],
+    "players": [
+      {
+        "id": "fallen-2018",
+        "name": "FalleN",
+        "realName": "Gabriel Toledo",
+        "role": "IGL",
+        "rating": 1.08,
+        "bestMaps": [
+          "Mirage",
+          "Inferno",
+          "Train"
+        ]
+      },
+      {
+        "id": "fer-2018",
+        "name": "fer",
+        "realName": "Fernando Alvarenga",
+        "role": "Entry",
+        "rating": 1.12,
+        "bestMaps": [
+          "Cache",
+          "Dust2",
+          "Overpass"
+        ]
+      },
+      {
+        "id": "coldzera-2018",
+        "name": "coldzera",
+        "realName": "Marcelo David",
+        "role": "Rifler",
+        "rating": 1.2,
+        "bestMaps": [
+          "Mirage",
+          "Train",
+          "Nuke"
+        ]
+      },
+      {
+        "id": "stewie2k-2018",
+        "name": "Stewie2K",
+        "realName": "Jake Yip",
+        "role": "Entry",
+        "rating": 1.1,
+        "bestMaps": [
+          "Inferno",
+          "Cache",
+          "Dust2"
+        ]
+      },
+      {
+        "id": "tarik-2018",
+        "name": "tarik",
+        "realName": "Tarik Celik",
+        "role": "Support",
+        "rating": 1.06,
+        "bestMaps": [
+          "Overpass",
+          "Mirage",
+          "Nuke"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "faze-2018",
+    "team": "FaZe Clan",
+    "shortName": "FaZe",
+    "event": "ELEAGUE Major Boston 2018",
+    "year": 2018,
+    "region": "EU",
+    "achievement": "Major Finalist",
+    "mapPoolBias": [
+      "Mirage",
+      "Inferno",
+      "Overpass",
+      "Train",
+      "Cache",
+      "Dust2",
+      "Nuke"
+    ],
+    "players": [
+      {
+        "id": "karrigan-2018",
+        "name": "karrigan",
+        "realName": "Finn Andersen",
+        "role": "IGL",
+        "rating": 0.98,
+        "bestMaps": [
+          "Inferno",
+          "Overpass",
+          "Nuke"
+        ]
+      },
+      {
+        "id": "rain-2018",
+        "name": "rain",
+        "realName": "Håvard Nygaard",
+        "role": "Entry",
+        "rating": 1.14,
+        "bestMaps": [
+          "Mirage",
+          "Cache",
+          "Dust2"
+        ]
+      },
+      {
+        "id": "niko-2018",
+        "name": "NiKo",
+        "realName": "Nikola Kovač",
+        "role": "Rifler",
+        "rating": 1.28,
+        "bestMaps": [
+          "Mirage",
+          "Inferno",
+          "Overpass"
+        ]
+      },
+      {
+        "id": "olof-2018",
+        "name": "olofmeister",
+        "realName": "Olof Kajbjer",
+        "role": "Lurker",
+        "rating": 1.1,
+        "bestMaps": [
+          "Cache",
+          "Train",
+          "Dust2"
+        ]
+      },
+      {
+        "id": "guardian-2018",
+        "name": "GuardiaN",
+        "realName": "Ladislav Kovács",
+        "role": "AWPer",
+        "rating": 1.16,
+        "bestMaps": [
+          "Dust2",
+          "Mirage",
+          "Train"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "g2-2017",
+    "team": "G2 Esports",
+    "shortName": "G2",
+    "event": "PGL Major Kraków 2017",
+    "year": 2017,
+    "region": "EU",
+    "achievement": "Major Contender",
+    "mapPoolBias": [
+      "Mirage",
+      "Inferno",
+      "Cache",
+      "Overpass",
+      "Train",
+      "Cobblestone",
+      "Nuke"
+    ],
+    "players": [
+      {
+        "id": "shox-2017",
+        "name": "shox",
+        "realName": "Richard Papillon",
+        "role": "Rifler",
+        "rating": 1.15,
+        "bestMaps": [
+          "Mirage",
+          "Cache",
+          "Inferno"
+        ]
+      },
+      {
+        "id": "bodyy-2017",
+        "name": "bodyy",
+        "realName": "Alexandre Pianaro",
+        "role": "Support",
+        "rating": 1.05,
+        "bestMaps": [
+          "Overpass",
+          "Train",
+          "Nuke"
+        ]
+      },
+      {
+        "id": "kennyS-2017",
+        "name": "kennyS",
+        "realName": "Kenny Schrub",
+        "role": "AWPer",
+        "rating": 1.18,
+        "bestMaps": [
+          "Dust2",
+          "Mirage",
+          "Cache"
+        ]
+      },
+      {
+        "id": "apex-2017",
+        "name": "apEX",
+        "realName": "Dan Madesclaire",
+        "role": "Entry",
+        "rating": 1.08,
+        "bestMaps": [
+          "Inferno",
+          "Cobblestone",
+          "Overpass"
+        ]
+      },
+      {
+        "id": "nbk-2017",
+        "name": "NBK-",
+        "realName": "Nathan Schmitt",
+        "role": "IGL",
+        "rating": 1.04,
+        "bestMaps": [
+          "Train",
+          "Nuke",
+          "Mirage"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "north-2017",
+    "team": "North",
+    "shortName": "North",
+    "event": "ELEAGUE Major Atlanta 2017",
+    "year": 2017,
+    "region": "EU",
+    "achievement": "Major Contender",
+    "mapPoolBias": [
+      "Train",
+      "Overpass",
+      "Inferno",
+      "Cache",
+      "Mirage",
+      "Cobblestone",
+      "Nuke"
+    ],
+    "players": [
+      {
+        "id": "device-2017",
+        "name": "device",
+        "realName": "Nicolai Reedtz",
+        "role": "AWPer",
+        "rating": 1.2,
+        "bestMaps": [
+          "Train",
+          "Mirage",
+          "Cache"
+        ]
+      },
+      {
+        "id": "cajunb-2017",
+        "name": "cajunb",
+        "realName": "René Borg",
+        "role": "Rifler",
+        "rating": 1.08,
+        "bestMaps": [
+          "Overpass",
+          "Inferno",
+          "Nuke"
+        ]
+      },
+      {
+        "id": "k0nfig-2017",
+        "name": "k0nfig",
+        "realName": "Kristian Wienecke",
+        "role": "Entry",
+        "rating": 1.14,
+        "bestMaps": [
+          "Cache",
+          "Mirage",
+          "Cobblestone"
+        ]
+      },
+      {
+        "id": "magisk-2017",
+        "name": "Magisk",
+        "realName": "Emil Reif",
+        "role": "Lurker",
+        "rating": 1.12,
+        "bestMaps": [
+          "Inferno",
+          "Train",
+          "Overpass"
+        ]
+      },
+      {
+        "id": "msl-2017",
+        "name": "MSL",
+        "realName": "Mathias Lauridsen",
+        "role": "IGL",
+        "rating": 0.96,
+        "bestMaps": [
+          "Nuke",
+          "Overpass",
+          "Inferno"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "big-2019",
+    "team": "BIG",
+    "shortName": "BIG",
+    "event": "StarLadder Berlin Major 2019",
+    "year": 2019,
+    "region": "EU",
+    "achievement": "Major Contender",
+    "mapPoolBias": [
+      "Train",
+      "Overpass",
+      "Mirage",
+      "Inferno",
+      "Nuke",
+      "Dust2",
+      "Vertigo"
+    ],
+    "players": [
+      {
+        "id": "tabseN-2019",
+        "name": "tabseN",
+        "realName": "Johannes Wodarz",
+        "role": "Entry",
+        "rating": 1.14,
+        "bestMaps": [
+          "Mirage",
+          "Inferno",
+          "Dust2"
+        ]
+      },
+      {
+        "id": "tiziaN-2019",
+        "name": "tiziaN",
+        "realName": "Tizian Feldbusch",
+        "role": "Support",
+        "rating": 1.02,
+        "bestMaps": [
+          "Overpass",
+          "Nuke",
+          "Train"
+        ]
+      },
+      {
+        "id": "smooya-2019",
+        "name": "smooya",
+        "realName": "Owen Butterfield",
+        "role": "AWPer",
+        "rating": 1.12,
+        "bestMaps": [
+          "Dust2",
+          "Mirage",
+          "Train"
+        ]
+      },
+      {
+        "id": "xantares-2019",
+        "name": "XANTARES",
+        "realName": "İsmailcan Dörtkardeş",
+        "role": "Rifler",
+        "rating": 1.18,
+        "bestMaps": [
+          "Inferno",
+          "Mirage",
+          "Overpass"
+        ]
+      },
+      {
+        "id": "gob-2019",
+        "name": "gob b",
+        "realName": "Fatih Dayik",
+        "role": "IGL",
+        "rating": 0.94,
+        "bestMaps": [
+          "Nuke",
+          "Train",
+          "Overpass"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "complexity-2020",
+    "team": "Complexity",
+    "shortName": "col",
+    "event": "IEM Katowice 2020",
+    "year": 2020,
+    "region": "NA",
+    "achievement": "#1 Ranked",
+    "mapPoolBias": [
+      "Mirage",
+      "Inferno",
+      "Nuke",
+      "Overpass",
+      "Dust2",
+      "Vertigo",
+      "Train"
+    ],
+    "players": [
+      {
+        "id": "blamef-2020",
+        "name": "blameF",
+        "realName": "Benjamin Bremer",
+        "role": "Rifler",
+        "rating": 1.22,
+        "bestMaps": [
+          "Mirage",
+          "Inferno",
+          "Nuke"
+        ]
+      },
+      {
+        "id": "k0nfig-2020",
+        "name": "k0nfig",
+        "realName": "Kristian Wienecke",
+        "role": "Entry",
+        "rating": 1.14,
+        "bestMaps": [
+          "Dust2",
+          "Mirage",
+          "Overpass"
+        ]
+      },
+      {
+        "id": "poizon-2020",
+        "name": "poizon",
+        "realName": "Valentin Vasilev",
+        "role": "AWPer",
+        "rating": 1.12,
+        "bestMaps": [
+          "Dust2",
+          "Mirage",
+          "Train"
+        ]
+      },
+      {
+        "id": "jks-2020",
+        "name": "jks",
+        "realName": "Justin de Leon",
+        "role": "Support",
+        "rating": 1.1,
+        "bestMaps": [
+          "Inferno",
+          "Nuke",
+          "Overpass"
+        ]
+      },
+      {
+        "id": "es3tag-2020",
+        "name": "es3tag",
+        "realName": "Patrick Hansen",
+        "role": "IGL",
+        "rating": 1.02,
+        "bestMaps": [
+          "Vertigo",
+          "Train",
+          "Nuke"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "vitality-2019",
+    "team": "Team Vitality",
+    "shortName": "VIT",
+    "event": "StarLadder Berlin Major 2019",
+    "year": 2019,
+    "region": "EU",
+    "achievement": "Major Contender",
+    "mapPoolBias": [
+      "Mirage",
+      "Inferno",
+      "Dust2",
+      "Overpass",
+      "Train",
+      "Nuke",
+      "Vertigo"
+    ],
+    "players": [
+      {
+        "id": "zywoo-2019",
+        "name": "ZywOo",
+        "realName": "Mathieu Herbaut",
+        "role": "AWPer",
+        "rating": 1.35,
+        "bestMaps": [
+          "Dust2",
+          "Mirage",
+          "Inferno"
+        ]
+      },
+      {
+        "id": "apex-2019",
+        "name": "apEX",
+        "realName": "Dan Madesclaire",
+        "role": "IGL",
+        "rating": 1.02,
+        "bestMaps": [
+          "Inferno",
+          "Overpass",
+          "Nuke"
+        ]
+      },
+      {
+        "id": "rpks-2019",
+        "name": "RpK",
+        "realName": "Cédric Guipouy",
+        "role": "Support",
+        "rating": 0.98,
+        "bestMaps": [
+          "Train",
+          "Nuke",
+          "Overpass"
+        ]
+      },
+      {
+        "id": "aletha-2019",
+        "name": "ALEX",
+        "realName": "Alex McMeekin",
+        "role": "Entry",
+        "rating": 1.05,
+        "bestMaps": [
+          "Mirage",
+          "Dust2",
+          "Vertigo"
+        ]
+      },
+      {
+        "id": "shox-2019",
+        "name": "shox",
+        "realName": "Richard Papillon",
+        "role": "Rifler",
+        "rating": 1.1,
+        "bestMaps": [
+          "Mirage",
+          "Inferno",
+          "Train"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "navi-2018",
+    "team": "Natus Vincere",
+    "shortName": "NaVi",
+    "event": "FACEIT Major London 2018",
+    "year": 2018,
+    "region": "EU",
+    "achievement": "Major Contender",
+    "mapPoolBias": [
+      "Mirage",
+      "Inferno",
+      "Overpass",
+      "Cache",
+      "Dust2",
+      "Train",
+      "Nuke"
+    ],
+    "players": [
+      {
+        "id": "s1mple-2018",
+        "name": "s1mple",
+        "realName": "Oleksandr Kostyliev",
+        "role": "AWPer",
+        "rating": 1.33,
+        "bestMaps": [
+          "Dust2",
+          "Mirage",
+          "Overpass"
+        ]
+      },
+      {
+        "id": "electronic-2018",
+        "name": "electronic",
+        "realName": "Denis Sharipov",
+        "role": "Entry",
+        "rating": 1.18,
+        "bestMaps": [
+          "Inferno",
+          "Mirage",
+          "Cache"
+        ]
+      },
+      {
+        "id": "flamie-2018",
+        "name": "flamie",
+        "realName": "Egor Vasilyev",
+        "role": "Rifler",
+        "rating": 1.08,
+        "bestMaps": [
+          "Cache",
+          "Train",
+          "Nuke"
+        ]
+      },
+      {
+        "id": "edward-2018",
+        "name": "Edward",
+        "realName": "Ioann Sukhariev",
+        "role": "Support",
+        "rating": 1,
+        "bestMaps": [
+          "Overpass",
+          "Inferno",
+          "Nuke"
+        ]
+      },
+      {
+        "id": "zeus-2018",
+        "name": "Zeus",
+        "realName": "Danylo Teslenko",
+        "role": "IGL",
+        "rating": 0.95,
+        "bestMaps": [
+          "Train",
+          "Nuke",
+          "Inferno"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "liquid-boston-2018",
+    "team": "Team Liquid",
+    "shortName": "TL",
+    "event": "ELEAGUE Major Boston 2018",
+    "year": 2018,
+    "region": "NA",
+    "achievement": "Major Contender",
+    "mapPoolBias": [
+      "Mirage",
+      "Inferno",
+      "Cache",
+      "Overpass",
+      "Cobblestone",
+      "Train",
+      "Nuke"
+    ],
+    "players": [
+      {
+        "id": "elige-2018",
+        "name": "EliGE",
+        "realName": "Jonathan Jablonowski",
+        "role": "Rifler",
+        "rating": 1.2,
+        "bestMaps": [
+          "Mirage",
+          "Inferno",
+          "Cache"
+        ]
+      },
+      {
+        "id": "nitr0-2018",
+        "name": "nitr0",
+        "realName": "Nick Cannella",
+        "role": "IGL",
+        "rating": 1.05,
+        "bestMaps": [
+          "Overpass",
+          "Nuke",
+          "Train"
+        ]
+      },
+      {
+        "id": "twistzz-2018",
+        "name": "Twistzz",
+        "realName": "Russel Van Dulken",
+        "role": "Entry",
+        "rating": 1.14,
+        "bestMaps": [
+          "Mirage",
+          "Cache",
+          "Inferno"
+        ]
+      },
+      {
+        "id": "naf-2018",
+        "name": "NAF",
+        "realName": "Keith Markovic",
+        "role": "Lurker",
+        "rating": 1.16,
+        "bestMaps": [
+          "Overpass",
+          "Train",
+          "Nuke"
+        ]
+      },
+      {
+        "id": "stewie-boston",
+        "name": "Stewie2K",
+        "realName": "Jake Yip",
+        "role": "Support",
+        "rating": 1.1,
+        "bestMaps": [
+          "Inferno",
+          "Cobblestone",
+          "Dust2"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "gambit-2021",
+    "team": "Gambit Esports",
+    "shortName": "GMB",
+    "event": "PGL Major Stockholm 2021",
+    "year": 2021,
+    "region": "EU",
+    "achievement": "Major Contender",
+    "mapPoolBias": [
+      "Mirage",
+      "Inferno",
+      "Nuke",
+      "Ancient",
+      "Vertigo",
+      "Overpass",
+      "Dust2"
+    ],
+    "players": [
+      {
+        "id": "sh1ro-2021",
+        "name": "sh1ro",
+        "realName": "Dmitry Sokolov",
+        "role": "AWPer",
+        "rating": 1.24,
+        "bestMaps": [
+          "Mirage",
+          "Nuke",
+          "Ancient"
+        ]
+      },
+      {
+        "id": "nafany-2021",
+        "name": "nafany",
+        "realName": "Vladislav Gorshkov",
+        "role": "IGL",
+        "rating": 1.02,
+        "bestMaps": [
+          "Inferno",
+          "Vertigo",
+          "Overpass"
+        ]
+      },
+      {
+        "id": "interz-2021",
+        "name": "interz",
+        "realName": "Timofey Yakushin",
+        "role": "Support",
+        "rating": 1,
+        "bestMaps": [
+          "Nuke",
+          "Overpass",
+          "Dust2"
+        ]
+      },
+      {
+        "id": "ax1le-2021",
+        "name": "Ax1Le",
+        "realName": "Sergey Rykhtorov",
+        "role": "Rifler",
+        "rating": 1.2,
+        "bestMaps": [
+          "Mirage",
+          "Inferno",
+          "Ancient"
+        ]
+      },
+      {
+        "id": "hobbit-2021",
+        "name": "Hobbit",
+        "realName": "Abay Khassenov",
+        "role": "Entry",
+        "rating": 1.12,
+        "bestMaps": [
+          "Vertigo",
+          "Dust2",
+          "Mirage"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "imperial-2022",
+    "team": "Imperial Esports",
+    "shortName": "IMP",
+    "event": "IEM Rio Major 2022",
+    "year": 2022,
+    "region": "SA",
+    "achievement": "Major Contender",
+    "mapPoolBias": [
+      "Mirage",
+      "Inferno",
+      "Overpass",
+      "Nuke",
+      "Ancient",
+      "Dust2",
+      "Vertigo"
+    ],
+    "players": [
+      {
+        "id": "fallen-2022",
+        "name": "FalleN",
+        "realName": "Gabriel Toledo",
+        "role": "IGL",
+        "rating": 1.06,
+        "bestMaps": [
+          "Mirage",
+          "Inferno",
+          "Nuke"
+        ]
+      },
+      {
+        "id": "fer-2022",
+        "name": "fer",
+        "realName": "Fernando Alvarenga",
+        "role": "Entry",
+        "rating": 1.08,
+        "bestMaps": [
+          "Overpass",
+          "Dust2",
+          "Ancient"
+        ]
+      },
+      {
+        "id": "fnx-2022",
+        "name": "fnx",
+        "realName": "Lincoln Lau",
+        "role": "Support",
+        "rating": 1,
+        "bestMaps": [
+          "Inferno",
+          "Nuke",
+          "Mirage"
+        ]
+      },
+      {
+        "id": "boltz-2022",
+        "name": "boltz",
+        "realName": "Ricardo Prass",
+        "role": "Lurker",
+        "rating": 1.1,
+        "bestMaps": [
+          "Overpass",
+          "Ancient",
+          "Vertigo"
+        ]
+      },
+      {
+        "id": "vini-2022",
+        "name": "VINI",
+        "realName": "Vinicius Figueiredo",
+        "role": "Rifler",
+        "rating": 1.12,
+        "bestMaps": [
+          "Mirage",
+          "Dust2",
+          "Inferno"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "pain-2022",
+    "team": "paiN Gaming",
+    "shortName": "paiN",
+    "event": "IEM Rio Major 2022",
+    "year": 2022,
+    "region": "SA",
+    "achievement": "Major Contender",
+    "mapPoolBias": [
+      "Mirage",
+      "Inferno",
+      "Overpass",
+      "Nuke",
+      "Ancient",
+      "Dust2",
+      "Vertigo"
+    ],
+    "players": [
+      {
+        "id": "biguzera-2022",
+        "name": "biguzera",
+        "realName": "Rodrigo Bittencourt",
+        "role": "Rifler",
+        "rating": 1.14,
+        "bestMaps": [
+          "Mirage",
+          "Inferno",
+          "Ancient"
+        ]
+      },
+      {
+        "id": "pk-2022",
+        "name": "pk",
+        "realName": "Patrick Lima",
+        "role": "Entry",
+        "rating": 1.08,
+        "bestMaps": [
+          "Dust2",
+          "Overpass",
+          "Vertigo"
+        ]
+      },
+      {
+        "id": "skullz-2022",
+        "name": "skullz",
+        "realName": "Felipe Medeiros",
+        "role": "Lurker",
+        "rating": 1.12,
+        "bestMaps": [
+          "Nuke",
+          "Mirage",
+          "Inferno"
+        ]
+      },
+      {
+        "id": "zevy-2022",
+        "name": "zevy",
+        "realName": "Romeu Rocco",
+        "role": "AWPer",
+        "rating": 1.1,
+        "bestMaps": [
+          "Dust2",
+          "Mirage",
+          "Overpass"
+        ]
+      },
+      {
+        "id": "hardzao-2022",
+        "name": "hardzao",
+        "realName": "Wesley Lopes",
+        "role": "IGL",
+        "rating": 1,
+        "bestMaps": [
+          "Inferno",
+          "Nuke",
+          "Ancient"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "9z-2023",
+    "team": "9z Team",
+    "shortName": "9z",
+    "event": "BLAST.tv Paris Major 2023",
+    "year": 2023,
+    "region": "SA",
+    "achievement": "Major Contender",
+    "mapPoolBias": [
+      "Mirage",
+      "Inferno",
+      "Nuke",
+      "Ancient",
+      "Anubis",
+      "Overpass",
+      "Vertigo"
+    ],
+    "players": [
+      {
+        "id": "dgt-2023",
+        "name": "dgt",
+        "realName": "Franco Garcia",
+        "role": "Rifler",
+        "rating": 1.12,
+        "bestMaps": [
+          "Mirage",
+          "Inferno",
+          "Ancient"
+        ]
+      },
+      {
+        "id": "buda-2023",
+        "name": "buda",
+        "realName": "Nicolás Kramer",
+        "role": "Entry",
+        "rating": 1.08,
+        "bestMaps": [
+          "Anubis",
+          "Overpass",
+          "Vertigo"
+        ]
+      },
+      {
+        "id": "max-2023",
+        "name": "max",
+        "realName": "Maximiliano Gonzalez",
+        "role": "Support",
+        "rating": 1.02,
+        "bestMaps": [
+          "Nuke",
+          "Inferno",
+          "Mirage"
+        ]
+      },
+      {
+        "id": "lavins-2023",
+        "name": "lavins",
+        "realName": "Gonzalo Franchi",
+        "role": "AWPer",
+        "rating": 1.1,
+        "bestMaps": [
+          "Dust2",
+          "Mirage",
+          "Ancient"
+        ]
+      },
+      {
+        "id": "try-2023",
+        "name": "try",
+        "realName": "Santino Rigal",
+        "role": "IGL",
+        "rating": 1,
+        "bestMaps": [
+          "Anubis",
+          "Nuke",
+          "Overpass"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "eternal-fire-2023",
+    "team": "Eternal Fire",
+    "shortName": "EF",
+    "event": "BLAST.tv Paris Major 2023",
+    "year": 2023,
+    "region": "EU",
+    "achievement": "Major Contender",
+    "mapPoolBias": [
+      "Mirage",
+      "Inferno",
+      "Ancient",
+      "Anubis",
+      "Nuke",
+      "Overpass",
+      "Vertigo"
+    ],
+    "players": [
+      {
+        "id": "xantares-2023",
+        "name": "XANTARES",
+        "realName": "İsmailcan Dörtkardeş",
+        "role": "Rifler",
+        "rating": 1.2,
+        "bestMaps": [
+          "Mirage",
+          "Inferno",
+          "Anubis"
+        ]
+      },
+      {
+        "id": "woxic-2023",
+        "name": "woxic",
+        "realName": "Özgür Eker",
+        "role": "AWPer",
+        "rating": 1.14,
+        "bestMaps": [
+          "Ancient",
+          "Mirage",
+          "Nuke"
+        ]
+      },
+      {
+        "id": "calyx-2023",
+        "name": "Calyx",
+        "realName": "Buğra Arkın",
+        "role": "Entry",
+        "rating": 1.08,
+        "bestMaps": [
+          "Inferno",
+          "Overpass",
+          "Vertigo"
+        ]
+      },
+      {
+        "id": "imo-2023",
+        "name": "imoRR",
+        "realName": "Ömer Karataş",
+        "role": "Lurker",
+        "rating": 1.1,
+        "bestMaps": [
+          "Anubis",
+          "Nuke",
+          "Mirage"
+        ]
+      },
+      {
+        "id": "xant-igl-2023",
+        "name": "MAJ3R",
+        "realName": "Engin Küpeli",
+        "role": "IGL",
+        "rating": 0.98,
+        "bestMaps": [
+          "Overpass",
+          "Inferno",
+          "Ancient"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "mongolz-2024",
+    "team": "The MongolZ",
+    "shortName": "MGLZ",
+    "event": "Perfect World Shanghai Major 2024",
+    "year": 2024,
+    "region": "AS",
+    "achievement": "Major Contender",
+    "mapPoolBias": [
+      "Mirage",
+      "Inferno",
+      "Ancient",
+      "Anubis",
+      "Dust2",
+      "Nuke",
+      "Vertigo"
+    ],
+    "players": [
+      {
+        "id": "bLitz-2024",
+        "name": "bLitz",
+        "realName": "Garidmagnai Byambasuren",
+        "role": "IGL",
+        "rating": 1.08,
+        "bestMaps": [
+          "Mirage",
+          "Inferno",
+          "Anubis"
+        ]
+      },
+      {
+        "id": "techno4k-2024",
+        "name": "Techno4K",
+        "realName": "Sodbayar Munkhbold",
+        "role": "Entry",
+        "rating": 1.12,
+        "bestMaps": [
+          "Dust2",
+          "Ancient",
+          "Vertigo"
+        ]
+      },
+      {
+        "id": "910-2024",
+        "name": "910",
+        "realName": "Usukhbayar Banzragch",
+        "role": "AWPer",
+        "rating": 1.16,
+        "bestMaps": [
+          "Mirage",
+          "Dust2",
+          "Nuke"
+        ]
+      },
+      {
+        "id": "mzinho-2024",
+        "name": "mzinho",
+        "realName": "Ayush Batbold",
+        "role": "Support",
+        "rating": 1.06,
+        "bestMaps": [
+          "Inferno",
+          "Anubis",
+          "Ancient"
+        ]
+      },
+      {
+        "id": "senzu-2024",
+        "name": "Senzu",
+        "realName": "Munkhbold Azbayar",
+        "role": "Rifler",
+        "rating": 1.18,
+        "bestMaps": [
+          "Mirage",
+          "Nuke",
+          "Dust2"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "falcons-2024",
+    "team": "Team Falcons",
+    "shortName": "FLC",
+    "event": "Perfect World Shanghai Major 2024",
+    "year": 2024,
+    "region": "EU",
+    "achievement": "Major Contender",
+    "mapPoolBias": [
+      "Mirage",
+      "Inferno",
+      "Ancient",
+      "Anubis",
+      "Nuke",
+      "Dust2",
+      "Vertigo"
+    ],
+    "players": [
+      {
+        "id": "niko-2024",
+        "name": "NiKo",
+        "realName": "Nikola Kovač",
+        "role": "Rifler",
+        "rating": 1.22,
+        "bestMaps": [
+          "Mirage",
+          "Inferno",
+          "Ancient"
+        ]
+      },
+      {
+        "id": "magisk-2024",
+        "name": "Magisk",
+        "realName": "Emil Reif",
+        "role": "Support",
+        "rating": 1.08,
+        "bestMaps": [
+          "Nuke",
+          "Anubis",
+          "Overpass"
+        ]
+      },
+      {
+        "id": "dupreeh-2024",
+        "name": "dupreeh",
+        "realName": "Peter Rasmussen",
+        "role": "Entry",
+        "rating": 1.06,
+        "bestMaps": [
+          "Dust2",
+          "Mirage",
+          "Inferno"
+        ]
+      },
+      {
+        "id": "snappi-2024",
+        "name": "Snappi",
+        "realName": "Marco Pfeiffer",
+        "role": "IGL",
+        "rating": 0.98,
+        "bestMaps": [
+          "Anubis",
+          "Nuke",
+          "Vertigo"
+        ]
+      },
+      {
+        "id": "kyxsan-2024",
+        "name": "kyxsan",
+        "realName": "Damjan Stoilkovski",
+        "role": "Lurker",
+        "rating": 1.1,
+        "bestMaps": [
+          "Ancient",
+          "Mirage",
+          "Dust2"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "3dmax-2024",
+    "team": "3DMAX",
+    "shortName": "3DMAX",
+    "event": "Perfect World Shanghai Major 2024",
+    "year": 2024,
+    "region": "EU",
+    "achievement": "Major Contender",
+    "mapPoolBias": [
+      "Mirage",
+      "Inferno",
+      "Ancient",
+      "Anubis",
+      "Nuke",
+      "Dust2",
+      "Vertigo"
+    ],
+    "players": [
+      {
+        "id": "lucky-2024",
+        "name": "Lucky",
+        "realName": "Lucas Haas",
+        "role": "Rifler",
+        "rating": 1.14,
+        "bestMaps": [
+          "Mirage",
+          "Inferno",
+          "Ancient"
+        ]
+      },
+      {
+        "id": "ex3rcice-2024",
+        "name": "Ex3rcice",
+        "realName": "Pierre-Antoine Brun",
+        "role": "Entry",
+        "rating": 1.1,
+        "bestMaps": [
+          "Dust2",
+          "Anubis",
+          "Vertigo"
+        ]
+      },
+      {
+        "id": "makazze-2024",
+        "name": "Makazze",
+        "realName": "Matej Markoč",
+        "role": "AWPer",
+        "rating": 1.12,
+        "bestMaps": [
+          "Mirage",
+          "Nuke",
+          "Dust2"
+        ]
+      },
+      {
+        "id": "bodyy-2024",
+        "name": "bodyy",
+        "realName": "Alexandre Pianaro",
+        "role": "Support",
+        "rating": 1.04,
+        "bestMaps": [
+          "Inferno",
+          "Nuke",
+          "Anubis"
+        ]
+      },
+      {
+        "id": "graviti-2024",
+        "name": "Graviti",
+        "realName": "Théo Bloudeau",
+        "role": "IGL",
+        "rating": 1,
+        "bestMaps": [
+          "Ancient",
+          "Overpass",
+          "Vertigo"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "gamerlegion-2024",
+    "team": "GamerLegion",
+    "shortName": "GL",
+    "event": "PGL Major Copenhagen 2024",
+    "year": 2024,
+    "region": "EU",
+    "achievement": "Major Finalist",
+    "mapPoolBias": [
+      "Mirage",
+      "Inferno",
+      "Ancient",
+      "Anubis",
+      "Nuke",
+      "Vertigo",
+      "Dust2"
+    ],
+    "players": [
+      {
+        "id": "volt-2024",
+        "name": "volt",
+        "realName": "Volodymyr Vlasenko",
+        "role": "Rifler",
+        "rating": 1.12,
+        "bestMaps": [
+          "Mirage",
+          "Inferno",
+          "Ancient"
+        ]
+      },
+      {
+        "id": "isak-2024",
+        "name": "isak",
+        "realName": "Isak Fahlén",
+        "role": "AWPer",
+        "rating": 1.1,
+        "bestMaps": [
+          "Dust2",
+          "Mirage",
+          "Nuke"
+        ]
+      },
+      {
+        "id": "fl4mus-2024",
+        "name": "FL4MUS",
+        "realName": "Timofey Khromov",
+        "role": "Entry",
+        "rating": 1.14,
+        "bestMaps": [
+          "Anubis",
+          "Vertigo",
+          "Inferno"
+        ]
+      },
+      {
+        "id": "acor-2024",
+        "name": "acor",
+        "realName": "Jonas Wergård",
+        "role": "Support",
+        "rating": 1.04,
+        "bestMaps": [
+          "Nuke",
+          "Ancient",
+          "Overpass"
+        ]
+      },
+      {
+        "id": "snax-2024",
+        "name": "Snax",
+        "realName": "Janusz Pogorzelski",
+        "role": "IGL",
+        "rating": 1.02,
+        "bestMaps": [
+          "Mirage",
+          "Inferno",
+          "Anubis"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "spirit-2022",
+    "team": "Team Spirit",
+    "shortName": "Spirit",
+    "event": "IEM Rio Major 2022",
+    "year": 2022,
+    "region": "EU",
+    "achievement": "Major Contender",
+    "mapPoolBias": [
+      "Mirage",
+      "Inferno",
+      "Nuke",
+      "Ancient",
+      "Dust2",
+      "Overpass",
+      "Vertigo"
+    ],
+    "players": [
+      {
+        "id": "patsi-2022",
+        "name": "Patsi",
+        "realName": "Robert Isyanov",
+        "role": "Entry",
+        "rating": 1.14,
+        "bestMaps": [
+          "Mirage",
+          "Inferno",
+          "Dust2"
+        ]
+      },
+      {
+        "id": "degster-spirit-2022",
+        "name": "degster",
+        "realName": "Abdul Gasanov",
+        "role": "AWPer",
+        "rating": 1.16,
+        "bestMaps": [
+          "Nuke",
+          "Mirage",
+          "Ancient"
+        ]
+      },
+      {
+        "id": "chopper-2022",
+        "name": "chopper",
+        "realName": "Leonid Vishnyakov",
+        "role": "IGL",
+        "rating": 0.98,
+        "bestMaps": [
+          "Inferno",
+          "Overpass",
+          "Vertigo"
+        ]
+      },
+      {
+        "id": "magixx-2022",
+        "name": "magixx",
+        "realName": "Boris Vorobiev",
+        "role": "Support",
+        "rating": 1.06,
+        "bestMaps": [
+          "Ancient",
+          "Nuke",
+          "Mirage"
+        ]
+      },
+      {
+        "id": "s0m-2022",
+        "name": "s0m",
+        "realName": "Artyom Avanesov",
+        "role": "Lurker",
+        "rating": 1.08,
+        "bestMaps": [
+          "Dust2",
+          "Inferno",
+          "Overpass"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "cloud9-2023",
+    "team": "Cloud9",
+    "shortName": "C9",
+    "event": "BLAST.tv Paris Major 2023",
+    "year": 2023,
+    "region": "EU",
+    "achievement": "Major Contender",
+    "mapPoolBias": [
+      "Mirage",
+      "Inferno",
+      "Ancient",
+      "Anubis",
+      "Nuke",
+      "Overpass",
+      "Vertigo"
+    ],
+    "players": [
+      {
+        "id": "sh1ro-2023",
+        "name": "sh1ro",
+        "realName": "Dmitry Sokolov",
+        "role": "AWPer",
+        "rating": 1.2,
+        "bestMaps": [
+          "Mirage",
+          "Nuke",
+          "Ancient"
+        ]
+      },
+      {
+        "id": "ax1le-2023",
+        "name": "Ax1Le",
+        "realName": "Sergey Rykhtorov",
+        "role": "Rifler",
+        "rating": 1.16,
+        "bestMaps": [
+          "Inferno",
+          "Mirage",
+          "Anubis"
+        ]
+      },
+      {
+        "id": "hobbit-2023",
+        "name": "Hobbit",
+        "realName": "Abay Khassenov",
+        "role": "Entry",
+        "rating": 1.1,
+        "bestMaps": [
+          "Vertigo",
+          "Dust2",
+          "Overpass"
+        ]
+      },
+      {
+        "id": "nafany-2023",
+        "name": "nafany",
+        "realName": "Vladislav Gorshkov",
+        "role": "IGL",
+        "rating": 0.98,
+        "bestMaps": [
+          "Anubis",
+          "Inferno",
+          "Nuke"
+        ]
+      },
+      {
+        "id": "interz-2023",
+        "name": "interz",
+        "realName": "Timofey Yakushin",
+        "role": "Support",
+        "rating": 0.96,
+        "bestMaps": [
+          "Overpass",
+          "Ancient",
+          "Nuke"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "og-2022",
+    "team": "OG",
+    "shortName": "OG",
+    "event": "PGL Major Antwerp 2022",
+    "year": 2022,
+    "region": "EU",
+    "achievement": "Major Contender",
+    "mapPoolBias": [
+      "Mirage",
+      "Inferno",
+      "Nuke",
+      "Ancient",
+      "Overpass",
+      "Dust2",
+      "Vertigo"
+    ],
+    "players": [
+      {
+        "id": "nertz-2022",
+        "name": "nertz",
+        "realName": "Nemanja Ninić",
+        "role": "Rifler",
+        "rating": 1.14,
+        "bestMaps": [
+          "Mirage",
+          "Inferno",
+          "Ancient"
+        ]
+      },
+      {
+        "id": "flamez-2022",
+        "name": "flameZ",
+        "realName": "Shahar Shushan",
+        "role": "Entry",
+        "rating": 1.12,
+        "bestMaps": [
+          "Dust2",
+          "Overpass",
+          "Vertigo"
+        ]
+      },
+      {
+        "id": "degster-2022",
+        "name": "degster",
+        "realName": "Abdul Gasanov",
+        "role": "AWPer",
+        "rating": 1.16,
+        "bestMaps": [
+          "Mirage",
+          "Nuke",
+          "Dust2"
+        ]
+      },
+      {
+        "id": "f1ku-2022",
+        "name": "F1KU",
+        "realName": "Maciej Miklas",
+        "role": "Support",
+        "rating": 1.04,
+        "bestMaps": [
+          "Inferno",
+          "Ancient",
+          "Overpass"
+        ]
+      },
+      {
+        "id": "nebs-2022",
+        "name": "NEOFRAG",
+        "realName": "Adam Zouhar",
+        "role": "IGL",
+        "rating": 1,
+        "bestMaps": [
+          "Nuke",
+          "Vertigo",
+          "Mirage"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "mouz-2022",
+    "team": "MOUZ",
+    "shortName": "MOUZ",
+    "event": "PGL Major Antwerp 2022",
+    "year": 2022,
+    "region": "EU",
+    "achievement": "Major Contender",
+    "mapPoolBias": [
+      "Mirage",
+      "Inferno",
+      "Nuke",
+      "Ancient",
+      "Dust2",
+      "Overpass",
+      "Vertigo"
+    ],
+    "players": [
+      {
+        "id": "torzsi-2022",
+        "name": "torzsi",
+        "realName": "Ádám Torzsás",
+        "role": "AWPer",
+        "rating": 1.14,
+        "bestMaps": [
+          "Mirage",
+          "Dust2",
+          "Nuke"
+        ]
+      },
+      {
+        "id": "jimpphat-2022",
+        "name": "Jimpphat",
+        "realName": "Jimi Salo",
+        "role": "Rifler",
+        "rating": 1.16,
+        "bestMaps": [
+          "Inferno",
+          "Ancient",
+          "Mirage"
+        ]
+      },
+      {
+        "id": "xertion-2022",
+        "name": "xertioN",
+        "realName": "Dorian Berman",
+        "role": "Entry",
+        "rating": 1.12,
+        "bestMaps": [
+          "Dust2",
+          "Overpass",
+          "Vertigo"
+        ]
+      },
+      {
+        "id": "siuhy-2022",
+        "name": "siuhy",
+        "realName": "Kamil Szkaradek",
+        "role": "IGL",
+        "rating": 1.02,
+        "bestMaps": [
+          "Nuke",
+          "Inferno",
+          "Ancient"
+        ]
+      },
+      {
+        "id": "brollan-2022",
+        "name": "Brollan",
+        "realName": "Ludvig Brolin",
+        "role": "Lurker",
+        "rating": 1.1,
+        "bestMaps": [
+          "Mirage",
+          "Overpass",
+          "Dust2"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "heroic-2023",
+    "team": "Heroic",
+    "shortName": "HERO",
+    "event": "BLAST.tv Paris Major 2023",
+    "year": 2023,
+    "region": "EU",
+    "achievement": "Major Contender",
+    "mapPoolBias": [
+      "Mirage",
+      "Inferno",
+      "Ancient",
+      "Anubis",
+      "Nuke",
+      "Overpass",
+      "Vertigo"
+    ],
+    "players": [
+      {
+        "id": "stavn-2023",
+        "name": "stavn",
+        "realName": "Martin Lund",
+        "role": "Rifler",
+        "rating": 1.14,
+        "bestMaps": [
+          "Mirage",
+          "Inferno",
+          "Anubis"
+        ]
+      },
+      {
+        "id": "jabbi-2023",
+        "name": "jabbi",
+        "realName": "Jakob Nygaard",
+        "role": "Entry",
+        "rating": 1.12,
+        "bestMaps": [
+          "Ancient",
+          "Dust2",
+          "Vertigo"
+        ]
+      },
+      {
+        "id": "sjuush-2023",
+        "name": "sjuush",
+        "realName": "Rasmus Beck",
+        "role": "Support",
+        "rating": 1.08,
+        "bestMaps": [
+          "Nuke",
+          "Overpass",
+          "Inferno"
+        ]
+      },
+      {
+        "id": "cadiaN-2023",
+        "name": "cadiaN",
+        "realName": "Casper Møller",
+        "role": "IGL",
+        "rating": 1.04,
+        "bestMaps": [
+          "Anubis",
+          "Mirage",
+          "Ancient"
+        ]
+      },
+      {
+        "id": "teses-2023",
+        "name": "TeSeS",
+        "realName": "René Madsen",
+        "role": "Lurker",
+        "rating": 1.1,
+        "bestMaps": [
+          "Overpass",
+          "Nuke",
+          "Vertigo"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "furia-2024",
+    "team": "FURIA",
+    "shortName": "FURIA",
+    "event": "PGL Major Copenhagen 2024",
+    "year": 2024,
+    "region": "SA",
+    "achievement": "Major Contender",
+    "mapPoolBias": [
+      "Mirage",
+      "Inferno",
+      "Ancient",
+      "Anubis",
+      "Nuke",
+      "Dust2",
+      "Vertigo"
+    ],
+    "players": [
+      {
+        "id": "kscerato-2024",
+        "name": "KSCERATO",
+        "realName": "Kaike Cerato",
+        "role": "Rifler",
+        "rating": 1.16,
+        "bestMaps": [
+          "Mirage",
+          "Inferno",
+          "Ancient"
+        ]
+      },
+      {
+        "id": "yuurih-2024",
+        "name": "yuurih",
+        "realName": "Yuri Santos",
+        "role": "Support",
+        "rating": 1.12,
+        "bestMaps": [
+          "Nuke",
+          "Anubis",
+          "Overpass"
+        ]
+      },
+      {
+        "id": "arenez-2024",
+        "name": "arenez",
+        "realName": "André Barbosa",
+        "role": "Entry",
+        "rating": 1.08,
+        "bestMaps": [
+          "Dust2",
+          "Vertigo",
+          "Mirage"
+        ]
+      },
+      {
+        "id": "chelo-2024",
+        "name": "chelo",
+        "realName": "Marcelo Cespedes",
+        "role": "Lurker",
+        "rating": 1.1,
+        "bestMaps": [
+          "Inferno",
+          "Ancient",
+          "Anubis"
+        ]
+      },
+      {
+        "id": "fallen-2024",
+        "name": "FalleN",
+        "realName": "Gabriel Toledo",
+        "role": "IGL",
+        "rating": 1.04,
+        "bestMaps": [
+          "Mirage",
+          "Nuke",
+          "Dust2"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "liquid-2024",
+    "team": "Team Liquid",
+    "shortName": "TL",
+    "event": "PGL Major Copenhagen 2024",
+    "year": 2024,
+    "region": "NA",
+    "achievement": "Major Contender",
+    "mapPoolBias": [
+      "Mirage",
+      "Inferno",
+      "Ancient",
+      "Anubis",
+      "Nuke",
+      "Dust2",
+      "Vertigo"
+    ],
+    "players": [
+      {
+        "id": "naf-2024",
+        "name": "NAF",
+        "realName": "Keith Markovic",
+        "role": "Lurker",
+        "rating": 1.12,
+        "bestMaps": [
+          "Mirage",
+          "Nuke",
+          "Ancient"
+        ]
+      },
+      {
+        "id": "yekindar-2024",
+        "name": "YEKINDAR",
+        "realName": "Mareks Gaļinskis",
+        "role": "Entry",
+        "rating": 1.1,
+        "bestMaps": [
+          "Inferno",
+          "Anubis",
+          "Dust2"
+        ]
+      },
+      {
+        "id": "twistzz-2024",
+        "name": "Twistzz",
+        "realName": "Russel Van Dulken",
+        "role": "Rifler",
+        "rating": 1.14,
+        "bestMaps": [
+          "Mirage",
+          "Inferno",
+          "Ancient"
+        ]
+      },
+      {
+        "id": "ultimate-2024",
+        "name": "ultimate",
+        "realName": "Rolandas Tomkus",
+        "role": "AWPer",
+        "rating": 1.08,
+        "bestMaps": [
+          "Dust2",
+          "Mirage",
+          "Nuke"
+        ]
+      },
+      {
+        "id": "jks-2024",
+        "name": "jks",
+        "realName": "Justin de Leon",
+        "role": "Support",
+        "rating": 1.06,
+        "bestMaps": [
+          "Anubis",
+          "Overpass",
+          "Vertigo"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "virtuspro-2024",
+    "team": "Virtus.pro",
+    "shortName": "VP",
+    "event": "Perfect World Shanghai Major 2024",
+    "year": 2024,
+    "region": "EU",
+    "achievement": "Major Contender",
+    "mapPoolBias": [
+      "Mirage",
+      "Inferno",
+      "Ancient",
+      "Anubis",
+      "Nuke",
+      "Dust2",
+      "Vertigo"
+    ],
+    "players": [
+      {
+        "id": "electro-2024",
+        "name": "electroNic",
+        "realName": "Denis Sharipov",
+        "role": "Rifler",
+        "rating": 1.12,
+        "bestMaps": [
+          "Mirage",
+          "Inferno",
+          "Ancient"
+        ]
+      },
+      {
+        "id": "jl-2024",
+        "name": "JLop",
+        "realName": "Denis Lipatkin",
+        "role": "Entry",
+        "rating": 1.1,
+        "bestMaps": [
+          "Dust2",
+          "Anubis",
+          "Vertigo"
+        ]
+      },
+      {
+        "id": "fame-2024",
+        "name": "fame",
+        "realName": "Petr Bolyshev",
+        "role": "Lurker",
+        "rating": 1.14,
+        "bestMaps": [
+          "Nuke",
+          "Mirage",
+          "Inferno"
+        ]
+      },
+      {
+        "id": "fl1t-2024",
+        "name": "FL1T",
+        "realName": "Evgeny Lebedev",
+        "role": "Support",
+        "rating": 1.08,
+        "bestMaps": [
+          "Ancient",
+          "Anubis",
+          "Overpass"
+        ]
+      },
+      {
+        "id": "mir-2024",
+        "name": "mir",
+        "realName": "Nikolay Bityukov",
+        "role": "IGL",
+        "rating": 1.02,
+        "bestMaps": [
+          "Inferno",
+          "Nuke",
+          "Dust2"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "astralis-2024",
+    "team": "Astralis",
+    "shortName": "AST",
+    "event": "PGL Major Copenhagen 2024",
+    "year": 2024,
+    "region": "EU",
+    "achievement": "Major Contender",
+    "mapPoolBias": [
+      "Mirage",
+      "Inferno",
+      "Ancient",
+      "Anubis",
+      "Nuke",
+      "Overpass",
+      "Vertigo"
+    ],
+    "players": [
+      {
+        "id": "device-2024",
+        "name": "device",
+        "realName": "Nicolai Reedtz",
+        "role": "AWPer",
+        "rating": 1.14,
+        "bestMaps": [
+          "Mirage",
+          "Nuke",
+          "Ancient"
+        ]
+      },
+      {
+        "id": "stavn-ast-2024",
+        "name": "stavn",
+        "realName": "Martin Lund",
+        "role": "Rifler",
+        "rating": 1.12,
+        "bestMaps": [
+          "Inferno",
+          "Anubis",
+          "Mirage"
+        ]
+      },
+      {
+        "id": "jabbi-ast-2024",
+        "name": "jabbi",
+        "realName": "Jakob Nygaard",
+        "role": "Entry",
+        "rating": 1.1,
+        "bestMaps": [
+          "Dust2",
+          "Vertigo",
+          "Overpass"
+        ]
+      },
+      {
+        "id": "br0-2024",
+        "name": "br0",
+        "realName": "Alexander Bro",
+        "role": "Support",
+        "rating": 1.04,
+        "bestMaps": [
+          "Nuke",
+          "Ancient",
+          "Inferno"
+        ]
+      },
+      {
+        "id": "blamef-2024",
+        "name": "blameF",
+        "realName": "Benjamin Bremer",
+        "role": "IGL",
+        "rating": 1.08,
+        "bestMaps": [
+          "Mirage",
+          "Anubis",
+          "Overpass"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "navi-2025",
+    "team": "Natus Vincere",
+    "shortName": "NaVi",
+    "event": "BLAST Austin Major 2025",
+    "year": 2025,
+    "region": "EU",
+    "achievement": "Major Contender",
+    "mapPoolBias": [
+      "Mirage",
+      "Inferno",
+      "Ancient",
+      "Anubis",
+      "Nuke",
+      "Dust2",
+      "Overpass"
+    ],
+    "players": [
+      {
+        "id": "b1t-2025",
+        "name": "b1t",
+        "realName": "Valeriy Vakhovskiy",
+        "role": "Rifler",
+        "rating": 1.16,
+        "bestMaps": [
+          "Mirage",
+          "Inferno",
+          "Ancient"
+        ]
+      },
+      {
+        "id": "jL-2025",
+        "name": "jL",
+        "realName": "Justinas Lekavicius",
+        "role": "Entry",
+        "rating": 1.14,
+        "bestMaps": [
+          "Dust2",
+          "Anubis",
+          "Mirage"
+        ]
+      },
+      {
+        "id": "aleksib-2025",
+        "name": "AleksiB",
+        "realName": "Aleksi Virolainen",
+        "role": "IGL",
+        "rating": 1.02,
+        "bestMaps": [
+          "Nuke",
+          "Overpass",
+          "Inferno"
+        ]
+      },
+      {
+        "id": "im-2025",
+        "name": "iM",
+        "realName": "Mihai Ivan",
+        "role": "Lurker",
+        "rating": 1.12,
+        "bestMaps": [
+          "Ancient",
+          "Anubis",
+          "Dust2"
+        ]
+      },
+      {
+        "id": "w0nderful-2025",
+        "name": "w0nderful",
+        "realName": "Ihor Zhdanov",
+        "role": "AWPer",
+        "rating": 1.18,
+        "bestMaps": [
+          "Mirage",
+          "Nuke",
+          "Dust2"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "g2-2025",
+    "team": "G2 Esports",
+    "shortName": "G2",
+    "event": "BLAST Austin Major 2025",
+    "year": 2025,
+    "region": "EU",
+    "achievement": "Major Contender",
+    "mapPoolBias": [
+      "Mirage",
+      "Inferno",
+      "Ancient",
+      "Anubis",
+      "Nuke",
+      "Dust2",
+      "Vertigo"
+    ],
+    "players": [
+      {
+        "id": "m0nesy-2025",
+        "name": "m0NESY",
+        "realName": "Ilya Osipov",
+        "role": "AWPer",
+        "rating": 1.28,
+        "bestMaps": [
+          "Mirage",
+          "Dust2",
+          "Ancient"
+        ]
+      },
+      {
+        "id": "niko-g2-2025",
+        "name": "NiKo",
+        "realName": "Nikola Kovač",
+        "role": "Rifler",
+        "rating": 1.2,
+        "bestMaps": [
+          "Inferno",
+          "Mirage",
+          "Anubis"
+        ]
+      },
+      {
+        "id": "hunter-2025",
+        "name": "huNter-",
+        "realName": "Nemanja Kovač",
+        "role": "Support",
+        "rating": 1.1,
+        "bestMaps": [
+          "Nuke",
+          "Ancient",
+          "Overpass"
+        ]
+      },
+      {
+        "id": "malbs-2025",
+        "name": "malbsMd",
+        "realName": "Mario Samayoa",
+        "role": "Entry",
+        "rating": 1.14,
+        "bestMaps": [
+          "Dust2",
+          "Vertigo",
+          "Inferno"
+        ]
+      },
+      {
+        "id": "snax-g2-2025",
+        "name": "Snax",
+        "realName": "Janusz Pogorzelski",
+        "role": "IGL",
+        "rating": 1,
+        "bestMaps": [
+          "Anubis",
+          "Mirage",
+          "Nuke"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "faze-2024",
+    "team": "FaZe Clan",
+    "shortName": "FaZe",
+    "event": "PGL Major Copenhagen 2024",
+    "year": 2024,
+    "region": "EU",
+    "achievement": "Major Contender",
+    "mapPoolBias": [
+      "Mirage",
+      "Inferno",
+      "Ancient",
+      "Anubis",
+      "Nuke",
+      "Dust2",
+      "Overpass"
+    ],
+    "players": [
+      {
+        "id": "karrigan-2024",
+        "name": "karrigan",
+        "realName": "Finn Andersen",
+        "role": "IGL",
+        "rating": 0.98,
+        "bestMaps": [
+          "Inferno",
+          "Nuke",
+          "Overpass"
+        ]
+      },
+      {
+        "id": "rain-2024",
+        "name": "rain",
+        "realName": "Håvard Nygaard",
+        "role": "Entry",
+        "rating": 1.1,
+        "bestMaps": [
+          "Mirage",
+          "Dust2",
+          "Anubis"
+        ]
+      },
+      {
+        "id": "frozen-2024",
+        "name": "frozen",
+        "realName": "David Čerňanský",
+        "role": "Rifler",
+        "rating": 1.16,
+        "bestMaps": [
+          "Ancient",
+          "Mirage",
+          "Inferno"
+        ]
+      },
+      {
+        "id": "ropz-2024",
+        "name": "ropz",
+        "realName": "Robin Kool",
+        "role": "Lurker",
+        "rating": 1.18,
+        "bestMaps": [
+          "Nuke",
+          "Overpass",
+          "Ancient"
+        ]
+      },
+      {
+        "id": "broky-2024",
+        "name": "broky",
+        "realName": "Helvijs Saukants",
+        "role": "AWPer",
+        "rating": 1.14,
+        "bestMaps": [
+          "Dust2",
+          "Mirage",
+          "Anubis"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "complexity-2024",
+    "team": "Complexity",
+    "shortName": "col",
+    "event": "PGL Major Copenhagen 2024",
+    "year": 2024,
+    "region": "NA",
+    "achievement": "Major Contender",
+    "mapPoolBias": [
+      "Mirage",
+      "Inferno",
+      "Ancient",
+      "Anubis",
+      "Nuke",
+      "Dust2",
+      "Vertigo"
+    ],
+    "players": [
+      {
+        "id": "elige-2024",
+        "name": "EliGE",
+        "realName": "Jonathan Jablonowski",
+        "role": "Rifler",
+        "rating": 1.16,
+        "bestMaps": [
+          "Mirage",
+          "Inferno",
+          "Ancient"
+        ]
+      },
+      {
+        "id": "floppy-2024",
+        "name": "floppy",
+        "realName": "Ricky Kemery",
+        "role": "Entry",
+        "rating": 1.08,
+        "bestMaps": [
+          "Dust2",
+          "Anubis",
+          "Vertigo"
+        ]
+      },
+      {
+        "id": "hallzerk-2024",
+        "name": "hallzerk",
+        "realName": "Håkon Fjærli",
+        "role": "AWPer",
+        "rating": 1.1,
+        "bestMaps": [
+          "Mirage",
+          "Nuke",
+          "Dust2"
+        ]
+      },
+      {
+        "id": "grim-2024",
+        "name": "Grim",
+        "realName": "Bradley Wright",
+        "role": "Lurker",
+        "rating": 1.12,
+        "bestMaps": [
+          "Inferno",
+          "Ancient",
+          "Anubis"
+        ]
+      },
+      {
+        "id": "jt-2024",
+        "name": "JT",
+        "realName": "Johnny Theodosiou",
+        "role": "IGL",
+        "rating": 0.98,
+        "bestMaps": [
+          "Nuke",
+          "Overpass",
+          "Vertigo"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "saw-2024",
+    "team": "SAW",
+    "shortName": "SAW",
+    "event": "PGL Major Copenhagen 2024",
+    "year": 2024,
+    "region": "EU",
+    "achievement": "Major Contender",
+    "mapPoolBias": [
+      "Mirage",
+      "Inferno",
+      "Ancient",
+      "Anubis",
+      "Nuke",
+      "Dust2",
+      "Vertigo"
+    ],
+    "players": [
+      {
+        "id": "story-2024",
+        "name": "story",
+        "realName": "João Vieira",
+        "role": "AWPer",
+        "rating": 1.12,
+        "bestMaps": [
+          "Mirage",
+          "Dust2",
+          "Nuke"
+        ]
+      },
+      {
+        "id": "arrozdoce-2024",
+        "name": "arrozdoce",
+        "realName": "Rafael Wing",
+        "role": "Rifler",
+        "rating": 1.1,
+        "bestMaps": [
+          "Inferno",
+          "Ancient",
+          "Anubis"
+        ]
+      },
+      {
+        "id": "ewjilan-2024",
+        "name": "ewjilan",
+        "realName": "André Oliveira",
+        "role": "Entry",
+        "rating": 1.08,
+        "bestMaps": [
+          "Dust2",
+          "Vertigo",
+          "Mirage"
+        ]
+      },
+      {
+        "id": "muukohh-2024",
+        "name": "MUUKOHH",
+        "realName": "Rafael Costa",
+        "role": "Support",
+        "rating": 1.04,
+        "bestMaps": [
+          "Nuke",
+          "Overpass",
+          "Inferno"
+        ]
+      },
+      {
+        "id": "ag1l-2024",
+        "name": "Ag1l",
+        "realName": "André Gil",
+        "role": "IGL",
+        "rating": 1,
+        "bestMaps": [
+          "Anubis",
+          "Ancient",
+          "Mirage"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "legacy-2024",
+    "team": "Legacy",
+    "shortName": "Legacy",
+    "event": "Perfect World Shanghai Major 2024",
+    "year": 2024,
+    "region": "SA",
+    "achievement": "Major Contender",
+    "mapPoolBias": [
+      "Mirage",
+      "Inferno",
+      "Ancient",
+      "Anubis",
+      "Nuke",
+      "Dust2",
+      "Vertigo"
+    ],
+    "players": [
+      {
+        "id": "latto-2024",
+        "name": "latto",
+        "realName": "Bruno Rebelatto",
+        "role": "Rifler",
+        "rating": 1.14,
+        "bestMaps": [
+          "Mirage",
+          "Inferno",
+          "Ancient"
+        ]
+      },
+      {
+        "id": "dumau-2024",
+        "name": "dumau",
+        "realName": "Lucas Mantese",
+        "role": "Entry",
+        "rating": 1.12,
+        "bestMaps": [
+          "Dust2",
+          "Anubis",
+          "Vertigo"
+        ]
+      },
+      {
+        "id": "saadzin-2024",
+        "name": "saadzin",
+        "realName": "Roberto Franco",
+        "role": "AWPer",
+        "rating": 1.1,
+        "bestMaps": [
+          "Mirage",
+          "Nuke",
+          "Dust2"
+        ]
+      },
+      {
+        "id": "nertz-leg-2024",
+        "name": "nertz",
+        "realName": "Nemanja Ninić",
+        "role": "Lurker",
+        "rating": 1.12,
+        "bestMaps": [
+          "Inferno",
+          "Ancient",
+          "Anubis"
+        ]
+      },
+      {
+        "id": "lux-2024",
+        "name": "lux",
+        "realName": "Lucas Christofoletti",
+        "role": "IGL",
+        "rating": 1,
+        "bestMaps": [
+          "Nuke",
+          "Overpass",
+          "Mirage"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "wildcard-2024",
+    "team": "Wildcard",
+    "shortName": "WC",
+    "event": "Perfect World Shanghai Major 2024",
+    "year": 2024,
+    "region": "NA",
+    "achievement": "Major Contender",
+    "mapPoolBias": [
+      "Mirage",
+      "Inferno",
+      "Ancient",
+      "Anubis",
+      "Nuke",
+      "Dust2",
+      "Vertigo"
+    ],
+    "players": [
+      {
+        "id": "stanislaw-2024",
+        "name": "stanislaw",
+        "realName": "Peter Jarguz",
+        "role": "IGL",
+        "rating": 0.98,
+        "bestMaps": [
+          "Inferno",
+          "Nuke",
+          "Overpass"
+        ]
+      },
+      {
+        "id": "sonic-2024",
+        "name": "Sonic",
+        "realName": "Aran Christopher",
+        "role": "Entry",
+        "rating": 1.1,
+        "bestMaps": [
+          "Mirage",
+          "Dust2",
+          "Anubis"
+        ]
+      },
+      {
+        "id": "phzy-2024",
+        "name": "phzy",
+        "realName": "Love Smidebrant",
+        "role": "AWPer",
+        "rating": 1.12,
+        "bestMaps": [
+          "Dust2",
+          "Mirage",
+          "Nuke"
+        ]
+      },
+      {
+        "id": "susp-2024",
+        "name": "susp",
+        "realName": "Tim Ångström",
+        "role": "Rifler",
+        "rating": 1.1,
+        "bestMaps": [
+          "Inferno",
+          "Ancient",
+          "Anubis"
+        ]
+      },
+      {
+        "id": "jba-2024",
+        "name": "jba",
+        "realName": "Josh Barutt",
+        "role": "Support",
+        "rating": 1.04,
+        "bestMaps": [
+          "Vertigo",
+          "Overpass",
+          "Nuke"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "betboom-2024",
+    "team": "BetBoom Team",
+    "shortName": "BB",
+    "event": "PGL Major Copenhagen 2024",
+    "year": 2024,
+    "region": "EU",
+    "achievement": "Major Contender",
+    "mapPoolBias": [
+      "Mirage",
+      "Inferno",
+      "Ancient",
+      "Anubis",
+      "Nuke",
+      "Dust2",
+      "Vertigo"
+    ],
+    "players": [
+      {
+        "id": "naitosakura-2024",
+        "name": "naitosakura",
+        "realName": "Kirill Karpov",
+        "role": "Rifler",
+        "rating": 1.12,
+        "bestMaps": [
+          "Mirage",
+          "Inferno",
+          "Ancient"
+        ]
+      },
+      {
+        "id": "zorte-2024",
+        "name": "zorte",
+        "realName": "Alexey Zolotov",
+        "role": "AWPer",
+        "rating": 1.1,
+        "bestMaps": [
+          "Dust2",
+          "Mirage",
+          "Nuke"
+        ]
+      },
+      {
+        "id": "s1ren-2024",
+        "name": "s1ren",
+        "realName": "Pavel Gushin",
+        "role": "Entry",
+        "rating": 1.08,
+        "bestMaps": [
+          "Anubis",
+          "Vertigo",
+          "Inferno"
+        ]
+      },
+      {
+        "id": "magixx-bb-2024",
+        "name": "magixx",
+        "realName": "Boris Vorobiev",
+        "role": "Support",
+        "rating": 1.06,
+        "bestMaps": [
+          "Nuke",
+          "Overpass",
+          "Ancient"
+        ]
+      },
+      {
+        "id": "kairos-2024",
+        "name": "KaiR0N-",
+        "realName": "Aleksandr Matviyenko",
+        "role": "IGL",
+        "rating": 1,
+        "bestMaps": [
+          "Mirage",
+          "Anubis",
+          "Dust2"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "fnatic-2024",
+    "team": "Fnatic",
+    "shortName": "FNC",
+    "event": "PGL Major Copenhagen 2024",
+    "year": 2024,
+    "region": "EU",
+    "achievement": "Major Contender",
+    "mapPoolBias": [
+      "Mirage",
+      "Inferno",
+      "Ancient",
+      "Anubis",
+      "Nuke",
+      "Dust2",
+      "Vertigo"
+    ],
+    "players": [
+      {
+        "id": "blamef-fnc",
+        "name": "blameF",
+        "realName": "Benjamin Bremer",
+        "role": "Rifler",
+        "rating": 1.14,
+        "bestMaps": [
+          "Mirage",
+          "Inferno",
+          "Nuke"
+        ]
+      },
+      {
+        "id": "afro-2024",
+        "name": "afro",
+        "realName": "Aurelien Drapier",
+        "role": "AWPer",
+        "rating": 1.1,
+        "bestMaps": [
+          "Dust2",
+          "Mirage",
+          "Ancient"
+        ]
+      },
+      {
+        "id": "bodyy-fnc",
+        "name": "bodyy",
+        "realName": "Alexandre Pianaro",
+        "role": "Support",
+        "rating": 1.04,
+        "bestMaps": [
+          "Anubis",
+          "Overpass",
+          "Inferno"
+        ]
+      },
+      {
+        "id": "matys-2024",
+        "name": "matys",
+        "realName": "Matúš Šimko",
+        "role": "Entry",
+        "rating": 1.12,
+        "bestMaps": [
+          "Vertigo",
+          "Dust2",
+          "Mirage"
+        ]
+      },
+      {
+        "id": "krimz-2024",
+        "name": "KRIMZ",
+        "realName": "Freddy Johansson",
+        "role": "IGL",
+        "rating": 1.02,
+        "bestMaps": [
+          "Nuke",
+          "Ancient",
+          "Inferno"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "nip-2024",
+    "team": "Ninjas in Pyjamas",
+    "shortName": "NiP",
+    "event": "PGL Major Copenhagen 2024",
+    "year": 2024,
+    "region": "EU",
+    "achievement": "Major Contender",
+    "mapPoolBias": [
+      "Mirage",
+      "Inferno",
+      "Ancient",
+      "Anubis",
+      "Nuke",
+      "Dust2",
+      "Vertigo"
+    ],
+    "players": [
+      {
+        "id": "headtr1ck-2024",
+        "name": "headtr1ck",
+        "realName": "Viktor Orudzhev",
+        "role": "AWPer",
+        "rating": 1.12,
+        "bestMaps": [
+          "Mirage",
+          "Dust2",
+          "Nuke"
+        ]
+      },
+      {
+        "id": "k0nfig-nip",
+        "name": "k0nfig",
+        "realName": "Kristian Wienecke",
+        "role": "Entry",
+        "rating": 1.1,
+        "bestMaps": [
+          "Inferno",
+          "Anubis",
+          "Vertigo"
+        ]
+      },
+      {
+        "id": "r1nkle-2024",
+        "name": "r1nkle",
+        "realName": "Artem Moroz",
+        "role": "Rifler",
+        "rating": 1.12,
+        "bestMaps": [
+          "Ancient",
+          "Mirage",
+          "Inferno"
+        ]
+      },
+      {
+        "id": "alex-nip",
+        "name": "alex",
+        "realName": "Alec McMeekin",
+        "role": "Support",
+        "rating": 1.02,
+        "bestMaps": [
+          "Nuke",
+          "Overpass",
+          "Anubis"
+        ]
+      },
+      {
+        "id": "maxster-2024",
+        "name": "maxster",
+        "realName": "Max Jansson",
+        "role": "IGL",
+        "rating": 1,
+        "bestMaps": [
+          "Mirage",
+          "Dust2",
+          "Ancient"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "grayhound-2019",
+    "team": "Grayhound",
+    "shortName": "GH",
+    "event": "IEM Katowice 2019",
+    "year": 2019,
+    "region": "OC",
+    "achievement": "Regional Champions",
+    "mapPoolBias": [
+      "Mirage",
+      "Inferno",
+      "Dust2",
+      "Overpass",
+      "Train",
+      "Nuke",
+      "Cache"
+    ],
+    "players": [
+      {
+        "id": "erka-2019",
+        "name": "erkaSt",
+        "realName": "Erikas Narkevicius",
+        "role": "Rifler",
+        "rating": 1.1,
+        "bestMaps": [
+          "Mirage",
+          "Inferno",
+          "Dust2"
+        ]
+      },
+      {
+        "id": "sico-2019",
+        "name": "Sico",
+        "realName": "Simon Williams",
+        "role": "AWPer",
+        "rating": 1.08,
+        "bestMaps": [
+          "Dust2",
+          "Mirage",
+          "Train"
+        ]
+      },
+      {
+        "id": "malta-2019",
+        "name": "malta",
+        "realName": "Matthew Mulhern",
+        "role": "Entry",
+        "rating": 1.05,
+        "bestMaps": [
+          "Inferno",
+          "Overpass",
+          "Cache"
+        ]
+      },
+      {
+        "id": "dickdench-2019",
+        "name": "DickDench",
+        "realName": "Liam Teagle",
+        "role": "Support",
+        "rating": 0.98,
+        "bestMaps": [
+          "Nuke",
+          "Train",
+          "Overpass"
+        ]
+      },
+      {
+        "id": "ofnu-2019",
+        "name": "ofnu",
+        "realName": "Chris Davis",
+        "role": "IGL",
+        "rating": 0.96,
+        "bestMaps": [
+          "Mirage",
+          "Inferno",
+          "Nuke"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "space-soldiers-2018",
+    "team": "Space Soldiers",
+    "shortName": "SS",
+    "event": "FACEIT Major London 2018",
+    "year": 2018,
+    "region": "EU",
+    "achievement": "Major Contender",
+    "mapPoolBias": [
+      "Mirage",
+      "Inferno",
+      "Overpass",
+      "Cache",
+      "Train",
+      "Dust2",
+      "Nuke"
+    ],
+    "players": [
+      {
+        "id": "xantares-2018",
+        "name": "XANTARES",
+        "realName": "İsmailcan Dörtkardeş",
+        "role": "Rifler",
+        "rating": 1.22,
+        "bestMaps": [
+          "Mirage",
+          "Inferno",
+          "Cache"
+        ]
+      },
+      {
+        "id": "woxic-2018",
+        "name": "woxic",
+        "realName": "Özgür Eker",
+        "role": "AWPer",
+        "rating": 1.16,
+        "bestMaps": [
+          "Dust2",
+          "Mirage",
+          "Train"
+        ]
+      },
+      {
+        "id": "calyx-2018",
+        "name": "Calyx",
+        "realName": "Buğra Arkın",
+        "role": "Entry",
+        "rating": 1.08,
+        "bestMaps": [
+          "Overpass",
+          "Inferno",
+          "Nuke"
+        ]
+      },
+      {
+        "id": "paz-2018",
+        "name": "paz",
+        "realName": "Ahmet Karahoca",
+        "role": "Support",
+        "rating": 1.02,
+        "bestMaps": [
+          "Train",
+          "Nuke",
+          "Cache"
+        ]
+      },
+      {
+        "id": "nguyen-2018",
+        "name": "ngiN",
+        "realName": "Engin Kor",
+        "role": "IGL",
+        "rating": 0.96,
+        "bestMaps": [
+          "Mirage",
+          "Overpass",
+          "Inferno"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "optc-2017",
+    "team": "OpTic Gaming",
+    "shortName": "OpTic",
+    "event": "ELEAGUE Major Atlanta 2017",
+    "year": 2017,
+    "region": "NA",
+    "achievement": "Major Contender",
+    "mapPoolBias": [
+      "Mirage",
+      "Cache",
+      "Cobblestone",
+      "Overpass",
+      "Train",
+      "Dust2",
+      "Nuke"
+    ],
+    "players": [
+      {
+        "id": "mixwell-2017",
+        "name": "mixwell",
+        "realName": "Oscar Cañellas",
+        "role": "AWPer",
+        "rating": 1.14,
+        "bestMaps": [
+          "Dust2",
+          "Mirage",
+          "Cache"
+        ]
+      },
+      {
+        "id": "tarik-2017",
+        "name": "tarik",
+        "realName": "Tarik Celik",
+        "role": "Rifler",
+        "rating": 1.12,
+        "bestMaps": [
+          "Mirage",
+          "Overpass",
+          "Cobblestone"
+        ]
+      },
+      {
+        "id": "rush-2017",
+        "name": "RUSH",
+        "realName": "Will Wierzba",
+        "role": "Entry",
+        "rating": 1.08,
+        "bestMaps": [
+          "Cache",
+          "Dust2",
+          "Train"
+        ]
+      },
+      {
+        "id": "n0thing-2017",
+        "name": "n0thing",
+        "realName": "Jordan Gilbert",
+        "role": "Support",
+        "rating": 1,
+        "bestMaps": [
+          "Nuke",
+          "Overpass",
+          "Train"
+        ]
+      },
+      {
+        "id": "stanislaw-2017",
+        "name": "stanislaw",
+        "realName": "Peter Jarguz",
+        "role": "IGL",
+        "rating": 0.98,
+        "bestMaps": [
+          "Inferno",
+          "Nuke",
+          "Cobblestone"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "c9-2017",
+    "team": "Cloud9",
+    "shortName": "C9",
+    "event": "ELEAGUE Major Atlanta 2017",
+    "year": 2017,
+    "region": "NA",
+    "achievement": "Major Contender",
+    "mapPoolBias": [
+      "Mirage",
+      "Cache",
+      "Overpass",
+      "Cobblestone",
+      "Train",
+      "Dust2",
+      "Nuke"
+    ],
+    "players": [
+      {
+        "id": "skadoodle-2017",
+        "name": "Skadoodle",
+        "realName": "Tyler Latham",
+        "role": "AWPer",
+        "rating": 1.1,
+        "bestMaps": [
+          "Dust2",
+          "Mirage",
+          "Train"
+        ]
+      },
+      {
+        "id": "stewie-2017",
+        "name": "Stewie2K",
+        "realName": "Jake Yip",
+        "role": "Entry",
+        "rating": 1.14,
+        "bestMaps": [
+          "Cache",
+          "Inferno",
+          "Cobblestone"
+        ]
+      },
+      {
+        "id": "autimatic-2017",
+        "name": "autimatic",
+        "realName": "Timothy Ta",
+        "role": "Rifler",
+        "rating": 1.12,
+        "bestMaps": [
+          "Mirage",
+          "Overpass",
+          "Nuke"
+        ]
+      },
+      {
+        "id": "n0thing-c9-2017",
+        "name": "n0thing",
+        "realName": "Jordan Gilbert",
+        "role": "Support",
+        "rating": 1.02,
+        "bestMaps": [
+          "Train",
+          "Nuke",
+          "Overpass"
+        ]
+      },
+      {
+        "id": "shroud-2017",
+        "name": "shroud",
+        "realName": "Michael Grzesiek",
+        "role": "Lurker",
+        "rating": 1.08,
+        "bestMaps": [
+          "Dust2",
+          "Cache",
+          "Mirage"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "ldlc-2015",
+    "team": "Team LDLC",
+    "shortName": "LDLC",
+    "event": "DreamHack Winter 2014",
+    "year": 2014,
+    "region": "EU",
+    "achievement": "Major Champions",
+    "mapPoolBias": [
+      "Dust2",
+      "Inferno",
+      "Nuke",
+      "Mirage",
+      "Overpass",
+      "Cache",
+      "Cobblestone"
+    ],
+    "players": [
+      {
+        "id": "kennys-2014",
+        "name": "kennyS",
+        "realName": "Kenny Schrub",
+        "role": "AWPer",
+        "rating": 1.26,
+        "bestMaps": [
+          "Dust2",
+          "Mirage",
+          "Cache"
+        ]
+      },
+      {
+        "id": "apex-2014",
+        "name": "apEX",
+        "realName": "Dan Madesclaire",
+        "role": "Entry",
+        "rating": 1.1,
+        "bestMaps": [
+          "Inferno",
+          "Cobblestone",
+          "Overpass"
+        ]
+      },
+      {
+        "id": "happy-2014",
+        "name": "Happy",
+        "realName": "Vincent Schopenhauer",
+        "role": "IGL",
+        "rating": 1.08,
+        "bestMaps": [
+          "Nuke",
+          "Inferno",
+          "Mirage"
+        ]
+      },
+      {
+        "id": "kio-2014",
+        "name": "kioShiMa",
+        "realName": "Fabien Fiey",
+        "role": "Support",
+        "rating": 1.06,
+        "bestMaps": [
+          "Overpass",
+          "Train",
+          "Cache"
+        ]
+      },
+      {
+        "id": "smithzz-2014",
+        "name": "SmithZz",
+        "realName": "Edouard Dubourdeaux",
+        "role": "Lurker",
+        "rating": 1.02,
+        "bestMaps": [
+          "Nuke",
+          "Inferno",
+          "Dust2"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "titan-2015",
+    "team": "Titan",
+    "shortName": "Titan",
+    "event": "ESL One Cologne 2015",
+    "year": 2015,
+    "region": "EU",
+    "achievement": "Major Contender",
+    "mapPoolBias": [
+      "Dust2",
+      "Inferno",
+      "Mirage",
+      "Cache",
+      "Overpass",
+      "Cobblestone",
+      "Train"
+    ],
+    "players": [
+      {
+        "id": "ex6tenz-2015",
+        "name": "Ex6TenZ",
+        "realName": "Kévin Droolans",
+        "role": "IGL",
+        "rating": 0.96,
+        "bestMaps": [
+          "Inferno",
+          "Overpass",
+          "Nuke"
+        ]
+      },
+      {
+        "id": "shox-2015",
+        "name": "shox",
+        "realName": "Richard Papillon",
+        "role": "Rifler",
+        "rating": 1.16,
+        "bestMaps": [
+          "Mirage",
+          "Cache",
+          "Dust2"
+        ]
+      },
+      {
+        "id": "rpks-2015",
+        "name": "RpK",
+        "realName": "Cédric Guipouy",
+        "role": "Support",
+        "rating": 1.02,
+        "bestMaps": [
+          "Train",
+          "Overpass",
+          "Inferno"
+        ]
+      },
+      {
+        "id": "smithzz-2015",
+        "name": "SmithZz",
+        "realName": "Edouard Dubourdeaux",
+        "role": "Lurker",
+        "rating": 1,
+        "bestMaps": [
+          "Nuke",
+          "Cobblestone",
+          "Inferno"
+        ]
+      },
+      {
+        "id": "scream-2015",
+        "name": "ScreaM",
+        "realName": "Adil Benrlitom",
+        "role": "Entry",
+        "rating": 1.12,
+        "bestMaps": [
+          "Dust2",
+          "Mirage",
+          "Cache"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "dignitas-2015",
+    "team": "Team Dignitas",
+    "shortName": "dig",
+    "event": "DreamHack Open Cluj-Napoca 2015",
+    "year": 2015,
+    "region": "EU",
+    "achievement": "Major Contender",
+    "mapPoolBias": [
+      "Dust2",
+      "Inferno",
+      "Mirage",
+      "Cache",
+      "Overpass",
+      "Cobblestone",
+      "Train"
+    ],
+    "players": [
+      {
+        "id": "device-2015",
+        "name": "device",
+        "realName": "Nicolai Reedtz",
+        "role": "AWPer",
+        "rating": 1.18,
+        "bestMaps": [
+          "Dust2",
+          "Mirage",
+          "Cache"
+        ]
+      },
+      {
+        "id": "dupreeh-2015",
+        "name": "dupreeh",
+        "realName": "Peter Rasmussen",
+        "role": "Entry",
+        "rating": 1.14,
+        "bestMaps": [
+          "Inferno",
+          "Cobblestone",
+          "Overpass"
+        ]
+      },
+      {
+        "id": "karrigan-2015",
+        "name": "karrigan",
+        "realName": "Finn Andersen",
+        "role": "IGL",
+        "rating": 0.98,
+        "bestMaps": [
+          "Nuke",
+          "Overpass",
+          "Train"
+        ]
+      },
+      {
+        "id": "xyp9x-2015",
+        "name": "Xyp9x",
+        "realName": "Andreas Højsleth",
+        "role": "Support",
+        "rating": 1.1,
+        "bestMaps": [
+          "Inferno",
+          "Overpass",
+          "Train"
+        ]
+      },
+      {
+        "id": "cajunb-2015",
+        "name": "cajunb",
+        "realName": "René Borg",
+        "role": "Rifler",
+        "rating": 1.08,
+        "bestMaps": [
+          "Mirage",
+          "Cache",
+          "Dust2"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "kinguin-2015",
+    "team": "Team Kinguin",
+    "shortName": "Kinguin",
+    "event": "ESL One Cologne 2015",
+    "year": 2015,
+    "region": "EU",
+    "achievement": "Major Contender",
+    "mapPoolBias": [
+      "Dust2",
+      "Inferno",
+      "Mirage",
+      "Cache",
+      "Overpass",
+      "Cobblestone",
+      "Train"
+    ],
+    "players": [
+      {
+        "id": "neo-2015",
+        "name": "NEO",
+        "realName": "Filip Kubski",
+        "role": "IGL",
+        "rating": 1.04,
+        "bestMaps": [
+          "Inferno",
+          "Nuke",
+          "Train"
+        ]
+      },
+      {
+        "id": "taz-2015",
+        "name": "TaZ",
+        "realName": "Wiktor Wojtas",
+        "role": "Support",
+        "rating": 1,
+        "bestMaps": [
+          "Overpass",
+          "Inferno",
+          "Cobblestone"
+        ]
+      },
+      {
+        "id": "pasha-2015",
+        "name": "pashaBiceps",
+        "realName": "Jarosław Jarząbkowski",
+        "role": "Entry",
+        "rating": 1.12,
+        "bestMaps": [
+          "Dust2",
+          "Mirage",
+          "Cache"
+        ]
+      },
+      {
+        "id": "snax-2015",
+        "name": "Snax",
+        "realName": "Janusz Pogorzelski",
+        "role": "Rifler",
+        "rating": 1.18,
+        "bestMaps": [
+          "Mirage",
+          "Inferno",
+          "Cache"
+        ]
+      },
+      {
+        "id": "byali-2015",
+        "name": "byali",
+        "realName": "Paweł Bieliński",
+        "role": "Lurker",
+        "rating": 1.1,
+        "bestMaps": [
+          "Dust2",
+          "Train",
+          "Overpass"
+        ]
+      }
+    ]
+  }
+]

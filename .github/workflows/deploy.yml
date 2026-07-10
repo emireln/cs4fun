@@ -1,0 +1,145 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: true
+
+jobs:
+  deploy-sites:
+    name: Build & deploy sites
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Build landing
+        working-directory: apps/web
+        env:
+          VITE_APP_URL: https://app.cs4fun.online
+          VITE_WINDOWS_DOWNLOAD_URL: https://cs4fun.online/download/cs4fun-Setup.exe
+        run: npm run build
+
+      - name: Build game
+        working-directory: apps/app
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        run: npm run build
+
+      - name: Setup SSH
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p "${{ secrets.VPS_PORT }}" -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Rsync landing
+        run: |
+          rsync -az --delete \
+            -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.VPS_PORT }} -o IdentitiesOnly=yes" \
+            apps/web/dist/ \
+            "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/var/www/cs4fun/web/"
+
+      - name: Rsync game
+        run: |
+          rsync -az --delete \
+            -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.VPS_PORT }} -o IdentitiesOnly=yes" \
+            apps/app/dist/ \
+            "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/var/www/cs4fun/app/"
+
+      - name: Reload nginx
+        run: |
+          ssh -i ~/.ssh/deploy_key -p "${{ secrets.VPS_PORT }}" -o IdentitiesOnly=yes \
+            "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
+            "sudo nginx -t && sudo systemctl reload nginx"
+
+  build-installer:
+    name: Build Windows installer
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Build Electron installer
+        working-directory: apps/app
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        run: npm run electron:build
+
+      - name: Prepare download artifacts
+        shell: pwsh
+        run: |
+          $release = "apps/app/release"
+          $exe = Get-ChildItem $release -Filter "cs4fun-Setup-*.exe" |
+            Where-Object { $_.Name -ne "cs4fun-Setup.exe" } |
+            Sort-Object LastWriteTime -Descending |
+            Select-Object -First 1
+          if (-not $exe) { throw "No cs4fun-Setup-*.exe found in $release" }
+          Copy-Item $exe.FullName (Join-Path $release "cs4fun-Setup.exe") -Force
+          Write-Host "Prepared $($exe.Name) + cs4fun-Setup.exe"
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: |
+            apps/app/release/cs4fun-Setup.exe
+            apps/app/release/cs4fun-Setup-*.exe
+          if-no-files-found: error
+          retention-days: 14
+
+  deploy-installer:
+    name: Deploy Windows installer
+    needs: build-installer
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download installer artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-installer
+          path: installer
+
+      - name: Setup SSH
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p "${{ secrets.VPS_PORT }}" -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Upload to VPS /download
+        run: |
+          shopt -s nullglob
+          files=(installer/cs4fun-Setup.exe installer/cs4fun-Setup-*.exe)
+          if [[ ${#files[@]} -eq 0 ]]; then
+            echo "No installer files in artifact" >&2
+            ls -laR installer || true
+            exit 1
+          fi
+          # Deduplicate if glob also matches the stable alias
+          scp -i ~/.ssh/deploy_key -P "${{ secrets.VPS_PORT }}" -o IdentitiesOnly=yes \
+            "${files[@]}" \
+            "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/var/www/cs4fun/download/"

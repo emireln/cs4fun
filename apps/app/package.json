@@ -1,0 +1,82 @@
+{
+  "name": "@cs4fun/app",
+  "private": true,
+  "version": "1.0.0",
+  "description": "cs4fun — Counter-Strike draft arena",
+  "author": "cs4fun",
+  "type": "module",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "icons": "node electron/generate-icons.mjs",
+    "electron:dev": "node electron/dev.mjs",
+    "electron:build": "node electron/build.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.110.2",
+    "framer-motion": "^12.42.2",
+    "lucide-react": "^1.24.0",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.2",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.3",
+    "electron": "39.8.10",
+    "electron-builder": "^26.0.12",
+    "png-to-ico": "^2.1.8",
+    "sharp": "^0.34.2",
+    "tailwindcss": "^4.3.2",
+    "vite": "^8.1.1",
+    "wait-on": "^8.0.3"
+  },
+  "build": {
+    "appId": "online.cs4fun.app",
+    "productName": "cs4fun",
+    "copyright": "Copyright © cs4fun",
+    "electronVersion": "39.8.10",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/main.cjs",
+      "electron/preload.cjs",
+      "build/icon.ico",
+      "build/icon.png",
+      "build/tray.ico",
+      "build/tray.png",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "icon.ico",
+      "artifactName": "${productName}-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "cs4fun",
+      "installerIcon": "icon.ico",
+      "uninstallerIcon": "icon.ico",
+      "installerHeader": "installerHeader.bmp",
+      "installerSidebar": "installerSidebar.bmp",
+      "uninstallerSidebar": "installerSidebar.bmp"
+    }
+  }
+}

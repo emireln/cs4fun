@@ -1,0 +1,25 @@
+{
+  "name": "cs4fun",
+  "private": true,
+  "version": "1.8.7",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w @cs4fun/app",
+    "dev:app": "npm run dev -w @cs4fun/app",
+    "dev:web": "npm run dev -w @cs4fun/web",
+    "build": "npm run build -w @cs4fun/web && npm run build -w @cs4fun/app",
+    "build:app": "npm run build -w @cs4fun/app",
+    "build:web": "npm run build -w @cs4fun/web",
+    "preview:app": "npm run preview -w @cs4fun/app",
+    "preview:web": "npm run preview -w @cs4fun/web",
+    "electron:dev": "npm run electron:dev -w @cs4fun/app",
+    "electron:build": "npm run electron:build -w @cs4fun/app",
+    "smoke:localhost": "node scripts/smoke-localhost.mjs",
+    "smoke:engine": "npx vite-node scripts/smoke-guests.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.61.1"
+  }
+}
