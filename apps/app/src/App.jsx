@@ -93,7 +93,7 @@ function AppShell() {
 
   return (
     <div
-      className={`carbon-bg min-h-dvh overflow-x-clip sm:pt-[calc(52px+env(safe-area-inset-top,0px))] ${
+      className={`carbon-bg flex min-h-dvh flex-col overflow-x-clip sm:pt-[calc(52px+env(safe-area-inset-top,0px))] ${
         mobileStatsPad
           ? 'pt-[calc(108px+env(safe-area-inset-top,0px))]'
           : 'pt-[calc(76px+env(safe-area-inset-top,0px))]'
@@ -128,6 +128,7 @@ function AppShell() {
       <AnimatePresence mode="wait">
         <motion.main
           key={screen + (room?.code || '')}
+          className="flex min-h-0 flex-1 flex-col"
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0 }}
@@ -219,8 +220,8 @@ function AppShell() {
       )}
 
       {showFooter && (
-        <footer className="border-t border-cs-border/40 px-4 py-2.5 sm:py-3">
-          <div className="mx-auto flex max-w-lg flex-col items-center gap-5 sm:gap-6">
+        <footer className="mt-auto shrink-0 border-t border-cs-border/40 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] sm:py-3.5">
+          <div className="mx-auto flex max-w-lg flex-col items-center gap-2.5 sm:gap-3">
             <a
               href="https://cs4fun.online"
               className="inline-flex items-center gap-2 text-cs-muted transition hover:text-cs-gold"
