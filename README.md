@@ -74,14 +74,15 @@ Landing buttons use `VITE_WINDOWS_DOWNLOAD_URL` (default `https://cs4fun.online/
 
 ## Deploy
 
-Two static hosts on your VPS (or Vercel / Netlify / Cloudflare Pages):
+Production deploys automatically on every push to `main` via GitHub Actions → this VPS (nginx).
 
-| Host | Root directory | Build command | Output |
-|------|----------------|---------------|--------|
-| `cs4fun.online` (+ `www`) | `apps/web` | `npm run build` | `dist` |
-| `app.cs4fun.online` | `apps/app` | `npm run build` | `dist` |
+| Host | Path on VPS |
+|------|-------------|
+| `cs4fun.online` (+ `www`) | `/var/www/cs4fun/web` |
+| `app.cs4fun.online` | `/var/www/cs4fun/app` |
+| `cs4fun.online/download/` | `/var/www/cs4fun/download` (Windows setup) |
 
-From the monorepo root you can also set each project’s install to `npm install` at root and build with `npm run build -w @cs4fun/web` / `@cs4fun/app`.
+Ops details (secrets, DNS, bootstrap): [`deploy/README.md`](deploy/README.md).
 
 In Supabase Auth, add redirect URL `https://app.cs4fun.online` (and local `http://localhost:5173` for dev).
 

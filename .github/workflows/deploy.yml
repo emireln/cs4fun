@@ -41,30 +41,50 @@ jobs:
         run: npm run build
 
       - name: Setup SSH
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
         run: |
+          set -euo pipefail
+          : "${VPS_HOST:?VPS_HOST secret is empty}"
+          : "${VPS_PORT:?VPS_PORT secret is empty}"
+          : "${VPS_SSH_KEY:?VPS_SSH_KEY secret is empty}"
           install -m 700 -d ~/.ssh
-          printf '%s\n' "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -p "${{ secrets.VPS_PORT }}" -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts
+          ssh-keyscan -p "$VPS_PORT" -H "$VPS_HOST" >> ~/.ssh/known_hosts
 
       - name: Rsync landing
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_USER: ${{ secrets.VPS_USER }}
         run: |
           rsync -az --delete \
-            -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.VPS_PORT }} -o IdentitiesOnly=yes" \
+            -e "ssh -i ~/.ssh/deploy_key -p ${VPS_PORT} -o IdentitiesOnly=yes" \
             apps/web/dist/ \
-            "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/var/www/cs4fun/web/"
+            "${VPS_USER}@${VPS_HOST}:/var/www/cs4fun/web/"
 
       - name: Rsync game
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_USER: ${{ secrets.VPS_USER }}
         run: |
           rsync -az --delete \
-            -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.VPS_PORT }} -o IdentitiesOnly=yes" \
+            -e "ssh -i ~/.ssh/deploy_key -p ${VPS_PORT} -o IdentitiesOnly=yes" \
             apps/app/dist/ \
-            "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/var/www/cs4fun/app/"
+            "${VPS_USER}@${VPS_HOST}:/var/www/cs4fun/app/"
 
       - name: Reload nginx
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_USER: ${{ secrets.VPS_USER }}
         run: |
-          ssh -i ~/.ssh/deploy_key -p "${{ secrets.VPS_PORT }}" -o IdentitiesOnly=yes \
-            "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
+          ssh -i ~/.ssh/deploy_key -p "${VPS_PORT}" -o IdentitiesOnly=yes \
+            "${VPS_USER}@${VPS_HOST}" \
             "sudo nginx -t && sudo systemctl reload nginx"
 
   build-installer:
@@ -124,13 +144,25 @@ jobs:
           path: installer
 
       - name: Setup SSH
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
         run: |
+          set -euo pipefail
+          : "${VPS_HOST:?VPS_HOST secret is empty}"
+          : "${VPS_PORT:?VPS_PORT secret is empty}"
+          : "${VPS_SSH_KEY:?VPS_SSH_KEY secret is empty}"
           install -m 700 -d ~/.ssh
-          printf '%s\n' "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -p "${{ secrets.VPS_PORT }}" -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts
+          ssh-keyscan -p "$VPS_PORT" -H "$VPS_HOST" >> ~/.ssh/known_hosts
 
       - name: Upload to VPS /download
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_USER: ${{ secrets.VPS_USER }}
         run: |
           shopt -s nullglob
           files=(installer/cs4fun-Setup.exe installer/cs4fun-Setup-*.exe)
@@ -139,7 +171,6 @@ jobs:
             ls -laR installer || true
             exit 1
           fi
-          # Deduplicate if glob also matches the stable alias
-          scp -i ~/.ssh/deploy_key -P "${{ secrets.VPS_PORT }}" -o IdentitiesOnly=yes \
+          scp -i ~/.ssh/deploy_key -P "${VPS_PORT}" -o IdentitiesOnly=yes \
             "${files[@]}" \
-            "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/var/www/cs4fun/download/"
+            "${VPS_USER}@${VPS_HOST}:/var/www/cs4fun/download/"
