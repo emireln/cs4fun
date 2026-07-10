@@ -7,6 +7,7 @@ Push to `main` → GitHub Actions builds and deploys:
 - Landing → `/var/www/cs4fun/web` (`https://cs4fun.online`)
 - Game → `/var/www/cs4fun/app` (`https://app.cs4fun.online`)
 - Windows installer → `/var/www/cs4fun/download/cs4fun-Setup.exe`
+- Supabase → `supabase db push` (migrations in `supabase/migrations/`)
 
 Manual run: Actions → **Deploy** → **Run workflow**.
 
@@ -22,8 +23,21 @@ Repo → **Settings → Secrets and variables → Actions**:
 | `VPS_SSH_KEY` | OpenSSH private key for the deploy user (entire PEM, including `BEGIN`/`END` lines) |
 | `VITE_SUPABASE_URL` | `https://xxxx.supabase.co` |
 | `VITE_SUPABASE_ANON_KEY` | anon/public key |
+| `SUPABASE_PROJECT_REF` | Project ref (subdomain of `*.supabase.co`) — already set for this repo |
+| `SUPABASE_ACCESS_TOKEN` | [Account → Access Tokens](https://supabase.com/dashboard/account/tokens) |
+| `SUPABASE_DB_PASSWORD` | Database password (Project Settings → Database) |
 
 `VITE_SUPABASE_*` may be empty strings if you want guest-only builds; prefer real production values.
+
+### Supabase schema automation
+
+On every push to `main`, the **Apply Supabase migrations** job runs `supabase db push` against production.
+
+- Versioned SQL: [`supabase/migrations/`](../supabase/migrations/)
+- Reference / SQL-editor copy: [`supabase/schema.sql`](../supabase/schema.sql)
+- **Do not edit old migrations.** Add a new file like `supabase/migrations/20260711120000_add_thing.sql` for changes.
+- One-time dashboard setup still manual: Email auth + redirect `https://app.cs4fun.online`
+- Admin promote SQL stays manual (`insert into app_admins …`)
 
 ## DNS (required for HTTPS)
 

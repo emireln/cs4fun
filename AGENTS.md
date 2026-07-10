@@ -183,9 +183,15 @@ Auto-update wiring (when implementing):
 
 Keep `app.cs4fun.online` for the web SPA; keep Supabase for API/data only.
 
-## Backend (`supabase/schema.sql`)
+## Backend (`supabase/schema.sql` + `supabase/migrations/`)
 
-Re-run after pulls when schema changes. Includes profiles (`avatar_id`, `avatar_url`), rooms, leaderboards, history, badges, friendships, invites, H2H RPCs, RLS.
+Schema is applied automatically on push to `main` via GitHub Actions (`supabase db push`).
+
+- Add new changes as **new files** under `supabase/migrations/` (never edit applied migrations).
+- `supabase/schema.sql` is a reference / SQL-editor copy — keep it roughly in sync if you still paste manually.
+- Re-run / repair only if CI fails; secrets: `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD`, `SUPABASE_PROJECT_REF`.
+
+Includes profiles (`avatar_id`, `avatar_url`), rooms, leaderboards, history, badges, friendships, invites, H2H RPCs, RLS.
 
 Auth redirect URL for production: `https://app.cs4fun.online`.
 

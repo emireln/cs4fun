@@ -1,8 +1,4 @@
--- cs4fun schema (SQL editor / reference copy)
--- Production applies versioned files in supabase/migrations/ via GitHub Actions.
--- When changing the backend: add a NEW migration under supabase/migrations/ (do not edit old ones).
--- Keep this file in sync only if you still paste into the Supabase SQL editor manually.
--- cs4fun secure schema — run in Supabase SQL editor
+-- cs4fun secure schema — initial migration (applied by CI via `supabase db push`)
 -- Frontend only uses the anon key. All writes go through SECURITY DEFINER RPCs.
 
 create extension if not exists pgcrypto;
