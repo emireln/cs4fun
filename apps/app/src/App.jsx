@@ -445,9 +445,14 @@ function AppShell() {
       {showFooter && (
         <footer className="mt-auto shrink-0 border-t border-cs-border/40 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] sm:py-3.5">
           <div className="mx-auto flex max-w-lg flex-wrap items-center justify-center gap-2 sm:gap-2.5">
-            <span className="font-display text-[10px] font-bold tracking-[0.22em] text-cs-muted sm:text-[11px]">
+            <a
+              href="https://cs4fun.online"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-display text-[10px] font-bold tracking-[0.22em] text-cs-muted transition hover:text-cs-gold sm:text-[11px]"
+            >
               {t('meta.footer')}
-            </span>
+            </a>
             <button
               type="button"
               onClick={() => {
