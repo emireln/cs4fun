@@ -140,7 +140,7 @@ export default function StatusBar({
               onClick={onOpenLeaderboard}
               title={t('nav.leaderboard')}
               aria-label={t('nav.leaderboard')}
-              className="flex h-9 w-9 items-center justify-center rounded-full text-cs-muted transition hover:bg-white/5 hover:text-cs-gold"
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-cs-border bg-cs-panel text-cs-muted transition hover:border-cs-gold/50 hover:bg-cs-gold/10 hover:text-cs-gold"
             >
               <Trophy className="h-[18px] w-[18px]" />
             </button>
