@@ -1,14 +1,57 @@
+import { useEffect, useRef, useState } from 'react'
 import { TACTICAL_CALLS } from '../data/constants'
 import { useI18n } from '../i18n'
 
+const DEFAULT_SECONDS = 15
+
 /** Overlay to pick / change an IGL call for a map during live tactical pause. */
-export default function TacticalPausePanel({ mapName, onSelect, onCancel }) {
+export default function TacticalPausePanel({
+  mapName,
+  onSelect,
+  onCancel,
+  seconds = DEFAULT_SECONDS,
+}) {
   const { t } = useI18n()
+  const [left, setLeft] = useState(seconds)
+  const firedRef = useRef(false)
+  const onSelectRef = useRef(onSelect)
+  onSelectRef.current = onSelect
+
+  useEffect(() => {
+    firedRef.current = false
+    setLeft(seconds)
+    const id = setInterval(() => {
+      setLeft((n) => {
+        if (n <= 1) {
+          clearInterval(id)
+          return 0
+        }
+        return n - 1
+      })
+    }, 1000)
+    return () => clearInterval(id)
+  }, [seconds, mapName])
+
+  useEffect(() => {
+    if (left !== 0 || firedRef.current) return
+    firedRef.current = true
+    const call = TACTICAL_CALLS[Math.floor(Math.random() * TACTICAL_CALLS.length)]
+    onSelectRef.current?.(call)
+  }, [left])
 
   return (
     <div className="panel rounded-xl border-cs-info/40 p-4 sm:p-5">
-      <div className="mb-1 font-display text-[10px] tracking-[0.2em] text-cs-info uppercase">
-        {t('live.tacticalPause')}
+      <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+        <div className="font-display text-[10px] tracking-[0.2em] text-cs-info uppercase">
+          {t('live.tacticalPause')}
+        </div>
+        <span
+          className={`font-mono text-sm tabular-nums ${
+            left <= 5 ? 'animate-pulse text-cs-loss' : 'text-cs-warn'
+          }`}
+        >
+          {left}s
+        </span>
       </div>
       <h3 className="font-display text-lg font-bold text-cs-text">
         {t('tournament.tactical', { map: mapName || '—' })}
@@ -19,7 +62,10 @@ export default function TacticalPausePanel({ mapName, onSelect, onCancel }) {
           <button
             key={call.id}
             type="button"
-            onClick={() => onSelect(call)}
+            onClick={() => {
+              firedRef.current = true
+              onSelect(call)
+            }}
             className="min-h-[52px] rounded border border-cs-border bg-cs-bg/40 px-3 py-3 text-left transition hover:border-cs-info/50 hover:bg-cs-info/5 active:scale-[0.99]"
           >
             <div className="text-sm font-bold text-cs-text">

@@ -19,9 +19,9 @@ export default function HomeHub({ onSelectMode, onOpenFriends }) {
   const streak = useMemo(() => getDailyStreak(profile?.id), [profile?.id])
 
   return (
-    <div className="relative">
-      <div className="mx-auto max-w-5xl px-4 pb-6 pt-6 sm:pt-10">
-        <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} className="mb-10 text-center">
+    <div className="relative flex min-h-0 flex-1 flex-col justify-center">
+      <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:py-10">
+        <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} className="mb-8 text-center sm:mb-10">
           <img src="/logo.svg" alt="cs4fun" className="mx-auto mb-4 h-20 w-20 sm:h-24 sm:w-24" />
           <h1 className="font-display text-5xl font-extrabold tracking-tight sm:text-6xl">
             <span className="gold-text">{t('home.title')}</span>

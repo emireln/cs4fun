@@ -294,10 +294,6 @@ export default function GauntletGame({ profile, onHome, onStatus }) {
             playbackRef.current.setSpeed(n)
           }}
           paused={paused}
-          onTogglePause={() => {
-            const next = playbackRef.current.togglePause()
-            setPaused(next)
-          }}
           onTacticalPause={openTacticalPause}
           canTacticalPause={simulating && !tacticalOpen}
           playing={simulating}

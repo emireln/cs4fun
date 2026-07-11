@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Crosshair, Flame, Pause, Play, Shield, Swords, Zap, Star, Radio } from 'lucide-react'
+import { Crosshair, Flame, Shield, Swords, Zap, Star, Radio } from 'lucide-react'
 import { getMapAsset } from '../data/maps'
 import { useI18n } from '../i18n'
 import { playMatchEvent, unlockAudio } from '../lib/sound'
@@ -68,8 +68,8 @@ export default function MatchLive({
   mvp = null,
   speed = 1,
   onSpeedChange,
+  speedLocked = false,
   paused = false,
-  onTogglePause,
   onTacticalPause,
   canTacticalPause = false,
   playing = false,
@@ -202,7 +202,7 @@ export default function MatchLive({
               <span
                 className={`h-1.5 w-1.5 rounded-full ${paused ? 'bg-cs-warn' : 'animate-pulse bg-cs-win'}`}
               />
-              {paused ? t('live.paused') : t('tournament.live')}
+              {paused ? t('live.tacticalTimeout') : t('tournament.live')}
             </span>
           </div>
 
@@ -235,27 +235,20 @@ export default function MatchLive({
       </div>
 
       {/* Controls */}
-      {(onSpeedChange || onTogglePause || onTacticalPause) && (
+      {(onSpeedChange || onTacticalPause) && (
         <div className="flex flex-wrap items-center gap-2 border-b border-cs-border/60 px-3 py-2 sm:px-4">
-          {onTogglePause && (
-            <button
-              type="button"
-              onClick={onTogglePause}
-              disabled={!playing && !paused}
-              className="btn-ghost inline-flex min-h-[36px] items-center gap-1.5 rounded px-2.5 py-1.5 text-xs"
-            >
-              {paused ? <Play className="h-3.5 w-3.5" /> : <Pause className="h-3.5 w-3.5" />}
-              {paused ? t('live.resume') : t('live.pause')}
-            </button>
-          )}
           {onSpeedChange && (
-            <div className="inline-flex rounded border border-cs-border p-0.5">
+            <div
+              className="inline-flex rounded border border-cs-border p-0.5"
+              title={speedLocked ? t('live.speedHostOnly') : undefined}
+            >
               {[1, 2, 3].map((n) => (
                 <button
                   key={n}
                   type="button"
                   onClick={() => onSpeedChange(n)}
-                  className={`rounded px-2.5 py-1 text-xs font-bold ${
+                  disabled={speedLocked}
+                  className={`rounded px-2.5 py-1 text-xs font-bold disabled:cursor-not-allowed disabled:opacity-40 ${
                     speed === n ? 'bg-cs-gold/20 text-cs-gold' : 'text-cs-muted hover:text-cs-text'
                   }`}
                 >

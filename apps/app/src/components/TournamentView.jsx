@@ -106,7 +106,7 @@ export default function TournamentView({
     setPaused(false)
   }, [userMatchInfo?.match?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Random tactical call when timer expires
+  // Series tactical call — one 15s timer for the whole MD3 pool
   useEffect(() => {
     if (matchPhase !== 'tactics' || !veto) return undefined
     autoTacticRef.current = false
@@ -121,22 +121,17 @@ export default function TournamentView({
       })
     }, 1000)
     return () => clearInterval(id)
-  }, [matchPhase, currentMapIdx, veto?.mapOrder?.[currentMapIdx]]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [matchPhase, veto?.mapOrder?.join('|')]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-pick random tactic on timeout
+  // Auto-pick one call for all maps on timeout
   useEffect(() => {
     if (matchPhase !== 'tactics' || tacticTimer !== 0 || !veto || !userMatchInfo) return
     if (autoTacticRef.current) return
     autoTacticRef.current = true
     const call = TACTICAL_CALLS[Math.floor(Math.random() * TACTICAL_CALLS.length)]
-    const mapName = veto.mapOrder[currentMapIdx]
-    const next = { ...tacticalCalls, [mapName]: call }
+    const next = Object.fromEntries(veto.mapOrder.map((m) => [m, call]))
     setTacticalCalls(next)
-    if (currentMapIdx < 2) {
-      setCurrentMapIdx((i) => i + 1)
-    } else {
-      setPendingSeriesCalls(next)
-    }
+    setPendingSeriesCalls(next)
   }, [tacticTimer, matchPhase]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Start series when auto-tactic fills the last map
@@ -161,30 +156,23 @@ export default function TournamentView({
   const goTactics = (v) => {
     setVeto(v)
     setCurrentMapIdx(0)
+    setTacticalCalls({})
     setMatchPhase('tactics')
   }
 
-  const selectTactic = (call) => {
-    if (!veto) return
-    const mapName = veto.mapOrder[currentMapIdx]
-    const next = { ...tacticalCalls, [mapName]: call }
+  /** One call for the whole MD3 map pool (maps already locked by veto). */
+  const selectSeriesTactic = (call) => {
+    if (!veto?.mapOrder?.length) return
+    const next = Object.fromEntries(veto.mapOrder.map((m) => [m, call]))
     setTacticalCalls(next)
-    autoTacticRef.current = false
-
-    if (currentMapIdx < 2) {
-      setCurrentMapIdx((i) => i + 1)
-    } else {
-      runSeries(next)
-    }
+    autoTacticRef.current = true
+    runSeries(next)
   }
 
   const skipRemainingTactics = () => {
-    const next = { ...tacticalCalls }
-    for (let i = currentMapIdx; i < veto.mapOrder.length; i++) {
-      if (!next[veto.mapOrder[i]]) {
-        next[veto.mapOrder[i]] = TACTICAL_CALLS[0]
-      }
-    }
+    if (!veto?.mapOrder?.length) return
+    const call = TACTICAL_CALLS[0]
+    const next = Object.fromEntries(veto.mapOrder.map((m) => [m, call]))
     setTacticalCalls(next)
     runSeries(next)
   }
@@ -194,12 +182,9 @@ export default function TournamentView({
     const pb = playbackRef.current
     pb.setPaused(true)
     setPaused(true)
-    // Mid-map: current map is already rolling — retarget the next map.
-    // Between maps: retarget the upcoming map (same as liveMapName).
     const idx = mapSimulatingRef.current ? mapResultsLenRef.current + 1 : mapResultsLenRef.current
     const target = veto.mapOrder[idx]
     if (!target) {
-      // Last map already live — pause only (call locked in).
       setTacticalOpen(false)
       setPendingTacticMap(null)
       return
@@ -411,7 +396,7 @@ export default function TournamentView({
                   <div className="flex items-center gap-2">
                     <Crosshair className="h-4 w-4 text-cs-gold" />
                     <h3 className="font-display text-xs font-bold tracking-[0.2em] text-cs-gold uppercase">
-                      {t('tournament.tactical', { map: veto.mapOrder[currentMapIdx] })}
+                      {t('tournament.seriesCall')}
                     </h3>
                   </div>
                   <span
@@ -422,13 +407,24 @@ export default function TournamentView({
                     {tacticTimer}s
                   </span>
                 </div>
-                <p className="mb-4 text-sm text-cs-muted">{t('tournament.tacticalHint')}</p>
+                <p className="mb-3 text-sm text-cs-muted">{t('tournament.seriesCallHint')}</p>
+                <div className="mb-4 flex flex-wrap gap-2">
+                  {(veto.mapOrder || []).map((map, i) => (
+                    <span
+                      key={map}
+                      className="inline-flex items-center gap-1.5 rounded border border-cs-gold/35 bg-cs-gold/10 px-2.5 py-1 text-xs font-semibold text-cs-gold"
+                    >
+                      <span className="font-mono text-[10px] text-cs-muted">M{i + 1}</span>
+                      {map}
+                    </span>
+                  ))}
+                </div>
                 <div className="grid gap-2 sm:grid-cols-2">
                   {TACTICAL_CALLS.map((call) => (
                     <button
                       key={call.id}
                       type="button"
-                      onClick={() => selectTactic(call)}
+                      onClick={() => selectSeriesTactic(call)}
                       className="min-h-[52px] rounded border border-cs-border bg-cs-bg/40 px-3 py-3 text-left transition hover:border-cs-gold/50 hover:bg-cs-gold/5 active:scale-[0.99]"
                     >
                       <div className="text-sm font-bold text-cs-text">
@@ -484,10 +480,6 @@ export default function TournamentView({
                     playbackRef.current.setSpeed(n)
                   }}
                   paused={paused}
-                  onTogglePause={() => {
-                    const next = playbackRef.current.togglePause()
-                    setPaused(next)
-                  }}
                   onTacticalPause={openTacticalPause}
                   canTacticalPause={simulating && !tacticalOpen}
                   playing={simulating}

@@ -68,6 +68,7 @@ export default function DuelGame({ profile, room: initialRoom = null, onHome, on
   }, [])
 
   const isFriend = Boolean(liveRoom)
+  const isHost = !isFriend || liveRoom?.hostId === profile.id
   const seed = liveRoom?.seed || `duel-cpu-${profile.id}`
   const sharedRolls = useMemo(() => generateSharedRolls(seed, 5), [seed])
 
@@ -377,6 +378,28 @@ export default function DuelGame({ profile, room: initialRoom = null, onHome, on
     }
     setPendingTacticMap(target)
     setTacticalOpen(true)
+    if (isFriend && liveRoom?.code) {
+      updateRoom(liveRoom.code, (r) => ({
+        ...r,
+        playback: {
+          ...(r.playback || {}),
+          speed: r.playback?.speed || speed,
+          tactical: { active: true, mapName: target, by: profile.id },
+        },
+      }))
+    }
+  }
+
+  const clearTacticalRoom = () => {
+    if (!isFriend || !liveRoom?.code) return
+    updateRoom(liveRoom.code, (r) => ({
+      ...r,
+      playback: {
+        ...(r.playback || {}),
+        speed: r.playback?.speed || speed,
+        tactical: null,
+      },
+    }))
   }
 
   const applyLiveTactic = (call) => {
@@ -391,7 +414,54 @@ export default function DuelGame({ profile, room: initialRoom = null, onHome, on
     setPendingTacticMap(null)
     playbackRef.current.setPaused(false)
     setPaused(false)
+    clearTacticalRoom()
   }
+
+  const cancelTacticalPause = () => {
+    setTacticalOpen(false)
+    setPendingTacticMap(null)
+    playbackRef.current.setPaused(false)
+    setPaused(false)
+    clearTacticalRoom()
+  }
+
+  const changeSpeed = (n) => {
+    if (isFriend && !isHost) return
+    setSpeed(n)
+    playbackRef.current.setSpeed(n)
+    if (isFriend && liveRoom?.code && isHost) {
+      updateRoom(liveRoom.code, (r) => ({
+        ...r,
+        playback: { ...(r.playback || {}), speed: n, tactical: r.playback?.tactical || null },
+      }))
+    }
+  }
+
+  // Mirror host speed + tactical pause for friend duels
+  useEffect(() => {
+    if (!isFriend || !liveRoom?.playback) return
+    const remoteSpeed = Number(liveRoom.playback.speed) || 1
+    if (remoteSpeed !== speed) {
+      setSpeed(remoteSpeed)
+      playbackRef.current.setSpeed(remoteSpeed)
+    }
+    const tac = liveRoom.playback.tactical
+    if (tac?.active) {
+      if (!tacticalOpen) {
+        playbackRef.current.setPaused(true)
+        setPaused(true)
+        setPendingTacticMap(tac.mapName || null)
+        setTacticalOpen(true)
+      }
+      return
+    }
+    if (tacticalOpen && tac == null && liveRoom.playback.tactical === null) {
+      setTacticalOpen(false)
+      setPendingTacticMap(null)
+      playbackRef.current.setPaused(false)
+      setPaused(false)
+    }
+  }, [isFriend, liveRoom?.playback]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (step === 'setup') {
     return (
@@ -531,12 +601,7 @@ export default function DuelGame({ profile, room: initialRoom = null, onHome, on
           <TacticalPausePanel
             mapName={pendingTacticMap || liveMapName}
             onSelect={applyLiveTactic}
-            onCancel={() => {
-              setTacticalOpen(false)
-              setPendingTacticMap(null)
-              playbackRef.current.setPaused(false)
-              setPaused(false)
-            }}
+            onCancel={cancelTacticalPause}
           />
         )}
         <MatchLive
@@ -550,15 +615,9 @@ export default function DuelGame({ profile, room: initialRoom = null, onHome, on
           seriesScore={seriesScore}
           mvp={liveMvp}
           speed={speed}
-          onSpeedChange={(n) => {
-            setSpeed(n)
-            playbackRef.current.setSpeed(n)
-          }}
+          onSpeedChange={changeSpeed}
+          speedLocked={isFriend && !isHost}
           paused={paused}
-          onTogglePause={() => {
-            const next = playbackRef.current.togglePause()
-            setPaused(next)
-          }}
           onTacticalPause={openTacticalPause}
           canTacticalPause={simulating && !tacticalOpen}
           playing={simulating}
