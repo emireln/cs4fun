@@ -5,6 +5,7 @@ import { useDraftSession } from '../../hooks/useDraftSession'
 import { buildUserTeam, scoreMajorRun } from '../../lib/gameModes'
 import { saveGameResult } from '../../lib/history'
 import { generateBracket } from '../../engine/simulation'
+import { initialSoloSetupState, retrySoloSetupState } from '../../lib/setupPreset'
 import ModeSetup from '../ModeSetup'
 import DraftPlay from '../DraftPlay'
 import TournamentView from '../TournamentView'
@@ -12,8 +13,9 @@ import GameOver from '../GameOver'
 
 export default function MajorGame({ profile, onHome, onStatus }) {
   const { t } = useI18n()
-  const [step, setStep] = useState('setup')
-  const [cfg, setCfg] = useState(null)
+  const [boot] = useState(() => initialSoloSetupState(profile))
+  const [step, setStep] = useState(boot.step)
+  const [cfg, setCfg] = useState(boot.cfg)
   const [bracket, setBracket] = useState(null)
   const [userTeam, setUserTeam] = useState(null)
   const [wins, setWins] = useState(0)
@@ -164,7 +166,9 @@ export default function MajorGame({ profile, onHome, onStatus }) {
       onHome={onHome}
       onRetry={() => {
         draft.reset()
-        setStep('setup')
+        const next = retrySoloSetupState(profile)
+        setCfg(next.cfg)
+        setStep(next.step)
       }}
     />
   )

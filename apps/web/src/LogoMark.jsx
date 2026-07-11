@@ -24,6 +24,9 @@ export default function LogoMark({ className = '', title, decorative = true }) {
       role={title ? 'img' : undefined}
       aria-label={title}
       onPointerDown={triggerClickSpin}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') triggerClickSpin()
+      }}
     >
       <circle cx="64" cy="64" r="38" stroke="#E8EDF5" strokeWidth="5" />
       <path
@@ -32,12 +35,9 @@ export default function LogoMark({ className = '', title, decorative = true }) {
         strokeWidth="5"
         strokeLinecap="round"
       />
-      <path
-        className="logo-diamond"
-        d="M64 52l12 12-12 12-12-12 12-12z"
-        fill="#E8C547"
-        onAnimationEnd={onDiamondAnimEnd}
-      />
+      <g className="logo-diamond" onAnimationEnd={onDiamondAnimEnd}>
+        <path d="M64 52l12 12-12 12-12-12 12-12z" fill="#E8C547" />
+      </g>
     </svg>
   )
 }

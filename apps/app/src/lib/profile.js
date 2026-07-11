@@ -1,4 +1,5 @@
 import { DEFAULT_AVATAR_ID } from '../data/avatars'
+import { DEFAULT_SETUP_PRESET, normalizeSetupPresetFields } from './setupPreset'
 
 const KEY = 'cs4fun_profile'
 
@@ -8,7 +9,7 @@ export function loadProfile() {
     if (raw) {
       const p = JSON.parse(raw)
       if (!p.avatarId) p.avatarId = DEFAULT_AVATAR_ID
-      return p
+      return { ...p, ...normalizeSetupPresetFields(p) }
     }
   } catch {
     /* ignore */
@@ -22,6 +23,7 @@ export function loadProfile() {
     showcaseBadge: null,
     steamUrl: null,
     profilePublic: true,
+    ...DEFAULT_SETUP_PRESET,
     createdAt: Date.now(),
   }
   saveProfile(profile)

@@ -4,14 +4,17 @@ import { loadProfile, saveProfile, displayName } from './profile'
 import { sanitizeAvatarUrl } from './avatarImage'
 import { sanitizeSteamUrl } from './steam'
 import { fetchMyAccess } from './admin'
+import { DEFAULT_SETUP_PRESET, normalizeSetupPresetFields } from './setupPreset'
 
 const AuthContext = createContext(null)
 
 const EMPTY_ACCESS = { isAdmin: false, banned: false, banReason: null }
 
 function mergeUserProfile(user, local = loadProfile()) {
+  const preset = normalizeSetupPresetFields(local)
   return saveProfile({
     ...local,
+    ...preset,
     id: user.id,
     nickname:
       user.user_metadata?.nickname ||
@@ -35,6 +38,7 @@ export function AuthProvider({ children }) {
     p.avatarUrl = sanitizeAvatarUrl(p.avatarUrl)
     p.steamUrl = sanitizeSteamUrl(p.steamUrl).url
     if (p.profilePublic == null) p.profilePublic = true
+    Object.assign(p, normalizeSetupPresetFields(p))
     return p
   })
   const [loading, setLoading] = useState(true)
@@ -62,7 +66,9 @@ export function AuthProvider({ children }) {
     if (isSupabaseConfigured) {
       const { data } = await supabase
         .from('profiles')
-        .select('nickname, avatar_id, avatar_url, showcase_badge, email, steam_url, profile_public')
+        .select(
+          'nickname, avatar_id, avatar_url, showcase_badge, email, steam_url, profile_public, setup_preset_enabled, setup_preset_mode, setup_preset_mentality, setup_preset_map',
+        )
         .eq('id', user.id)
         .maybeSingle()
       if (gen !== hydrateGen.current) return
@@ -76,6 +82,12 @@ export function AuthProvider({ children }) {
           showcaseBadge: data.showcase_badge ?? next.showcaseBadge ?? null,
           steamUrl: sanitizeSteamUrl(data.steam_url).url,
           profilePublic: data.profile_public !== false,
+          ...normalizeSetupPresetFields({
+            setupPresetEnabled: data.setup_preset_enabled,
+            setupPresetMode: data.setup_preset_mode,
+            setupPresetMentality: data.setup_preset_mentality,
+            setupPresetMap: data.setup_preset_map,
+          }),
         })
       }
     }
@@ -130,9 +142,21 @@ export function AuthProvider({ children }) {
       steamUrl = steam.url
     }
 
+    const preset = normalizeSetupPresetFields({
+      setupPresetEnabled:
+        patch.setupPresetEnabled !== undefined ? patch.setupPresetEnabled : prev.setupPresetEnabled,
+      setupPresetMode: patch.setupPresetMode !== undefined ? patch.setupPresetMode : prev.setupPresetMode,
+      setupPresetMentality:
+        patch.setupPresetMentality !== undefined
+          ? patch.setupPresetMentality
+          : prev.setupPresetMentality,
+      setupPresetMap: patch.setupPresetMap !== undefined ? patch.setupPresetMap : prev.setupPresetMap,
+    })
+
     const next = saveProfile({
       ...prev,
       ...patch,
+      ...preset,
       nickname: patch.nickname != null ? String(patch.nickname).slice(0, 16) : prev.nickname,
       avatarUrl,
       steamUrl,
@@ -159,6 +183,10 @@ export function AuthProvider({ children }) {
         showcase_badge: next.showcaseBadge || null,
         steam_url: next.steamUrl || null,
         profile_public: next.profilePublic !== false,
+        setup_preset_enabled: next.setupPresetEnabled,
+        setup_preset_mode: next.setupPresetMode,
+        setup_preset_mentality: next.setupPresetMentality,
+        setup_preset_map: next.setupPresetMap,
         updated_at: new Date().toISOString(),
       })
       if (metaError || upsertError) {
@@ -217,6 +245,7 @@ export function AuthProvider({ children }) {
       showcaseBadge: null,
       steamUrl: null,
       profilePublic: true,
+      ...DEFAULT_SETUP_PRESET,
       createdAt: Date.now(),
     })
     profileRef.current = guest

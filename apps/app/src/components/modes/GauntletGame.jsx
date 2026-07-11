@@ -10,6 +10,7 @@ import {
 } from '../../lib/gameModes'
 import { createPlaybackController, streamLiveSeries } from '../../lib/matchPlayback'
 import { saveGameResult } from '../../lib/history'
+import { initialSoloSetupState, retrySoloSetupState } from '../../lib/setupPreset'
 import ModeSetup from '../ModeSetup'
 import DraftPlay from '../DraftPlay'
 import MatchLive from '../MatchLive'
@@ -20,8 +21,9 @@ import { pick } from '../../data/constants'
 
 export default function GauntletGame({ profile, onHome, onStatus }) {
   const { t, locale } = useI18n()
-  const [step, setStep] = useState('setup')
-  const [cfg, setCfg] = useState(null)
+  const [boot] = useState(() => initialSoloSetupState(profile))
+  const [step, setStep] = useState(boot.step)
+  const [cfg, setCfg] = useState(boot.cfg)
   const [userTeam, setUserTeam] = useState(null)
   const [wave, setWave] = useState(1)
   const [streak, setStreak] = useState(0)
@@ -333,7 +335,9 @@ export default function GauntletGame({ profile, onHome, onStatus }) {
         playbackRef.current.abort()
         setWave(1)
         setStreak(0)
-        setStep('setup')
+        const next = retrySoloSetupState(profile)
+        setCfg(next.cfg)
+        setStep(next.step)
       }}
     />
   )

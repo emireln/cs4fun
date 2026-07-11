@@ -61,7 +61,7 @@ const docsCopy = {
           {
             id: 'duel',
             title: 'Knife Fight',
-            text: 'Shared rolls versus the CPU or a friend — but it is a BO1 ban war. Ban until one map survives, then fight for ego.',
+            text: 'Shared rolls versus the BOT or a friend — but it is a BO1 ban war. Ban until one map survives, then fight for ego.',
           },
           {
             id: 'party',
@@ -183,7 +183,7 @@ const docsCopy = {
           {
             id: 'duel',
             title: 'Briga de Faca',
-            text: 'Revelações iguais contra a CPU ou um amigo — mas é guerra de bans BO1. Bane até sobrar um mapa e lute pelo ego.',
+            text: 'Revelações iguais contra o BOT ou um amigo — mas é guerra de bans BO1. Bane até sobrar um mapa e lute pelo ego.',
           },
           {
             id: 'party',

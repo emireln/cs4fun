@@ -301,6 +301,80 @@ export async function listIncomingRequests(profileId) {
     })
 }
 
+/** Pending requests you sent (waiting on them). */
+export async function listOutgoingRequests(profileId) {
+  if (isSupabaseConfigured) {
+    const { data: session } = await supabase.auth.getSession()
+    if (session?.session?.user) {
+      const { data } = await supabase
+        .from('friendships')
+        .select('id, addressee_id, created_at')
+        .eq('requester_id', profileId)
+        .eq('status', 'pending')
+      const ids = (data || []).map((r) => r.addressee_id)
+      if (!ids.length) return []
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, nickname, avatar_id, avatar_url')
+        .in('id', ids)
+      return (data || []).map((r) => {
+        const p = profiles?.find((x) => x.id === r.addressee_id)
+        return {
+          id: r.id,
+          toId: r.addressee_id,
+          toNick: p?.nickname || 'Player',
+          avatarId: p?.avatar_id || 'crosshair',
+          avatarUrl: p?.avatar_url || null,
+        }
+      })
+    }
+  }
+
+  const dir = readJson('cs4fun_local_directory_v1', [])
+  return localGraph()
+    .requests.filter((r) => r.fromId === profileId && r.status === 'pending')
+    .map((r) => {
+      const known = dir.find((p) => p.id === r.toId)
+      return {
+        id: r.id,
+        toId: r.toId,
+        toNick: r.toNick || known?.nickname || 'Player',
+        avatarId: known?.avatarId || 'crosshair',
+        avatarUrl: known?.avatarUrl || null,
+      }
+    })
+}
+
+/** Cancel a pending request you sent. */
+export async function cancelFriendRequest({ profileId, requestId, addresseeId }) {
+  if (isSupabaseConfigured) {
+    const { data: session } = await supabase.auth.getSession()
+    if (session?.session?.user) {
+      const { error } = await supabase
+        .from('friendships')
+        .delete()
+        .eq('id', requestId)
+        .eq('requester_id', profileId)
+        .eq('status', 'pending')
+      if (error) return { error: error.message }
+      return { ok: true, global: true }
+    }
+  }
+
+  const g = localGraph()
+  const before = g.requests.length
+  g.requests = g.requests.filter(
+    (r) =>
+      !(
+        (r.id === requestId || (r.fromId === profileId && r.toId === addresseeId)) &&
+        r.fromId === profileId
+      ),
+  )
+  if (g.requests.length === before) return { error: 'not_found' }
+  saveLocalGraph(g)
+  return { ok: true, global: false }
+}
+
 /** Invite a friend into a new duel/party room — no code sharing needed */
 export async function inviteFriendToMatch({ from, friend, mode = 'duel' }) {
   const { room, global } = await createRoom({

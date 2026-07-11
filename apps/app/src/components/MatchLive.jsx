@@ -192,18 +192,12 @@ export default function MatchLive({
                 <div className="text-sm font-semibold text-cs-text">{activeMap || '—'}</div>
               </div>
             </div>
-            <span
-              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold tracking-wider ${
-                paused
-                  ? 'border-cs-warn/40 bg-cs-warn/15 text-cs-warn'
-                  : 'border-cs-win/40 bg-cs-win/15 text-cs-win'
-              }`}
-            >
-              <span
-                className={`h-1.5 w-1.5 rounded-full ${paused ? 'bg-cs-warn' : 'animate-pulse bg-cs-win'}`}
-              />
-              {paused ? t('live.tacticalTimeout') : t('tournament.live')}
-            </span>
+            {paused && (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-cs-warn/40 bg-cs-warn/15 px-2.5 py-1 text-[10px] font-bold tracking-wider text-cs-warn">
+                <span className="h-1.5 w-1.5 rounded-full bg-cs-warn" />
+                {t('live.tacticalTimeout')}
+              </span>
+            )}
           </div>
 
           <div className="mt-6 flex items-end justify-between gap-3">

@@ -1,8 +1,8 @@
 import { useCallback, useState } from 'react'
 
 /**
- * Inline cs4fun mark so the gold diamond can spin on hover / click.
- * Prefer this over <img src="/logo.svg"> for interactive surfaces.
+ * Inline cs4fun mark — gold diamond spins on hover / click.
+ * Plain SVG + CSS (Framer/CSS path transforms were unreliable in Electron).
  */
 export default function LogoMark({ className = '', title, decorative = true }) {
   const [clickSpin, setClickSpin] = useState(false)
@@ -38,12 +38,12 @@ export default function LogoMark({ className = '', title, decorative = true }) {
         strokeWidth="5"
         strokeLinecap="round"
       />
-      <path
+      <g
         className="logo-diamond"
-        d="M64 52l12 12-12 12-12-12 12-12z"
-        fill="#E8C547"
         onAnimationEnd={onDiamondAnimEnd}
-      />
+      >
+        <path d="M64 52l12 12-12 12-12-12 12-12z" fill="#E8C547" />
+      </g>
     </svg>
   )
 }

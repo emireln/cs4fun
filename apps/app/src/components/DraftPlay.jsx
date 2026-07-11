@@ -189,16 +189,23 @@ export default function DraftPlay({
               {t('draft.checklist')}
             </h3>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
-              {ROLES.map((role) => (
-                <div
+              {ROLES.map((role, i) => (
+                <motion.div
                   key={role.id}
-                  className={`rounded border px-2 py-2.5 text-center sm:px-1 sm:py-2 ${
-                    lineup[role.id] ? 'border-cs-win/40 bg-cs-win/10 text-cs-win' : 'border-cs-border text-cs-muted'
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.04 * i }}
+                  className={`rounded border px-2 py-2.5 text-center transition sm:px-1 sm:py-2 ${
+                    lineup[role.id]
+                      ? 'border-cs-win/40 bg-cs-win/10 text-cs-win'
+                      : 'border-cs-border text-cs-muted'
                   }`}
                 >
                   <div className="font-display text-[10px] tracking-wider sm:text-[10px]">{role.short}</div>
-                  <div className="mt-1 truncate text-xs sm:text-[10px]">{lineup[role.id]?.name || '—'}</div>
-                </div>
+                  <div className="mt-1 truncate text-xs sm:text-[10px]">
+                    {lineup[role.id]?.name || '—'}
+                  </div>
+                </motion.div>
               ))}
             </div>
             <p className="mt-3 text-xs text-cs-muted">{t('draft.scouted', { n: usedRosterIds.length })}</p>

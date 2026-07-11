@@ -26,12 +26,17 @@ import {
   shareProfile,
 } from '../lib/history'
 import ProfileAvatar, { BADGE_ICONS } from './ProfileAvatar'
+import FriendsPanel from './FriendsPanel'
 import { isSoundEnabled, setSoundEnabled, unlockAudio, playShot } from '../lib/sound'
 import { compressAvatarFile } from '../lib/avatarImage'
+import { ACTIVE_MAP_POOL, MENTALITIES } from '../data/constants'
+import { normalizeSetupPresetFields } from '../lib/setupPreset'
+import MapThumb from './MapThumb'
 
-const AUTH_TABS = ['edit', 'badges', 'history']
+const AUTH_TABS = ['edit', 'friends', 'badges', 'history']
+const GUEST_TABS = ['edit', 'friends']
 
-export default function ProfilePage({ onBack, onNeedAuth }) {
+export default function ProfilePage({ onBack, onNeedAuth, onStartMatch }) {
   const { t, locale, setLocale } = useI18n()
   const { profile, isAuthed, updateProfile, signOut, displayName, changePassword, deleteAccount } =
     useAuth()
@@ -42,6 +47,11 @@ export default function ProfilePage({ onBack, onNeedAuth }) {
   const [showcaseBadge, setShowcaseBadge] = useState(profile.showcaseBadge || null)
   const [steamUrl, setSteamUrl] = useState(profile.steamUrl || '')
   const [profilePublic, setProfilePublic] = useState(profile.profilePublic !== false)
+  const presetInit = normalizeSetupPresetFields(profile)
+  const [setupPresetEnabled, setSetupPresetEnabled] = useState(presetInit.setupPresetEnabled)
+  const [setupPresetMode, setSetupPresetMode] = useState(presetInit.setupPresetMode)
+  const [setupPresetMentality, setSetupPresetMentality] = useState(presetInit.setupPresetMentality)
+  const [setupPresetMap, setSetupPresetMap] = useState(presetInit.setupPresetMap)
   const [saved, setSaved] = useState(false)
   const [shared, setShared] = useState(false)
   const [uploadError, setUploadError] = useState(null)
@@ -72,6 +82,11 @@ export default function ProfilePage({ onBack, onNeedAuth }) {
     setShowcaseBadge(profile.showcaseBadge || null)
     setSteamUrl(profile.steamUrl || '')
     setProfilePublic(profile.profilePublic !== false)
+    const preset = normalizeSetupPresetFields(profile)
+    setSetupPresetEnabled(preset.setupPresetEnabled)
+    setSetupPresetMode(preset.setupPresetMode)
+    setSetupPresetMentality(preset.setupPresetMentality)
+    setSetupPresetMap(preset.setupPresetMap)
   }, [profile])
 
   useEffect(() => {
@@ -83,7 +98,8 @@ export default function ProfilePage({ onBack, onNeedAuth }) {
   }, [profile.id, tab, isAuthed])
 
   useEffect(() => {
-    if (!isAuthed && tab !== 'edit') setTab('edit')
+    const allowed = isAuthed ? AUTH_TABS : GUEST_TABS
+    if (!allowed.includes(tab)) setTab('edit')
   }, [isAuthed, tab])
 
   const ownedIds = new Set(owned.map((b) => b.id || b.badge_id))
@@ -125,6 +141,10 @@ export default function ProfilePage({ onBack, onNeedAuth }) {
             showcaseBadge: showcaseBadge && ownedIds.has(showcaseBadge) ? showcaseBadge : null,
             steamUrl: steamUrl.trim() || null,
             profilePublic,
+            setupPresetEnabled,
+            setupPresetMode,
+            setupPresetMentality,
+            setupPresetMap,
           }
         : {
             avatarId,
@@ -283,24 +303,22 @@ export default function ProfilePage({ onBack, onNeedAuth }) {
         </div>
       )}
 
-      {isAuthed && (
-        <div className="mb-4 flex gap-1.5">
-          {AUTH_TABS.map((id) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => setTab(id)}
-              className={`rounded border px-3 py-1.5 text-xs font-bold uppercase tracking-wider ${
-                tab === id
-                  ? 'border-cs-gold bg-cs-gold/15 text-cs-gold'
-                  : 'border-cs-border text-cs-muted'
-              }`}
-            >
-              {t(`profile.tabs.${id}`)}
-            </button>
-          ))}
-        </div>
-      )}
+      <div className="mb-4 flex flex-wrap gap-1.5">
+        {(isAuthed ? AUTH_TABS : GUEST_TABS).map((id) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setTab(id)}
+            className={`rounded border px-3 py-1.5 text-xs font-bold uppercase tracking-wider ${
+              tab === id
+                ? 'border-cs-gold bg-cs-gold/15 text-cs-gold'
+                : 'border-cs-border text-cs-muted'
+            }`}
+          >
+            {t(`profile.tabs.${id}`)}
+          </button>
+        ))}
+      </div>
 
       {tab === 'edit' && (
         <div className="grid gap-4 lg:grid-cols-2 lg:gap-6 lg:items-start">
@@ -515,6 +533,112 @@ export default function ProfilePage({ onBack, onNeedAuth }) {
               </div>
             </div>
 
+            {isAuthed && (
+              <div className="rounded-lg border border-cs-border bg-cs-bg/40 px-4 py-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-semibold text-cs-text">{t('profile.setupPreset')}</div>
+                    <p className="mt-0.5 text-xs text-cs-muted">{t('profile.setupPresetHint')}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSetupPresetEnabled((v) => !v)}
+                    className={`inline-flex shrink-0 items-center gap-2 rounded border px-4 py-2 text-xs font-bold tracking-wider uppercase ${
+                      setupPresetEnabled
+                        ? 'border-cs-gold/50 bg-cs-gold/15 text-cs-gold'
+                        : 'border-cs-border text-cs-muted'
+                    }`}
+                  >
+                    {setupPresetEnabled ? t('profile.setupPresetOn') : t('profile.setupPresetOff')}
+                  </button>
+                </div>
+
+                {setupPresetEnabled && (
+                  <div className="mt-4 space-y-4 border-t border-cs-border/60 pt-4">
+                    <div>
+                      <p className="mb-2 text-[10px] font-bold tracking-[0.18em] text-cs-gold uppercase">
+                        {t('profile.setupPresetMode')}
+                      </p>
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        {['classic', 'almanac'].map((id) => (
+                          <button
+                            key={id}
+                            type="button"
+                            onClick={() => setSetupPresetMode(id)}
+                            className={`rounded border px-3 py-2.5 text-left transition ${
+                              setupPresetMode === id
+                                ? 'border-cs-gold bg-cs-gold/10'
+                                : 'border-cs-border hover:border-cs-gold/40'
+                            }`}
+                          >
+                            <div
+                              className={`text-sm font-bold ${
+                                setupPresetMode === id ? 'text-cs-gold' : 'text-cs-text'
+                              }`}
+                            >
+                              {t(`setup.${id}`)}
+                            </div>
+                            <div className="mt-0.5 text-xs text-cs-muted">{t(`setup.${id}Desc`)}</div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <p className="mb-2 text-[10px] font-bold tracking-[0.18em] text-cs-gold uppercase">
+                        {t('profile.setupPresetMentality')}
+                      </p>
+                      <div className="grid gap-2 sm:grid-cols-3">
+                        {MENTALITIES.map((m) => (
+                          <button
+                            key={m.id}
+                            type="button"
+                            onClick={() => setSetupPresetMentality(m.id)}
+                            className={`rounded border px-3 py-2.5 text-left transition ${
+                              setupPresetMentality === m.id
+                                ? 'border-cs-gold bg-cs-gold/10'
+                                : 'border-cs-border hover:border-cs-gold/40'
+                            }`}
+                          >
+                            <div
+                              className={`text-sm font-bold ${
+                                setupPresetMentality === m.id ? 'text-cs-gold' : 'text-cs-text'
+                              }`}
+                            >
+                              {t(`setup.${m.id}`)}
+                            </div>
+                            <div className="mt-0.5 text-xs text-cs-muted">{t(`setup.${m.id}Desc`)}</div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <p className="mb-2 text-[10px] font-bold tracking-[0.18em] text-cs-gold uppercase">
+                        {t('profile.setupPresetMap')}
+                      </p>
+                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                        {ACTIVE_MAP_POOL.map((map) => (
+                          <button
+                            key={map}
+                            type="button"
+                            onClick={() => setSetupPresetMap(map)}
+                            className="overflow-hidden rounded-lg text-left"
+                          >
+                            <MapThumb
+                              name={map}
+                              className="aspect-[16/10]"
+                              selected={setupPresetMap === map}
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
@@ -619,6 +743,17 @@ export default function ProfilePage({ onBack, onNeedAuth }) {
               </div>
             </>
           )}
+        </div>
+      )}
+
+      {tab === 'friends' && (
+        <div className="panel rounded-xl p-4 sm:p-6 lg:max-w-2xl">
+          <FriendsPanel
+            profile={profile}
+            onNeedAuth={onNeedAuth}
+            onStart={onStartMatch}
+            showHeader={false}
+          />
         </div>
       )}
 

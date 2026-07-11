@@ -13,6 +13,7 @@ import { createPlaybackController, streamLiveSeries } from '../../lib/matchPlayb
 import { saveGameResult } from '../../lib/history'
 import { recordFriendMatch } from '../../lib/friends'
 import { subscribeRoom, updateRoom } from '../../lib/rooms'
+import { initialSoloSetupState, retrySoloSetupState } from '../../lib/setupPreset'
 import ModeSetup from '../ModeSetup'
 import DraftPlay from '../DraftPlay'
 import MapVetoPlay from '../MapVetoPlay'
@@ -24,12 +25,17 @@ import GameOver from '../GameOver'
 export default function DuelGame({ profile, room: initialRoom = null, onHome, onStatus, onNeedFriends }) {
   const { t } = useI18n()
   const [liveRoom, setLiveRoom] = useState(initialRoom)
-  const [step, setStep] = useState(initialRoom ? 'draft' : 'setup')
-  const [cfg, setCfg] = useState(
-    initialRoom
-      ? { mode: 'classic', mentality: 'tactical', mapPriority: 'Mirage', vsCpu: false }
-      : null,
-  )
+  const [boot] = useState(() => {
+    if (initialRoom) {
+      return {
+        step: 'draft',
+        cfg: { mode: 'classic', mentality: 'tactical', mapPriority: 'Mirage', vsCpu: false },
+      }
+    }
+    return initialSoloSetupState(profile, { vsCpu: true })
+  })
+  const [step, setStep] = useState(boot.step)
+  const [cfg, setCfg] = useState(boot.cfg)
   const [userTeam, setUserTeam] = useState(null)
   const [enemyTeam, setEnemyTeam] = useState(null)
   const [veto, setVeto] = useState(null)
@@ -562,8 +568,8 @@ export default function DuelGame({ profile, room: initialRoom = null, onHome, on
           const cpu = buildUserTeam(cpuLineup, {
             mapPriority: sharedRolls[0]?.mapPoolBias?.[0] || 'Inferno',
             mentalityId: 'aggressive',
-            name: 'CPU Legends',
-            shortName: 'CPU',
+            name: t('setup.cpuTeam'),
+            shortName: 'BOT',
           })
           cpu.isUser = false
           cpu.id = 'cpu-duel'
@@ -609,7 +615,7 @@ export default function DuelGame({ profile, room: initialRoom = null, onHome, on
           logs={logs}
           title={t('duel.showmatch')}
           homeName={userTeam?.shortName || profile.nickname?.slice(0, 8)?.toUpperCase() || 'YOU'}
-          awayName={enemyTeam?.shortName || 'CPU'}
+          awayName={enemyTeam?.shortName || 'BOT'}
           mapName={liveMapName}
           mapOrder={veto?.mapOrder || []}
           mapResults={mapResults}
@@ -652,7 +658,13 @@ export default function DuelGame({ profile, room: initialRoom = null, onHome, on
         setWaitingOpp(false)
         setMapResults([])
         setLiveMvp(null)
-        setStep(isFriend ? 'draft' : 'setup')
+        if (isFriend) {
+          setStep('draft')
+          return
+        }
+        const next = retrySoloSetupState(profile, { vsCpu: true })
+        setCfg(next.cfg)
+        setStep(next.step)
       }}
       onRematch={
         isFriend && liveRoom?.code

@@ -155,6 +155,11 @@ function AppShell() {
             <ProfilePage
               onBack={goHome}
               onNeedAuth={() => setAuthOpen(true)}
+              onStartMatch={(startedRoom) => {
+                setRoom(startedRoom)
+                setScreen(startedRoom.mode === 'duel' ? 'duel' : 'party')
+                setStatus({ phase: 'setup', gameMode: startedRoom.mode })
+              }}
             />
           )}
 

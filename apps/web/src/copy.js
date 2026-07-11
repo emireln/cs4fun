@@ -13,7 +13,7 @@ const copy = {
     modesBlurb: 'Each mode has its own rules — not just a different name.',
     modes: {
       major: { title: 'The Major', blurb: 'Real 8-team MD3. The serious one.' },
-      duel: { title: 'Knife Fight', blurb: 'BO1 ban war vs CPU or a friend' },
+      duel: { title: 'Knife Fight', blurb: 'BO1 ban war vs BOT or a friend' },
       party: { title: 'Power Party', blurb: 'Same scouts — highest vibes (power) wins' },
       daily: { title: 'Blind Daily', blurb: 'Global seed, hidden ratings, BO1 bracket' },
       gauntlet: { title: 'Chaos Gauntlet', blurb: 'Survive BO1 waves with cursed modifiers' },
@@ -38,7 +38,7 @@ const copy = {
     modesBlurb: 'Cada modo tem regras próprias — não é só outro nome.',
     modes: {
       major: { title: 'O Major', blurb: 'MD3 de 8 times de verdade. O sério.' },
-      duel: { title: 'Briga de Faca', blurb: 'Guerra de bans BO1 vs CPU ou amigo' },
+      duel: { title: 'Briga de Faca', blurb: 'Guerra de bans BO1 vs BOT ou amigo' },
       party: { title: 'Power Party', blurb: 'Mesmos scouts — maior vibe (poder) vence' },
       daily: { title: 'Diário Cego', blurb: 'Seed global, ratings ocultos, chave BO1' },
       gauntlet: { title: 'Gauntlet do Caos', blurb: 'Sobreviva a ondas BO1 com modificadores amaldiçoados' },

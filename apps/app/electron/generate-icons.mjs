@@ -89,8 +89,6 @@ function sidebarSvg() {
   <g transform="translate(34 72)">
     <svg width="96" height="96" viewBox="0 0 128 128">${logoSvg.replace(/<\/?svg[^>]*>/g, '')}</svg>
   </g>
-  <circle cx="82" cy="250" r="36" fill="${GOLD}" fill-opacity="0.06"/>
-  <circle cx="82" cy="250" r="18" fill="${GOLD}" fill-opacity="0.1"/>
 </svg>`
 }
 

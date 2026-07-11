@@ -5,6 +5,7 @@ import { useDraftSession } from '../../hooks/useDraftSession'
 import { generateSharedRolls, teamPowerScore } from '../../lib/gameModes'
 import { saveGameResult } from '../../lib/history'
 import { updateRoom } from '../../lib/rooms'
+import { initialSoloSetupState, retrySoloSetupState } from '../../lib/setupPreset'
 import DraftPlay from '../DraftPlay'
 import GameOver from '../GameOver'
 import ModeSetup from '../ModeSetup'
@@ -12,10 +13,17 @@ import ModeSetup from '../ModeSetup'
 export default function PartyGame({ profile, room, onHome, onStatus, onNeedFriends }) {
   const { t } = useI18n()
   const [localRoom, setLocalRoom] = useState(room)
-  const [cfg, setCfg] = useState(
-    room ? { mode: 'classic', mentality: 'tactical', mapPriority: 'Mirage' } : null,
-  )
-  const [step, setStep] = useState(room ? 'draft' : 'setup')
+  const [boot] = useState(() => {
+    if (room) {
+      return {
+        step: 'draft',
+        cfg: { mode: 'classic', mentality: 'tactical', mapPriority: 'Mirage' },
+      }
+    }
+    return initialSoloSetupState(profile, { vsCpu: true })
+  })
+  const [cfg, setCfg] = useState(boot.cfg)
+  const [step, setStep] = useState(boot.step)
   const [ranking, setRanking] = useState([])
   const [place, setPlace] = useState(null)
   const [submitInfo, setSubmitInfo] = useState(null)
@@ -149,7 +157,13 @@ export default function PartyGame({ profile, room, onHome, onStatus, onNeedFrien
       onHome={onHome}
       onRetry={() => {
         draft.reset()
-        setStep(localRoom ? 'draft' : 'setup')
+        if (localRoom) {
+          setStep('draft')
+          return
+        }
+        const next = retrySoloSetupState(profile, { vsCpu: true })
+        setCfg(next.cfg)
+        setStep(next.step)
       }}
       extra={
         <div className="mx-auto mt-4 max-w-sm text-left">

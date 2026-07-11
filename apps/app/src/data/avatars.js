@@ -44,7 +44,8 @@ export const AVATARS = [
     id: 'cs4fun',
     label: 'cs4fun',
     kind: 'brand',
-    src: '/avatars/cs4fun.svg',
+    // Relative to Vite `base: './'` so Electron file:// loads the asset
+    src: `${import.meta.env.BASE_URL}avatars/cs4fun.svg`,
     bg: '#12151c',
     accent: '#e8c547',
   },

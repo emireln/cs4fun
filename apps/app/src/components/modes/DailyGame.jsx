@@ -12,6 +12,7 @@ import { msUntilUtcMidnight, utcDayKey } from '../../lib/leaderboard'
 import { saveGameResult } from '../../lib/history'
 import { getDailyStreak, recordDailyPlay } from '../../lib/dailyStreak'
 import { generateBracket } from '../../engine/simulation'
+import { initialSoloSetupState, retrySoloSetupState } from '../../lib/setupPreset'
 import ModeSetup from '../ModeSetup'
 import DraftPlay from '../DraftPlay'
 import TournamentView from '../TournamentView'
@@ -19,8 +20,9 @@ import GameOver from '../GameOver'
 
 export default function DailyGame({ profile, onHome, onStatus }) {
   const { t } = useI18n()
-  const [step, setStep] = useState('setup')
-  const [cfg, setCfg] = useState(null)
+  const [boot] = useState(() => initialSoloSetupState(profile, { lockedMode: 'almanac' }))
+  const [step, setStep] = useState(boot.step)
+  const [cfg, setCfg] = useState(boot.cfg)
   const [bracket, setBracket] = useState(null)
   const [userTeam, setUserTeam] = useState(null)
   const [wins, setWins] = useState(0)
@@ -204,7 +206,9 @@ export default function DailyGame({ profile, onHome, onStatus }) {
       onHome={onHome}
       onRetry={() => {
         draft.reset()
-        setStep('setup')
+        const next = retrySoloSetupState(profile, { lockedMode: 'almanac' })
+        setCfg(next.cfg)
+        setStep(next.step)
       }}
     />
   )

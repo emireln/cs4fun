@@ -6,6 +6,7 @@ import { useI18n } from '../i18n'
 import { useAuth } from '../lib/auth'
 import { BADGE_DEFS, fetchUserBadges, ULTRA_BADGE_ID } from '../lib/history'
 import BrandWordmark from './BrandWordmark'
+import LogoMark from './LogoMark'
 import ProfileAvatar from './ProfileAvatar'
 
 export default function StatusBar({
@@ -89,7 +90,8 @@ export default function StatusBar({
       }`}
     >
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-3 py-2 sm:gap-3 sm:px-4 sm:py-2.5">
-        <button type="button" onClick={onHome} className="flex min-w-0 items-center gap-2 sm:gap-2.5">
+        <button type="button" onClick={onHome} className="group/logo flex min-w-0 items-center gap-2 sm:gap-2.5">
+          <LogoMark className="h-7 w-7 shrink-0 sm:h-8 sm:w-8" />
           <div className="min-w-0 text-left">
             <BrandWordmark />
             {!quiet && gameMode && (

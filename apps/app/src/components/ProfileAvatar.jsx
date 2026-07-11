@@ -106,12 +106,22 @@ export default function ProfileAvatar({
         {hasPhoto ? (
           <img src={avatarUrl} alt="" className="h-full w-full object-cover" draggable={false} />
         ) : avatar.kind === 'brand' ? (
-          <img
-            src={avatar.src}
-            alt=""
-            className="h-full w-full object-cover"
-            draggable={false}
-          />
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 128 128"
+            fill="none"
+            className="h-[72%] w-[72%]"
+            aria-hidden
+          >
+            <circle cx="64" cy="64" r="38" stroke="#E8EDF5" strokeWidth="5" />
+            <path
+              d="M64 18v20M64 90v20M18 64h20M90 64h20"
+              stroke="#E8EDF5"
+              strokeWidth="5"
+              strokeLinecap="round"
+            />
+            <path d="M64 52l12 12-12 12-12-12 12-12z" fill="#E8C547" />
+          </svg>
         ) : LucideIcon ? (
           <LucideIcon
             className={ICON_CLASS[size] || ICON_CLASS.md}
