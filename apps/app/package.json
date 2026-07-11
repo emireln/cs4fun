@@ -1,7 +1,7 @@
 {
   "name": "@cs4fun/app",
   "private": true,
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "cs4fun — Counter-Strike draft arena",
   "author": "cs4fun",
   "type": "module",
