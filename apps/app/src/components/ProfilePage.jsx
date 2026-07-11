@@ -12,6 +12,7 @@ import {
   Globe,
   Share2,
   Award,
+  Languages,
 } from 'lucide-react'
 import { useI18n } from '../i18n'
 import { useAuth } from '../lib/auth'
@@ -31,7 +32,7 @@ import { compressAvatarFile } from '../lib/avatarImage'
 const AUTH_TABS = ['edit', 'badges', 'history']
 
 export default function ProfilePage({ onBack, onNeedAuth }) {
-  const { t } = useI18n()
+  const { t, locale, setLocale } = useI18n()
   const { profile, isAuthed, updateProfile, signOut, displayName, changePassword, deleteAccount } =
     useAuth()
   const [tab, setTab] = useState('edit')
@@ -145,6 +146,10 @@ export default function ProfilePage({ onBack, onNeedAuth }) {
     const next = setSoundEnabled(!soundOn)
     setSoundOn(next)
     if (next) playShot()
+  }
+
+  const toggleLocale = () => {
+    setLocale(locale === 'en' ? 'pt-BR' : 'en')
   }
 
   const handleShareProfile = async () => {
@@ -488,6 +493,24 @@ export default function ProfilePage({ onBack, onNeedAuth }) {
                 >
                   {soundOn ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
                   {soundOn ? t('profile.soundOn') : t('profile.soundOff')}
+                </button>
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-cs-border bg-cs-bg/40 px-4 py-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <div className="text-sm font-semibold text-cs-text">{t('nav.language')}</div>
+                  <p className="mt-0.5 text-xs text-cs-muted">{t('profile.languageHint')}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={toggleLocale}
+                  aria-label={t('nav.language')}
+                  className="inline-flex items-center gap-2 rounded border border-cs-gold/50 bg-cs-gold/15 px-4 py-2 text-xs font-bold tracking-wider uppercase text-cs-gold"
+                >
+                  <Languages className="h-4 w-4" />
+                  {locale === 'en' ? t('lang.en') : t('lang.pt')}
                 </button>
               </div>
             </div>

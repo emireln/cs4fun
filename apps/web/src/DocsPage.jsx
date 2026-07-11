@@ -12,6 +12,7 @@ import {
   Download,
 } from 'lucide-react'
 import docsCopy from './docsCopy'
+import LogoMark from './LogoMark'
 
 const APP_URL = import.meta.env.VITE_APP_URL || 'https://app.cs4fun.online'
 const WINDOWS_URL =
@@ -120,7 +121,7 @@ export default function DocsPage({ lang, onNavigate, onToggleLang, langLabel }) 
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45 }}
           >
-            <img src="/logo.svg" alt="" className="mb-4 h-14 w-14" />
+            <LogoMark className="mb-4 h-14 w-14 cursor-pointer" />
             <h1 className="font-display text-3xl font-extrabold tracking-tight sm:text-4xl">
               <span className="gold-text">{t.title}</span>
             </h1>

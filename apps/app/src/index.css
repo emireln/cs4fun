@@ -243,3 +243,50 @@ canvas {
   75% { transform: translateX(4px); }
 }
 
+/* Logo mark — gold diamond spins on hover / click */
+.logo-mark {
+  display: block;
+  flex-shrink: 0;
+  overflow: visible;
+}
+
+.logo-mark .logo-diamond {
+  transform-box: fill-box;
+  transform-origin: center;
+  will-change: transform;
+}
+
+.logo-mark:hover .logo-diamond,
+.group:hover .logo-mark .logo-diamond,
+.group\/logo:hover .logo-mark .logo-diamond {
+  animation: logo-diamond-spin 1.15s linear infinite;
+}
+
+.logo-mark.logo-mark--click .logo-diamond,
+.logo-mark:active .logo-diamond,
+.group:active .logo-mark .logo-diamond {
+  animation: logo-diamond-spin-once 0.65s ease-in-out;
+}
+
+@keyframes logo-diamond-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes logo-diamond-spin-once {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logo-mark .logo-diamond,
+  .logo-mark:hover .logo-diamond,
+  .group:hover .logo-mark .logo-diamond,
+  .logo-mark.logo-mark--click .logo-diamond,
+  .logo-mark:active .logo-diamond {
+    animation: none !important;
+  }
+}
+

@@ -580,13 +580,14 @@ export default function DuelGame({ profile, room: initialRoom = null, onHome, on
       <div className="mx-auto max-w-2xl px-4 py-8">
         <h2 className="mb-2 text-center font-display text-2xl font-bold">{t('duel.showmatch')}</h2>
         <p className="mb-6 text-center text-sm text-cs-muted">
-          {userTeam.shortName} vs {enemyTeam.shortName}
+          {userTeam.shortName} vs {enemyTeam.shortName} · {t('duel.bo1Tag')}
         </p>
         <MapVetoPlay
           userPriority={userTeam.mapPriority}
           enemyBias={enemyTeam.mapPoolBias || []}
           mentalityId={mentality.id}
           enemyName={enemyTeam.shortName}
+          bestOf={1}
           onComplete={startLive}
         />
       </div>

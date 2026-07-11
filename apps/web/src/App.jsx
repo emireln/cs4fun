@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { BookOpen, Coffee, Mail, Swords, Users, Trophy, Flame, Calendar, Download } from 'lucide-react'
 import copy from './copy'
 import DocsPage from './DocsPage'
+import LogoMark from './LogoMark'
 
 const APP_URL = import.meta.env.VITE_APP_URL || 'https://app.cs4fun.online'
 const WINDOWS_URL =
@@ -129,14 +130,14 @@ export default function App() {
           }}
         />
 
-        <motion.img
-          src="/logo.svg"
-          alt=""
-          className="relative z-10 mb-6 h-28 w-28 sm:h-36 sm:w-36"
+        <motion.div
+          className="relative z-10 mb-6"
           initial={{ opacity: 0, y: 18, scale: 0.94 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-        />
+        >
+          <LogoMark className="h-28 w-28 cursor-pointer sm:h-36 sm:w-36" />
+        </motion.div>
 
         <motion.h1
           className="relative z-10 font-display text-5xl font-extrabold tracking-tight sm:text-7xl"

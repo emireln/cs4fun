@@ -31,6 +31,7 @@ export default function TournamentView({
   onChampion,
   onEliminated,
   hideRatings,
+  bestOf = 3,
 }) {
   const { t } = useI18n()
   const [matchPhase, setMatchPhase] = useState('preview')
@@ -71,9 +72,9 @@ export default function TournamentView({
 
   useEffect(() => {
     setBracket((prev) => {
-      let next = resolveNonUserMatches(prev, 'quarterfinals')
-      next = resolveNonUserMatches(next, 'semifinals')
-      next = resolveNonUserMatches(next, 'grandfinal')
+      let next = resolveNonUserMatches(prev, 'quarterfinals', { bestOf })
+      next = resolveNonUserMatches(next, 'semifinals', { bestOf })
+      next = resolveNonUserMatches(next, 'grandfinal', { bestOf })
       return next
     })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -376,9 +377,13 @@ export default function TournamentView({
                 className="panel rounded-lg p-6 text-center"
               >
                 <Swords className="mx-auto mb-3 h-10 w-10 text-cs-gold" />
-                <h2 className="font-display text-xl font-bold">{t('tournament.md3Ready')}</h2>
+                <h2 className="font-display text-xl font-bold">
+                  {bestOf === 1 ? t('tournament.bo1Ready') : t('tournament.md3Ready')}
+                </h2>
                 <p className="mx-auto mt-2 max-w-md text-sm text-cs-muted">
-                  {t('tournament.md3Hint', { map: userTeam.mapPriority, enemy: enemy.shortName })}
+                  {bestOf === 1
+                    ? t('tournament.bo1Hint', { map: userTeam.mapPriority, enemy: enemy.shortName })
+                    : t('tournament.md3Hint', { map: userTeam.mapPriority, enemy: enemy.shortName })}
                 </p>
                 <button
                   type="button"
@@ -403,6 +408,7 @@ export default function TournamentView({
                   enemyBias={enemy.mapPoolBias || []}
                   mentalityId={mentality.id}
                   enemyName={enemy.shortName}
+                  bestOf={bestOf}
                   onComplete={goTactics}
                 />
               </motion.div>
@@ -431,7 +437,9 @@ export default function TournamentView({
                     {tacticTimer}s
                   </span>
                 </div>
-                <p className="mb-3 text-sm text-cs-muted">{t('tournament.seriesCallHint')}</p>
+                <p className="mb-3 text-sm text-cs-muted">
+                  {bestOf === 1 ? t('tournament.seriesCallHintBo1') : t('tournament.seriesCallHint')}
+                </p>
                 <div className="mb-4 flex flex-wrap gap-2">
                   {(veto.mapOrder || []).map((map, i) => (
                     <span

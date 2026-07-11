@@ -59,20 +59,45 @@ export function autoDraftCpu(rolls, mentalityId = 'tactical') {
   return lineup
 }
 
-export function resolveSeriesVeto(userTeam, enemyTeam, mentality, vetoOverride = null) {
+export function resolveSeriesVeto(userTeam, enemyTeam, mentality, vetoOverride = null, { bestOf = 3 } = {}) {
   return (
     vetoOverride ||
     simulateMapVeto(
       userTeam.mapPriority || 'Mirage',
       enemyTeam.mapPoolBias || [],
       mentality?.id || 'tactical',
+      { bestOf },
     )
   )
 }
 
 export function runDuelSeries(userTeam, enemyTeam, mentality, vetoOverride = null, tacticalCallsByMap = {}) {
-  const veto = resolveSeriesVeto(userTeam, enemyTeam, mentality, vetoOverride)
+  const veto = resolveSeriesVeto(userTeam, enemyTeam, mentality, vetoOverride, { bestOf: 1 })
   return simulateFullSeries(userTeam, enemyTeam, mentality, veto, tacticalCallsByMap)
+}
+
+/** Funny cursed modifiers that stack with wave difficulty. */
+const GAUNTLET_CHAOS = [
+  { id: 'jetlag', en: 'Jet-lagged AWPer', pt: 'AWPer com jet lag', scale: 1.04 },
+  { id: 'energy', en: '3rd energy drink', pt: '3º energético', scale: 1.06 },
+  { id: 'coach', en: 'Coach on voice', pt: 'Coach no voice', scale: 1.08 },
+  { id: 'bootcamp', en: 'Bootcamp leftovers', pt: 'Restos do bootcamp', scale: 1.1 },
+  { id: 'major', en: 'Major or bust', pt: 'Major ou nada', scale: 1.12 },
+  { id: 'cursed', en: 'Cursed USB stick', pt: 'Pen drive amaldiçoado', scale: 1.15 },
+  { id: 'goat', en: 'They found the GOAT', pt: 'Acharam o GOAT', scale: 1.18 },
+]
+
+export function gauntletChaosForWave(wave, seedStr) {
+  const rand = mulberry32(hashString(`${seedStr}-chaos-${wave}`))
+  const base = GAUNTLET_CHAOS[Math.min(wave - 1, GAUNTLET_CHAOS.length - 1)]
+  // Occasionally swap for a random curse so waves feel different
+  const pickIdx = Math.floor(rand() * Math.min(wave, GAUNTLET_CHAOS.length))
+  const chaos = GAUNTLET_CHAOS[pickIdx] || base
+  return {
+    ...chaos,
+    label: chaos.en,
+    waveScale: 1 + Math.min(wave, 12) * 0.035,
+  }
 }
 
 export function buildGauntletOpponent(wave, seedStr) {
@@ -80,9 +105,9 @@ export function buildGauntletOpponent(wave, seedStr) {
   const rosters = getAllRosters()
   const roster = rosters[Math.floor(rand() * rosters.length)]
   const opp = buildOpponentFromRoster(roster, `g${wave}`)
+  const chaos = gauntletChaosForWave(wave, seedStr)
 
-  // Scale difficulty with wave
-  const scale = 1 + Math.min(wave, 12) * 0.035
+  const scale = chaos.waveScale * chaos.scale
   for (const slot of Object.keys(opp.lineup)) {
     opp.lineup[slot] = {
       ...opp.lineup[slot],
@@ -92,6 +117,7 @@ export function buildGauntletOpponent(wave, seedStr) {
   opp.name = `${roster.team} · Wave ${wave}`
   opp.shortName = `${roster.shortName}`
   opp.wave = wave
+  opp.chaos = chaos
   return opp
 }
 

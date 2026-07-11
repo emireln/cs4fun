@@ -4,6 +4,7 @@ import { Swords, Users, Trophy, Flame, Calendar } from 'lucide-react'
 import { useI18n } from '../i18n'
 import { useAuth } from '../lib/auth'
 import { getDailyStreak } from '../lib/dailyStreak'
+import LogoMark from './LogoMark'
 
 const MODE_META = [
   { id: 'major', icon: Trophy },
@@ -22,7 +23,7 @@ export default function HomeHub({ onSelectMode, onOpenFriends }) {
     <div className="relative flex min-h-0 flex-1 flex-col justify-center">
       <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:py-10">
         <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} className="mb-8 text-center sm:mb-10">
-          <img src="/logo.svg" alt="cs4fun" className="mx-auto mb-4 h-20 w-20 sm:h-24 sm:w-24" />
+          <LogoMark title="cs4fun" decorative={false} className="mx-auto mb-4 h-20 w-20 cursor-pointer sm:h-24 sm:w-24" />
           <h1 className="font-display text-5xl font-extrabold tracking-tight sm:text-6xl">
             <span className="gold-text">{t('home.title')}</span>
           </h1>
@@ -69,6 +70,9 @@ export default function HomeHub({ onSelectMode, onOpenFriends }) {
               >
                 <Icon className="mb-3 h-5 w-5 text-cs-gold" />
                 <div className="font-display text-sm font-bold">{t(`modes.${mode.id}.title`)}</div>
+                <div className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-cs-gold/80">
+                  {t(`modes.${mode.id}.tag`)}
+                </div>
                 <div className="mt-1 text-xs text-cs-muted">{t(`modes.${mode.id}.blurb`)}</div>
                 {isDaily && streak.currentStreak > 0 && (
                   <div className="mt-2 text-[10px] font-semibold uppercase tracking-wider text-cs-gold">

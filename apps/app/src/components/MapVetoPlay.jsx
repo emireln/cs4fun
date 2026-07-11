@@ -10,10 +10,11 @@ export default function MapVetoPlay({
   enemyBias = [],
   mentalityId = 'tactical',
   enemyName = 'Enemy',
+  bestOf = 3,
   onComplete,
 }) {
   const { t } = useI18n()
-  const veto = useMapVetoSession({ userPriority, enemyBias, mentalityId })
+  const veto = useMapVetoSession({ userPriority, enemyBias, mentalityId, bestOf })
 
   const promptLabel = (() => {
     if (veto.done) return t('veto.ready')
@@ -29,7 +30,7 @@ export default function MapVetoPlay({
       <div className="panel rounded-xl p-4">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <h3 className="font-display text-[10px] font-bold tracking-[0.22em] text-cs-gold uppercase">
-            {t('tournament.mapVeto')}
+            {bestOf === 1 ? t('tournament.mapVetoBo1') : t('tournament.mapVeto')}
           </h3>
           <span
             className={`inline-flex items-center gap-1.5 rounded border px-2.5 py-1 text-xs font-semibold ${
@@ -47,7 +48,9 @@ export default function MapVetoPlay({
         </div>
 
         <p className="mb-3 text-xs text-cs-muted">
-          {t('veto.priorityHint', { map: userPriority })}
+          {bestOf === 1
+            ? t('veto.bo1Hint', { map: userPriority })
+            : t('veto.priorityHint', { map: userPriority })}
         </p>
 
         {!veto.done && (

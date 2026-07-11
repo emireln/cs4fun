@@ -115,7 +115,8 @@ export async function streamLiveSeries({
   if (stopped()) return null
 
   for (let i = 0; i < mapOrder.length; i++) {
-    if (userMaps === 2 || enemyMaps === 2) break
+    const need = veto?.bestOf === 1 ? 1 : 2
+    if (userMaps === need || enemyMaps === need) break
     if (stopped()) return null
 
     const mapName = mapOrder[i]

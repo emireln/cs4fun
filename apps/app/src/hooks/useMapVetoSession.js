@@ -8,13 +8,25 @@ import {
   chooseUserPick,
 } from '../engine/simulation'
 
-const STEPS = [
+const STEPS_BO3 = [
   { id: 'enemy_ban_1', who: 'enemy', action: 'ban' },
   { id: 'user_ban_1', who: 'user', action: 'ban' },
   { id: 'enemy_ban_2', who: 'enemy', action: 'ban' },
   { id: 'user_ban_2', who: 'user', action: 'ban' },
   { id: 'user_pick', who: 'user', action: 'pick' },
   { id: 'enemy_pick', who: 'enemy', action: 'pick' },
+  { id: 'decider', who: 'decider', action: 'decider' },
+]
+
+/** Ban until one map remains — that map is the BO1 showmatch (8-map pool → 7 bans). */
+const STEPS_BO1 = [
+  { id: 'enemy_ban_1', who: 'enemy', action: 'ban' },
+  { id: 'user_ban_1', who: 'user', action: 'ban' },
+  { id: 'enemy_ban_2', who: 'enemy', action: 'ban' },
+  { id: 'user_ban_2', who: 'user', action: 'ban' },
+  { id: 'enemy_ban_3', who: 'enemy', action: 'ban' },
+  { id: 'user_ban_3', who: 'user', action: 'ban' },
+  { id: 'enemy_ban_4', who: 'enemy', action: 'ban' },
   { id: 'decider', who: 'decider', action: 'decider' },
 ]
 
@@ -29,7 +41,9 @@ export function useMapVetoSession({
   mentalityId = 'tactical',
   autoEnemyDelay = 700,
   userTurnSec = 12,
+  bestOf = 3,
 }) {
+  const steps = bestOf === 1 ? STEPS_BO1 : STEPS_BO3
   const [stepIdx, setStepIdx] = useState(0)
   const [pool, setPool] = useState(() => [...ACTIVE_MAP_POOL])
   const [bans, setBans] = useState([])
@@ -41,7 +55,7 @@ export function useMapVetoSession({
   const timerRef = useRef(null)
   const tickRef = useRef(null)
 
-  const step = STEPS[stepIdx] || null
+  const step = steps[stepIdx] || null
   const available = useMemo(() => pool, [pool])
 
   const clearTimers = () => {
@@ -70,13 +84,13 @@ export function useMapVetoSession({
   const finish = useCallback(
     (nextBans, nextPicks) => {
       clearTimers()
-      const veto = buildVetoResult(nextBans, nextPicks, mentalityId)
+      const veto = buildVetoResult(nextBans, nextPicks, mentalityId, { bestOf })
       setResult(veto)
       setDone(true)
       setBusy(false)
       setTurnTimer(null)
     },
-    [mentalityId],
+    [mentalityId, bestOf],
   )
 
   const applyAction = useCallback(
@@ -98,7 +112,7 @@ export function useMapVetoSession({
       setBans(nextBans)
       setPicks(nextPicks)
       setTurnTimer(null)
-      if (nextIdx >= STEPS.length) {
+      if (nextIdx >= steps.length) {
         finish(nextBans, nextPicks)
       } else {
         setStepIdx(nextIdx)
@@ -106,7 +120,7 @@ export function useMapVetoSession({
       }
       return { nextPool, nextBans, nextPicks, nextIdx }
     },
-    [finish],
+    [finish, steps],
   )
 
   const selectMap = useCallback(

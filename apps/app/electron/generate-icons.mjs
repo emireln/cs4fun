@@ -1,5 +1,5 @@
 /**
- * Generates Electron desktop icon (styled bg + rounded), tray (transparent),
+ * Generates Electron desktop icon (carbon bg + rounded, no outline), tray (transparent),
  * and NSIS installer bitmaps (no text).
  *
  * Run: node electron/generate-icons.mjs
@@ -24,10 +24,10 @@ fs.mkdirSync(buildDir, { recursive: true })
 
 const logoSvg = fs.readFileSync(publicLogoSvg, 'utf8')
 
-/** Desktop / taskbar / installer icon — carbon panel, gold rim, rounded */
+/** Desktop / taskbar / installer icon — carbon panel, rounded (no gold outline) */
 function desktopIconSvg(size = 512) {
   const r = Math.round(size * 0.18)
-  const pad = Math.round(size * 0.14)
+  const pad = Math.round(size * 0.1)
   const inner = size - pad * 2
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" fill="none">
@@ -58,8 +58,6 @@ function desktopIconSvg(size = 512) {
       <svg width="${inner}" height="${inner}" viewBox="0 0 128 128">${logoSvg.replace(/<\/?svg[^>]*>/g, '')}</svg>
     </g>
   </g>
-  <rect x="1.5" y="1.5" width="${size - 3}" height="${size - 3}" rx="${r - 1}" ry="${r - 1}"
-    stroke="${GOLD}" stroke-opacity="0.55" stroke-width="3" fill="none"/>
 </svg>`
 }
 
@@ -176,6 +174,16 @@ async function main() {
   }
   const ico = await pngToIco(pngBuffers)
   fs.writeFileSync(path.join(buildDir, 'icon.ico'), ico)
+
+  // Favicon PNG fallbacks (app + web public)
+  const favicon = await sharp(Buffer.from(logoSvg)).resize(192, 192).png().toBuffer()
+  fs.writeFileSync(path.join(appRoot, 'public', 'logo.png'), favicon)
+  const webLogo = path.join(appRoot, '..', 'web', 'public', 'logo.png')
+  try {
+    fs.writeFileSync(webLogo, favicon)
+  } catch {
+    /* web workspace optional */
+  }
 
   // Transparent tray / in-window fallback (no background)
   const traySvg = `<?xml version="1.0" encoding="UTF-8"?>

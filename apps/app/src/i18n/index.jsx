@@ -1,6 +1,7 @@
 import { createContext, useContext, useMemo, useState, useCallback, useEffect } from 'react'
 import en from './en'
 import ptBR from './pt-BR'
+import { LOCALE_STORAGE_KEY, normalizeLocale, resolveInitialLocale } from './locale'
 
 const DICTS = { en, 'pt-BR': ptBR }
 const I18nContext = createContext(null)
@@ -10,18 +11,13 @@ function getByPath(obj, path) {
 }
 
 export function I18nProvider({ children }) {
-  const [locale, setLocaleState] = useState(() => {
-    try {
-      return localStorage.getItem('cs4fun_locale') || 'en'
-    } catch {
-      return 'en'
-    }
-  })
+  const [locale, setLocaleState] = useState(() => resolveInitialLocale())
 
   const setLocale = useCallback((next) => {
-    setLocaleState(next)
+    const normalized = normalizeLocale(next) || 'en'
+    setLocaleState(normalized)
     try {
-      localStorage.setItem('cs4fun_locale', next)
+      localStorage.setItem(LOCALE_STORAGE_KEY, normalized)
     } catch {
       /* ignore */
     }

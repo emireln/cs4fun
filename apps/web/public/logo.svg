@@ -1,10 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
-  <!-- Open C frame -->
-  <path d="M98 38c-8-9-20-15-34-15-24 0-44 20-44 44s20 44 44 44c14 0 26-6 34-15" stroke="#E8EDF5" stroke-width="11" stroke-linecap="round"/>
-  <!-- Crosshair -->
-  <path d="M64 42v14M64 72v14M42 64h14M72 64h14" stroke="#E8EDF5" stroke-width="5" stroke-linecap="square"/>
-  <!-- Arrow tips -->
-  <path d="M64 34l5 8h-10l5-8zm0 60l5-8h-10l5 8zM34 64l8-5v10l-8-5zm60 0l-8-5v10l8-5z" fill="#E8EDF5"/>
-  <!-- Gold core -->
-  <path d="M64 56l8 8-8 8-8-8 8-8z" fill="#E8C547"/>
+  <!-- Minimal creative crosshair: sight + gold pick diamond -->
+  <circle cx="64" cy="64" r="38" stroke="#E8EDF5" stroke-width="5"/>
+  <path d="M64 18v20M64 90v20M18 64h20M90 64h20" stroke="#E8EDF5" stroke-width="5" stroke-linecap="round"/>
+  <path d="M64 52l12 12-12 12-12-12 12-12z" fill="#E8C547"/>
 </svg>

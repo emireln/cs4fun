@@ -18,6 +18,8 @@ import DuelGame from './components/modes/DuelGame'
 import PartyGame from './components/modes/PartyGame'
 import DailyGame from './components/modes/DailyGame'
 import GauntletGame from './components/modes/GauntletGame'
+import DesktopUpdateOverlay from './components/DesktopUpdateOverlay'
+import LogoMark from './components/LogoMark'
 
 function AppShell() {
   const { t } = useI18n()
@@ -224,9 +226,9 @@ function AppShell() {
           <div className="mx-auto flex max-w-lg flex-col items-center gap-2.5 sm:gap-3">
             <a
               href="https://cs4fun.online"
-              className="inline-flex items-center gap-2 text-cs-muted transition hover:text-cs-gold"
+              className="group inline-flex items-center gap-2 text-cs-muted transition hover:text-cs-gold"
             >
-              <img src="/logo.svg" alt="" className="h-5 w-5 shrink-0" />
+              <LogoMark className="h-5 w-5 shrink-0" />
               <span className="font-display text-[10px] font-bold tracking-[0.22em] sm:text-[11px]">
                 {t('meta.footer')}
               </span>
@@ -252,6 +254,7 @@ export default function App() {
     <I18nProvider>
       <AuthProvider>
         <AppShell />
+        <DesktopUpdateOverlay />
       </AuthProvider>
     </I18nProvider>
   )

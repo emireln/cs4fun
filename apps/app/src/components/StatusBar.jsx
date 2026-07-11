@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Trophy, Swords, Languages, LogIn } from 'lucide-react'
+import { Trophy, Swords, LogIn } from 'lucide-react'
 import { STAGES } from '../data/constants'
 import { useI18n } from '../i18n'
 import { useAuth } from '../lib/auth'
@@ -23,7 +23,7 @@ export default function StatusBar({
   onOpenProfile,
   onNeedAuth,
 }) {
-  const { t, locale, setLocale } = useI18n()
+  const { t } = useI18n()
   const { profile, isAuthed } = useAuth()
   const [hidden, setHidden] = useState(false)
   const [ultra, setUltra] = useState(false)
@@ -82,10 +82,6 @@ export default function StatusBar({
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  const toggleLocale = () => {
-    setLocale(locale === 'en' ? 'pt-BR' : 'en')
-  }
-
   return (
     <header
       className={`fixed inset-x-0 top-0 z-40 border-b border-cs-border/80 bg-[#0a0c10]/90 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md transition-transform duration-300 ease-out ${
@@ -141,19 +137,6 @@ export default function StatusBar({
               <Trophy className="h-[18px] w-[18px]" />
             </button>
           )}
-
-          <button
-            type="button"
-            onClick={toggleLocale}
-            title={locale === 'en' ? 'PT' : 'EN'}
-            aria-label={t('nav.language')}
-            className="relative flex h-9 w-9 items-center justify-center rounded-full text-cs-muted transition hover:bg-white/5 hover:text-cs-gold"
-          >
-            <Languages className="h-[18px] w-[18px]" />
-            <span className="absolute -bottom-0.5 right-0 rounded bg-cs-bg px-0.5 font-mono text-[8px] font-bold text-cs-gold">
-              {locale === 'en' ? 'EN' : 'PT'}
-            </span>
-          </button>
 
           {!isAuthed && (
             <button

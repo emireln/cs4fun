@@ -179,21 +179,48 @@ export function orderMapSeries(userPick, enemyPick, decider, mentalityId) {
   return [enemyPick, userPick, decider]
 }
 
-export function buildVetoResult(bans, picks, mentalityId) {
+export function buildVetoResult(bans, picks, mentalityId, { bestOf = 3 } = {}) {
   const userPick = picks.find((p) => p.by === 'user')?.map
   const enemyPick = picks.find((p) => p.by === 'enemy')?.map
   const decider = picks.find((p) => p.by === 'decider')?.map
+  if (bestOf === 1) {
+    const map = decider || userPick || enemyPick
+    return {
+      bans,
+      picks,
+      mapOrder: map ? [map] : [],
+      bestOf: 1,
+    }
+  }
   return {
     bans,
     picks,
     mapOrder: orderMapSeries(userPick, enemyPick, decider, mentalityId),
+    bestOf: 3,
   }
 }
 
-export function simulateMapVeto(userPriority, enemyBias, mentalityId) {
+export function simulateMapVeto(userPriority, enemyBias, mentalityId, { bestOf = 3 } = {}) {
   const pool = [...ACTIVE_MAP_POOL]
   const bans = []
   const picks = []
+
+  if (bestOf === 1) {
+    // Ban down to 1 map — that map is the showmatch
+    let who = 'enemy'
+    while (pool.length > 1) {
+      const ban =
+        who === 'user'
+          ? chooseUserAutoBan(pool, userPriority, enemyBias)
+          : chooseEnemyBan(pool, userPriority, enemyBias)
+      bans.push({ map: ban, by: who })
+      const i = pool.indexOf(ban)
+      if (i >= 0) pool.splice(i, 1)
+      who = who === 'user' ? 'enemy' : 'user'
+    }
+    picks.push({ map: pool[0], by: 'decider' })
+    return buildVetoResult(bans, picks, mentalityId, { bestOf: 1 })
+  }
 
   const banOrder = ['enemy', 'user', 'enemy', 'user']
   for (const who of banOrder) {
@@ -469,6 +496,7 @@ export function simulateFullSeries(userTeam, enemyTeam, mentality, veto, tactica
   const allLogs = []
   let userMaps = 0
   let enemyMaps = 0
+  const need = (veto?.bestOf === 1 ? 1 : 2)
 
   allLogs.push({
     type: 'series',
@@ -476,7 +504,7 @@ export function simulateFullSeries(userTeam, enemyTeam, mentality, veto, tactica
   })
 
   for (const mapName of veto.mapOrder) {
-    if (userMaps === 2 || enemyMaps === 2) break
+    if (userMaps === need || enemyMaps === need) break
     const call = tacticalCallsByMap[mapName] || null
     const result = simulateMap(userTeam, enemyTeam, mapName, mentality, call)
     maps.push(result)
@@ -499,16 +527,22 @@ export function simulateFullSeries(userTeam, enemyTeam, mentality, veto, tactica
   }
 }
 
-export function simulateCpuSeries(home, away) {
+export function simulateCpuSeries(home, away, { bestOf = 3 } = {}) {
   // Fast sim for non-user bracket matches
   const mentality = { bonuses: {} }
-  const veto = simulateMapVeto(home.mapPoolBias?.[0] || 'Mirage', away.mapPoolBias || ACTIVE_MAP_POOL, 'tactical')
+  const veto = simulateMapVeto(
+    home.mapPoolBias?.[0] || 'Mirage',
+    away.mapPoolBias || ACTIVE_MAP_POOL,
+    'tactical',
+    { bestOf },
+  )
   let userMaps = 0
   let enemyMaps = 0
   const maps = []
+  const need = bestOf === 1 ? 1 : 2
 
   for (const mapName of veto.mapOrder) {
-    if (userMaps === 2 || enemyMaps === 2) break
+    if (userMaps === need || enemyMaps === need) break
     const hp = computeTeamPower(home.lineup, mentality, mapName).avg + Math.random() * 0.15
     const ap = computeTeamPower(away.lineup, mentality, mapName).avg + Math.random() * 0.15
     const homeWon = hp >= ap
@@ -565,7 +599,7 @@ export function advanceBracket(bracket, matchId, seriesResult, winner, loser) {
   return next
 }
 
-export function resolveNonUserMatches(bracket, stage) {
+export function resolveNonUserMatches(bracket, stage, { bestOf = 3 } = {}) {
   let next = structuredClone(bracket)
   const list = next[stage === 'grandfinal' ? 'grandfinal' : stage]
 
@@ -574,7 +608,7 @@ export function resolveNonUserMatches(bracket, stage) {
     if (!match.home || !match.away) continue
     if (match.home.isUser || match.away.isUser) continue
 
-    const result = simulateCpuSeries(match.home, match.away)
+    const result = simulateCpuSeries(match.home, match.away, { bestOf })
     next = advanceBracket(next, match.id, result, result.winner, result.loser)
   }
 

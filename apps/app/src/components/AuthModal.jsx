@@ -3,6 +3,7 @@ import { X } from 'lucide-react'
 import { useI18n } from '../i18n'
 import { useAuth } from '../lib/auth'
 import { isSupabaseConfigured } from '../lib/supabase'
+import LogoMark from './LogoMark'
 
 export default function AuthModal({ open, onClose }) {
   const { t } = useI18n()
@@ -68,8 +69,8 @@ export default function AuthModal({ open, onClose }) {
           <X className="h-4 w-4" />
         </button>
 
-        <div className="mb-4 flex items-center gap-3">
-          <img src="/logo.svg" alt="" className="h-10 w-10" />
+        <div className="group mb-4 flex items-center gap-3">
+          <LogoMark className="h-10 w-10 cursor-pointer" />
           <h2 className="font-display text-lg font-bold text-cs-gold">{t('auth.title')}</h2>
         </div>
 

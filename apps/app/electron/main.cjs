@@ -1,4 +1,4 @@
-const { app, BrowserWindow, shell, Tray, Menu, nativeImage, dialog } = require('electron')
+const { app, BrowserWindow, shell, Tray, Menu, nativeImage, ipcMain } = require('electron')
 const path = require('node:path')
 const fs = require('node:fs')
 
@@ -40,6 +40,23 @@ function trayIconImage() {
 
 let tray = null
 let mainWindow = null
+let pendingUpdateEvent = null
+
+function sendUpdateEvent(payload) {
+  const win = mainWindow && !mainWindow.isDestroyed() ? mainWindow : null
+  if (!win) {
+    pendingUpdateEvent = payload
+    return
+  }
+  pendingUpdateEvent = null
+  win.webContents.send('cs4fun:update-event', payload)
+}
+
+function flushPendingUpdateEvent() {
+  if (!pendingUpdateEvent || !mainWindow || mainWindow.isDestroyed()) return
+  mainWindow.webContents.send('cs4fun:update-event', pendingUpdateEvent)
+  pendingUpdateEvent = null
+}
 
 function createWindow() {
   const icon = desktopIconImage()
@@ -80,6 +97,10 @@ function createWindow() {
     callback(false)
   })
 
+  win.webContents.on('did-finish-load', () => {
+    flushPendingUpdateEvent()
+  })
+
   if (isDev) {
     win.loadURL(process.env.VITE_DEV_SERVER_URL || 'http://127.0.0.1:5173')
   } else {
@@ -104,7 +125,11 @@ function createTray(win) {
       },
       {
         label: 'Check for updates',
-        click: () => checkForUpdates({ manual: true }),
+        click: () => {
+          win.show()
+          win.focus()
+          checkForUpdates({ manual: true })
+        },
       },
       { type: 'separator' },
       { label: 'Quit', click: () => app.quit() },
@@ -132,44 +157,62 @@ function setupAutoUpdater() {
 
   autoUpdater.on('error', (err) => {
     console.error('autoUpdater error', err)
+    sendUpdateEvent({
+      type: 'error',
+      message: String(err?.message || err || 'Update error'),
+    })
+  })
+
+  autoUpdater.on('checking-for-update', () => {
+    // Manual checks set checking explicitly; silent startup stays quiet until available.
   })
 
   autoUpdater.on('update-available', (info) => {
-    const parent = BrowserWindow.getFocusedWindow() || mainWindow
-    dialog
-      .showMessageBox(parent || undefined, {
-        type: 'info',
-        title: 'Update available',
-        message: `cs4fun ${info.version} is available`,
-        detail: 'Downloading the update in the background. You can keep playing.',
-        buttons: ['OK'],
-        defaultId: 0,
-        noLink: true,
-      })
-      .catch(() => {})
+    sendUpdateEvent({
+      type: 'available',
+      version: info?.version || '',
+      currentVersion: app.getVersion(),
+    })
+  })
+
+  autoUpdater.on('download-progress', (progress) => {
+    sendUpdateEvent({
+      type: 'progress',
+      percent: Math.max(0, Math.min(100, Number(progress?.percent) || 0)),
+      transferred: Number(progress?.transferred) || 0,
+      total: Number(progress?.total) || 0,
+    })
+  })
+
+  autoUpdater.on('update-not-available', (info) => {
+    // Only surface via manual check path in checkForUpdates().
+    void info
   })
 
   autoUpdater.on('update-downloaded', (info) => {
-    const parent = BrowserWindow.getFocusedWindow() || mainWindow
-    dialog
-      .showMessageBox(parent || undefined, {
-        type: 'info',
-        title: 'Update ready',
-        message: `Version ${info.version} is ready to install`,
-        detail: 'Restart now to apply the update, or choose Later and it will install when you quit.',
-        buttons: ['Restart now', 'Later'],
-        defaultId: 0,
-        cancelId: 1,
-        noLink: true,
-      })
-      .then(({ response }) => {
-        if (response === 0) autoUpdater.quitAndInstall(false, true)
-      })
-      .catch(() => {})
+    sendUpdateEvent({
+      type: 'downloaded',
+      version: info?.version || '',
+      currentVersion: app.getVersion(),
+    })
   })
 
-  // Expose for tray "Check for updates"
   global.__cs4funAutoUpdater = autoUpdater
+
+  ipcMain.handle('cs4fun:update-install', () => {
+    try {
+      autoUpdater.quitAndInstall(false, true)
+      return { ok: true }
+    } catch (err) {
+      return { ok: false, error: String(err?.message || err) }
+    }
+  })
+
+  ipcMain.handle('cs4fun:update-check', () => {
+    checkForUpdates({ manual: true })
+    return { ok: true }
+  })
+
   checkForUpdates({ manual: false })
 }
 
@@ -177,16 +220,19 @@ function checkForUpdates({ manual }) {
   const autoUpdater = global.__cs4funAutoUpdater
   if (!autoUpdater) {
     if (manual) {
-      dialog
-        .showMessageBox(mainWindow || undefined, {
-          type: 'info',
-          title: 'Updates',
-          message: 'Update checks are only available in the installed app.',
-          buttons: ['OK'],
-        })
-        .catch(() => {})
+      sendUpdateEvent({
+        type: 'unavailable',
+        currentVersion: app.getVersion(),
+      })
     }
     return
+  }
+
+  if (manual) {
+    sendUpdateEvent({
+      type: 'checking',
+      currentVersion: app.getVersion(),
+    })
   }
 
   autoUpdater
@@ -196,34 +242,26 @@ function checkForUpdates({ manual }) {
       const version = result?.updateInfo?.version
       const current = app.getVersion()
       if (!version || version === current) {
-        dialog
-          .showMessageBox(mainWindow || undefined, {
-            type: 'info',
-            title: 'Up to date',
-            message: `You're on the latest version (${current}).`,
-            buttons: ['OK'],
-          })
-          .catch(() => {})
+        sendUpdateEvent({
+          type: 'up-to-date',
+          version: current,
+          currentVersion: current,
+        })
       }
     })
     .catch((err) => {
       console.error('checkForUpdates failed', err)
       if (manual) {
-        dialog
-          .showMessageBox(mainWindow || undefined, {
-            type: 'warning',
-            title: 'Update check failed',
-            message: 'Could not check for updates right now.',
-            detail: String(err?.message || err),
-            buttons: ['OK'],
-          })
-          .catch(() => {})
+        sendUpdateEvent({
+          type: 'error',
+          message: String(err?.message || err || 'Could not check for updates'),
+          currentVersion: app.getVersion(),
+        })
       }
     })
 }
 
 app.whenReady().then(() => {
-  // Windows taskbar grouping / correct icon association
   if (process.platform === 'win32') {
     app.setAppUserModelId('online.cs4fun.app')
   }

@@ -37,7 +37,7 @@ export default function DailyGame({ profile, onHome, onStatus }) {
   const dayKey = utcDayKey()
 
   const draft = useDraftSession({
-    hideRatings: cfg?.mode === 'almanac',
+    hideRatings: true,
     sharedRolls,
     pickTimerSec: 25,
   })
@@ -100,8 +100,10 @@ export default function DailyGame({ profile, onHome, onStatus }) {
         <ModeSetup
           title={t('modes.daily.title')}
           subtitle={t('modes.daily.blurb')}
+          lockedMode="almanac"
+          modeNote={t('daily.blindNote')}
           onStart={(c) => {
-            setCfg(c)
+            setCfg({ ...c, mode: 'almanac' })
             draft.reset()
             setStep('draft')
           }}
@@ -172,7 +174,8 @@ export default function DailyGame({ profile, onHome, onStatus }) {
         losses={losses}
         setLosses={setLosses}
         setStage={setStage}
-        hideRatings={cfg.mode === 'almanac'}
+        hideRatings
+        bestOf={1}
         onChampion={() => finish(true, wins + 1, losses)}
         onEliminated={() => finish(false, wins, losses + 1)}
       />

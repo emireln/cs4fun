@@ -1,14 +1,11 @@
 import en from './en'
 import ptBR from './pt-BR'
+import { resolveInitialLocale } from './locale'
 
 const DICTS = { en, 'pt-BR': ptBR }
 
 export function getStoredLocale() {
-  try {
-    return localStorage.getItem('cs4fun_locale') || 'en'
-  } catch {
-    return 'en'
-  }
+  return resolveInitialLocale()
 }
 
 function getByPath(obj, path) {

@@ -15,13 +15,17 @@ export default function ModeSetup({
   ctaLabel,
   soloLabel,
   friendsLabel,
+  /** Lock classic/almanac (e.g. daily is always blind). */
+  lockedMode = null,
+  modeNote = null,
 }) {
   const { t } = useI18n()
-  const [mode, setMode] = useState('classic')
+  const [mode, setMode] = useState(lockedMode || 'classic')
   const [mentality, setMentality] = useState('tactical')
   const [mapPriority, setMapPriority] = useState('Mirage')
   const [vsCpu, setVsCpu] = useState(true)
   const playWith = showPlayWithOption || showCpuOption
+  const modeLocked = Boolean(lockedMode)
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
@@ -30,6 +34,7 @@ export default function ModeSetup({
           <span className="gold-text">{title}</span>
         </h1>
         {subtitle && <p className="mx-auto mt-2 max-w-xl text-cs-muted">{subtitle}</p>}
+        {modeNote && <p className="mx-auto mt-2 max-w-xl text-xs text-cs-gold">{modeNote}</p>}
       </motion.div>
 
       {playWith && (
@@ -60,11 +65,13 @@ export default function ModeSetup({
         </div>
       )}
 
-      <div className="grid gap-5 md:grid-cols-3">
-        <Panel title={t('setup.gameMode')} icon={<BookOpen className="h-4 w-4 text-cs-gold" />}>
-          <Choice active={mode === 'classic'} onClick={() => setMode('classic')} title={t('setup.classic')} subtitle={t('setup.classicDesc')} />
-          <Choice active={mode === 'almanac'} onClick={() => setMode('almanac')} title={t('setup.almanac')} subtitle={t('setup.almanacDesc')} />
-        </Panel>
+      <div className={`grid gap-5 ${modeLocked ? 'md:grid-cols-2' : 'md:grid-cols-3'}`}>
+        {!modeLocked && (
+          <Panel title={t('setup.gameMode')} icon={<BookOpen className="h-4 w-4 text-cs-gold" />}>
+            <Choice active={mode === 'classic'} onClick={() => setMode('classic')} title={t('setup.classic')} subtitle={t('setup.classicDesc')} />
+            <Choice active={mode === 'almanac'} onClick={() => setMode('almanac')} title={t('setup.almanac')} subtitle={t('setup.almanacDesc')} />
+          </Panel>
+        )}
 
         <Panel title={t('setup.mentality')} icon={<Flame className="h-4 w-4 text-cs-gold" />}>
           {MENTALITIES.map((m) => (
@@ -98,7 +105,7 @@ export default function ModeSetup({
         <button
           type="button"
           className="btn-gold rounded px-10 py-3.5 text-sm uppercase tracking-[0.2em]"
-          onClick={() => onStart({ mode, mentality, mapPriority, vsCpu })}
+          onClick={() => onStart({ mode: lockedMode || mode, mentality, mapPriority, vsCpu })}
         >
           <span className="inline-flex items-center gap-2">
             <Swords className="h-5 w-5" /> {ctaLabel || t('setup.enterDraft')}

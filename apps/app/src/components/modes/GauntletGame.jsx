@@ -19,7 +19,7 @@ import GameOver from '../GameOver'
 import { pick } from '../../data/constants'
 
 export default function GauntletGame({ profile, onHome, onStatus }) {
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
   const [step, setStep] = useState('setup')
   const [cfg, setCfg] = useState(null)
   const [userTeam, setUserTeam] = useState(null)
@@ -118,7 +118,7 @@ export default function GauntletGame({ profile, onHome, onStatus }) {
     setSimulating(true)
     setLogs([{ type: 'series', text: `═══ WAVE ${wave}: vs ${enemy.shortName} ═══` }])
     const call = pick(TACTICAL_CALLS)
-    const seriesVeto = resolveSeriesVeto(userTeam, enemy, mentality)
+    const seriesVeto = resolveSeriesVeto(userTeam, enemy, mentality, null, { bestOf: 1 })
     setVeto(seriesVeto)
     callsRef.current = Object.fromEntries(
       (seriesVeto.mapOrder || []).map((m) => [m, call]),
@@ -256,9 +256,15 @@ export default function GauntletGame({ profile, onHome, onStatus }) {
         <p className="mt-2 text-cs-muted">
           {t('gauntlet.next')}: <span className="text-cs-loss">{enemy?.name}</span>
         </p>
+        {enemy?.chaos && (
+          <p className="mt-3 rounded border border-cs-warn/40 bg-cs-warn/10 px-3 py-2 text-sm text-cs-warn">
+            {t('gauntlet.chaos')}: {locale === 'pt-BR' ? enemy.chaos.pt : enemy.chaos.en}
+          </p>
+        )}
         <p className="mt-1 text-sm text-cs-warn">
           {t('gauntlet.streak')}: {streak}
         </p>
+        <p className="mt-1 text-xs text-cs-muted">{t('gauntlet.bo1Tag')}</p>
         <button
           type="button"
           className="btn-gold mt-8 rounded px-8 py-3 text-sm uppercase tracking-wider"
