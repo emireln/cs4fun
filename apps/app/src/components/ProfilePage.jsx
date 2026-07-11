@@ -13,6 +13,7 @@ import {
   Share2,
   Award,
   Languages,
+  X,
 } from 'lucide-react'
 import { useI18n } from '../i18n'
 import { useAuth } from '../lib/auth'
@@ -31,12 +32,14 @@ import { isSoundEnabled, setSoundEnabled, unlockAudio, playShot } from '../lib/s
 import { compressAvatarFile } from '../lib/avatarImage'
 import { ACTIVE_MAP_POOL, MENTALITIES } from '../data/constants'
 import { normalizeSetupPresetFields } from '../lib/setupPreset'
+import { countIncomingFriendRequests } from '../lib/friends'
 import MapThumb from './MapThumb'
+import CountBadge from './CountBadge'
 
 const AUTH_TABS = ['edit', 'friends', 'badges', 'history']
 const GUEST_TABS = ['edit', 'friends']
 
-export default function ProfilePage({ onBack, onNeedAuth, onStartMatch }) {
+export default function ProfilePage({ onBack, onNeedAuth, onStartMatch, onInviteSent }) {
   const { t, locale, setLocale } = useI18n()
   const { profile, isAuthed, updateProfile, signOut, displayName, changePassword, deleteAccount } =
     useAuth()
@@ -74,6 +77,9 @@ export default function ProfilePage({ onBack, onNeedAuth, onStartMatch }) {
   const [delTag, setDelTag] = useState('')
   const [delMsg, setDelMsg] = useState(null)
   const [delBusy, setDelBusy] = useState(false)
+  const [passOpen, setPassOpen] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [friendRequestCount, setFriendRequestCount] = useState(0)
 
   useEffect(() => {
     setNickname(profile.nickname || '')
@@ -96,6 +102,20 @@ export default function ProfilePage({ onBack, onNeedAuth, onStartMatch }) {
     fetchUserStats(profile.id).then(setStats)
     fetchGameHistory(profile.id).then(setHistory)
   }, [profile.id, tab, isAuthed])
+
+  useEffect(() => {
+    let alive = true
+    const refreshRequests = async () => {
+      const n = await countIncomingFriendRequests(profile.id)
+      if (alive) setFriendRequestCount(n)
+    }
+    refreshRequests()
+    const id = setInterval(refreshRequests, 8000)
+    return () => {
+      alive = false
+      clearInterval(id)
+    }
+  }, [profile.id])
 
   useEffect(() => {
     const allowed = isAuthed ? AUTH_TABS : GUEST_TABS
@@ -154,6 +174,7 @@ export default function ProfilePage({ onBack, onNeedAuth, onStartMatch }) {
     if (res?.error) {
       if (res.error === 'avatar_invalid') setUploadError(t('profile.uploadError'))
       else if (res.error === 'steam_invalid') setFormError(t('profile.steamInvalid'))
+      else if (res.error === 'not_authenticated') setFormError(t('auth.needAuth'))
       else setFormError(res.error)
       return
     }
@@ -183,6 +204,36 @@ export default function ProfilePage({ onBack, onNeedAuth, onStartMatch }) {
     }
   }
 
+  const openPasswordModal = () => {
+    setPassMsg(null)
+    setCurPass('')
+    setNewPass('')
+    setConfirmPass('')
+    setPassOpen(true)
+  }
+
+  const closePasswordModal = () => {
+    setPassOpen(false)
+    setPassMsg(null)
+    setCurPass('')
+    setNewPass('')
+    setConfirmPass('')
+  }
+
+  const openDeleteModal = () => {
+    setDelMsg(null)
+    setDelEmail('')
+    setDelTag('')
+    setDeleteOpen(true)
+  }
+
+  const closeDeleteModal = () => {
+    setDeleteOpen(false)
+    setDelMsg(null)
+    setDelEmail('')
+    setDelTag('')
+  }
+
   const handleChangePassword = async () => {
     setPassMsg(null)
     if (newPass !== confirmPass) {
@@ -210,6 +261,7 @@ export default function ProfilePage({ onBack, onNeedAuth, onStartMatch }) {
     setNewPass('')
     setConfirmPass('')
     setPassMsg({ ok: true, text: t('profile.passwordChanged') })
+    setTimeout(() => closePasswordModal(), 900)
   }
 
   const handleDelete = async () => {
@@ -227,6 +279,7 @@ export default function ProfilePage({ onBack, onNeedAuth, onStartMatch }) {
       setDelMsg({ ok: false, text: map[res.error] || res.error })
       return
     }
+    closeDeleteModal()
     onBack()
   }
 
@@ -309,13 +362,14 @@ export default function ProfilePage({ onBack, onNeedAuth, onStartMatch }) {
             key={id}
             type="button"
             onClick={() => setTab(id)}
-            className={`rounded border px-3 py-1.5 text-xs font-bold uppercase tracking-wider ${
+            className={`inline-flex items-center rounded border px-3 py-1.5 text-xs font-bold uppercase tracking-wider ${
               tab === id
                 ? 'border-cs-gold bg-cs-gold/15 text-cs-gold'
                 : 'border-cs-border text-cs-muted'
             }`}
           >
             {t(`profile.tabs.${id}`)}
+            {id === 'friends' && <CountBadge count={friendRequestCount} />}
           </button>
         ))}
       </div>
@@ -663,86 +717,28 @@ export default function ProfilePage({ onBack, onNeedAuth, onStartMatch }) {
               )}
             </div>
             {formError && <p className="text-xs text-cs-loss">{formError}</p>}
+
+            {isAuthed && (
+              <div className="flex flex-wrap gap-2 border-t border-cs-border/50 pt-4">
+                <button
+                  type="button"
+                  className="btn-ghost inline-flex items-center gap-2 rounded px-3 py-2 text-xs"
+                  onClick={openPasswordModal}
+                >
+                  <KeyRound className="h-3.5 w-3.5 text-cs-gold" />
+                  {t('profile.changePassword')}
+                </button>
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-2 rounded border border-cs-loss/35 px-3 py-2 text-xs text-cs-loss transition hover:border-cs-loss/55 hover:bg-cs-loss/10"
+                  onClick={openDeleteModal}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  {t('profile.deleteAccount')}
+                </button>
+              </div>
+            )}
           </div>
-
-          {isAuthed && (
-            <>
-              <div className="panel space-y-3 rounded-xl p-5">
-                <div className="flex items-center gap-2 text-cs-gold">
-                  <KeyRound className="h-4 w-4" />
-                  <h2 className="font-display text-xs font-bold tracking-[0.2em] uppercase">
-                    {t('profile.changePassword')}
-                  </h2>
-                </div>
-                <input
-                  type="password"
-                  value={curPass}
-                  onChange={(e) => setCurPass(e.target.value)}
-                  placeholder={t('profile.currentPassword')}
-                  className="w-full rounded border border-cs-border bg-cs-bg/60 px-3 py-2 text-sm outline-none focus:border-cs-gold/50"
-                />
-                <input
-                  type="password"
-                  value={newPass}
-                  onChange={(e) => setNewPass(e.target.value)}
-                  placeholder={t('profile.newPassword')}
-                  className="w-full rounded border border-cs-border bg-cs-bg/60 px-3 py-2 text-sm outline-none focus:border-cs-gold/50"
-                />
-                <input
-                  type="password"
-                  value={confirmPass}
-                  onChange={(e) => setConfirmPass(e.target.value)}
-                  placeholder={t('auth.confirmPassword')}
-                  className="w-full rounded border border-cs-border bg-cs-bg/60 px-3 py-2 text-sm outline-none focus:border-cs-gold/50"
-                />
-                {passMsg && (
-                  <p className={`text-xs ${passMsg.ok ? 'text-cs-win' : 'text-cs-loss'}`}>
-                    {passMsg.text}
-                  </p>
-                )}
-                <button
-                  type="button"
-                  disabled={passBusy || !curPass || !newPass}
-                  className="btn-gold rounded px-4 py-2 text-xs tracking-wider uppercase disabled:opacity-50"
-                  onClick={handleChangePassword}
-                >
-                  {t('profile.updatePassword')}
-                </button>
-              </div>
-
-              <div className="panel space-y-3 rounded-xl border-cs-loss/30 p-5">
-                <div className="flex items-center gap-2 text-cs-loss">
-                  <Trash2 className="h-4 w-4" />
-                  <h2 className="font-display text-xs font-bold tracking-[0.2em] uppercase">
-                    {t('profile.deleteAccount')}
-                  </h2>
-                </div>
-                <p className="text-xs text-cs-muted">{t('profile.deleteHint')}</p>
-                <input
-                  type="email"
-                  value={delEmail}
-                  onChange={(e) => setDelEmail(e.target.value)}
-                  placeholder={t('auth.email')}
-                  className="w-full rounded border border-cs-border bg-cs-bg/60 px-3 py-2 text-sm outline-none focus:border-cs-loss/50"
-                />
-                <input
-                  value={delTag}
-                  onChange={(e) => setDelTag(e.target.value)}
-                  placeholder={t('profile.nickname')}
-                  className="w-full rounded border border-cs-border bg-cs-bg/60 px-3 py-2 text-sm outline-none focus:border-cs-loss/50"
-                />
-                {delMsg && <p className="text-xs text-cs-loss">{delMsg.text}</p>}
-                <button
-                  type="button"
-                  disabled={delBusy || !delEmail || !delTag}
-                  className="rounded border border-cs-loss/50 bg-cs-loss/15 px-4 py-2 text-xs font-bold tracking-wider text-cs-loss uppercase disabled:opacity-50"
-                  onClick={handleDelete}
-                >
-                  {t('profile.confirmDelete')}
-                </button>
-              </div>
-            </>
-          )}
         </div>
       )}
 
@@ -753,6 +749,8 @@ export default function ProfilePage({ onBack, onNeedAuth, onStartMatch }) {
             onNeedAuth={onNeedAuth}
             onStart={onStartMatch}
             showHeader={false}
+            onPendingChange={setFriendRequestCount}
+            onInviteSent={onInviteSent}
           />
         </div>
       )}
@@ -827,6 +825,132 @@ export default function ProfilePage({ onBack, onNeedAuth, onStartMatch }) {
               ))}
             </ul>
           )}
+        </div>
+      )}
+
+      {passOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto overscroll-contain bg-black/70 p-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))] backdrop-blur-sm sm:items-center sm:pb-4"
+          onClick={closePasswordModal}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={t('profile.changePassword')}
+            className="panel relative my-auto w-full max-w-sm rounded-xl p-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="absolute right-3 top-3 text-cs-muted hover:text-cs-text"
+              onClick={closePasswordModal}
+              aria-label={t('common.close')}
+            >
+              <X className="h-4 w-4" />
+            </button>
+            <div className="mb-4 flex items-center gap-2 text-cs-gold">
+              <KeyRound className="h-4 w-4" />
+              <h2 className="font-display text-sm font-bold tracking-[0.14em] uppercase">
+                {t('profile.changePassword')}
+              </h2>
+            </div>
+            <div className="space-y-3">
+              <input
+                type="password"
+                value={curPass}
+                onChange={(e) => setCurPass(e.target.value)}
+                placeholder={t('profile.currentPassword')}
+                className="w-full rounded border border-cs-border bg-cs-bg/60 px-3 py-2.5 text-sm outline-none focus:border-cs-gold/50"
+                autoComplete="current-password"
+              />
+              <input
+                type="password"
+                value={newPass}
+                onChange={(e) => setNewPass(e.target.value)}
+                placeholder={t('profile.newPassword')}
+                className="w-full rounded border border-cs-border bg-cs-bg/60 px-3 py-2.5 text-sm outline-none focus:border-cs-gold/50"
+                autoComplete="new-password"
+              />
+              <input
+                type="password"
+                value={confirmPass}
+                onChange={(e) => setConfirmPass(e.target.value)}
+                placeholder={t('auth.confirmPassword')}
+                className="w-full rounded border border-cs-border bg-cs-bg/60 px-3 py-2.5 text-sm outline-none focus:border-cs-gold/50"
+                autoComplete="new-password"
+              />
+              {passMsg && (
+                <p className={`text-xs ${passMsg.ok ? 'text-cs-win' : 'text-cs-loss'}`}>
+                  {passMsg.text}
+                </p>
+              )}
+              <button
+                type="button"
+                disabled={passBusy || !curPass || !newPass}
+                className="btn-gold w-full rounded px-4 py-2.5 text-xs tracking-wider uppercase disabled:opacity-50"
+                onClick={handleChangePassword}
+              >
+                {t('profile.updatePassword')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deleteOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto overscroll-contain bg-black/70 p-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))] backdrop-blur-sm sm:items-center sm:pb-4"
+          onClick={closeDeleteModal}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={t('profile.deleteAccount')}
+            className="panel relative my-auto w-full max-w-sm rounded-xl border-cs-loss/30 p-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="absolute right-3 top-3 text-cs-muted hover:text-cs-text"
+              onClick={closeDeleteModal}
+              aria-label={t('common.close')}
+            >
+              <X className="h-4 w-4" />
+            </button>
+            <div className="mb-3 flex items-center gap-2 text-cs-loss">
+              <Trash2 className="h-4 w-4" />
+              <h2 className="font-display text-sm font-bold tracking-[0.14em] uppercase">
+                {t('profile.deleteAccount')}
+              </h2>
+            </div>
+            <p className="mb-4 text-xs text-cs-muted">{t('profile.deleteHint')}</p>
+            <div className="space-y-3">
+              <input
+                type="email"
+                value={delEmail}
+                onChange={(e) => setDelEmail(e.target.value)}
+                placeholder={t('auth.email')}
+                className="w-full rounded border border-cs-border bg-cs-bg/60 px-3 py-2.5 text-sm outline-none focus:border-cs-loss/50"
+                autoComplete="email"
+              />
+              <input
+                value={delTag}
+                onChange={(e) => setDelTag(e.target.value)}
+                placeholder={t('profile.nickname')}
+                className="w-full rounded border border-cs-border bg-cs-bg/60 px-3 py-2.5 text-sm outline-none focus:border-cs-loss/50"
+                autoComplete="username"
+              />
+              {delMsg && <p className="text-xs text-cs-loss">{delMsg.text}</p>}
+              <button
+                type="button"
+                disabled={delBusy || !delEmail || !delTag}
+                className="w-full rounded border border-cs-loss/50 bg-cs-loss/15 px-4 py-2.5 text-xs font-bold tracking-wider text-cs-loss uppercase disabled:opacity-50"
+                onClick={handleDelete}
+              >
+                {t('profile.confirmDelete')}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

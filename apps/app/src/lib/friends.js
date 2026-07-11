@@ -301,6 +301,21 @@ export async function listIncomingRequests(profileId) {
     })
 }
 
+/** Pending friend-request count for badges. */
+export async function countIncomingFriendRequests(profileId) {
+  if (!profileId) return 0
+  const list = await listIncomingRequests(profileId)
+  return list.length
+}
+
+/** Display helper: 1–99 as digits, 100+ as "+99". */
+export function formatBadgeCount(n) {
+  const count = Math.max(0, Math.floor(Number(n) || 0))
+  if (count <= 0) return null
+  if (count > 99) return '+99'
+  return String(count)
+}
+
 /** Pending requests you sent (waiting on them). */
 export async function listOutgoingRequests(profileId) {
   if (isSupabaseConfigured) {
@@ -377,15 +392,21 @@ export async function cancelFriendRequest({ profileId, requestId, addresseeId })
 
 /** Invite a friend into a new duel/party room — no code sharing needed */
 export async function inviteFriendToMatch({ from, friend, mode = 'duel' }) {
-  const { room, global } = await createRoom({
+  const created = await createRoom({
     profile: from,
     mode: mode === 'party' ? 'party' : 'duel',
   })
+  if (created.error || !created.room?.code) {
+    return { ok: false, error: created.error || 'room_failed' }
+  }
+  const { room, global } = created
 
   const invite = {
     id: `inv_${Date.now()}`,
     fromId: from.id,
-    fromNick: from.nickname,
+    fromNick: from.nickname || 'Player',
+    fromAvatarId: from.avatarId || null,
+    fromAvatarUrl: from.avatarUrl || null,
     toId: friend.id,
     toNick: friend.nickname,
     mode: room.mode,
@@ -397,13 +418,24 @@ export async function inviteFriendToMatch({ from, friend, mode = 'duel' }) {
   if (isSupabaseConfigured) {
     const { data: session } = await supabase.auth.getSession()
     if (session?.session?.user) {
-      await supabase.from('friend_invites').insert({
-        from_id: from.id,
-        to_id: friend.id,
-        mode: room.mode,
-        room_code: room.code,
-        status: 'pending',
-      })
+      const { data: row, error } = await supabase
+        .from('friend_invites')
+        .insert({
+          from_id: from.id,
+          to_id: friend.id,
+          mode: room.mode,
+          room_code: room.code,
+          status: 'pending',
+        })
+        .select('id, created_at')
+        .maybeSingle()
+      if (error) return { ok: false, error: error.message }
+      if (row?.id != null) invite.id = row.id
+      // Also mirror locally + BroadcastChannel so same-browser tabs update instantly
+      const list = localInvites()
+      list.unshift(invite)
+      saveLocalInvites(list)
+      broadcastInvite(invite)
       return { ok: true, room, invite, global: true }
     }
   }
@@ -429,17 +461,25 @@ export async function listIncomingInvites(profileId) {
       const ids = (data || []).map((i) => i.from_id)
       let profiles = []
       if (ids.length) {
-        const res = await supabase.from('profiles').select('id, nickname').in('id', ids)
+        const res = await supabase
+          .from('profiles')
+          .select('id, nickname, avatar_id, avatar_url')
+          .in('id', ids)
         profiles = res.data || []
       }
-      return (data || []).map((i) => ({
-        id: i.id,
-        fromId: i.from_id,
-        fromNick: profiles.find((p) => p.id === i.from_id)?.nickname || 'Friend',
-        mode: i.mode,
-        roomCode: i.room_code,
-        status: i.status,
-      }))
+      return (data || []).map((i) => {
+        const p = profiles.find((x) => x.id === i.from_id)
+        return {
+          id: i.id,
+          fromId: i.from_id,
+          fromNick: p?.nickname || 'Friend',
+          fromAvatarId: p?.avatar_id || null,
+          fromAvatarUrl: p?.avatar_url || null,
+          mode: i.mode,
+          roomCode: i.room_code,
+          status: i.status,
+        }
+      })
     }
   }
 
@@ -449,6 +489,8 @@ export async function listIncomingInvites(profileId) {
       id: i.id,
       fromId: i.fromId,
       fromNick: i.fromNick,
+      fromAvatarId: i.fromAvatarId || null,
+      fromAvatarUrl: i.fromAvatarUrl || null,
       mode: i.mode,
       roomCode: i.roomCode,
       status: i.status,
@@ -546,17 +588,35 @@ export function subscribeInvites(profileId, onInvite) {
           table: 'friend_invites',
           filter: `to_id=eq.${profileId}`,
         },
-        (payload) => {
-          if (payload.new) {
-            onInvite({
-              id: payload.new.id,
-              fromId: payload.new.from_id,
-              mode: payload.new.mode,
-              roomCode: payload.new.room_code,
-              status: payload.new.status,
-              fromNick: 'Friend',
-            })
+        async (payload) => {
+          if (!payload.new) return
+          let fromNick = 'Friend'
+          let fromAvatarId = null
+          let fromAvatarUrl = null
+          try {
+            const { data: p } = await supabase
+              .from('profiles')
+              .select('nickname, avatar_id, avatar_url')
+              .eq('id', payload.new.from_id)
+              .maybeSingle()
+            if (p) {
+              fromNick = p.nickname || fromNick
+              fromAvatarId = p.avatar_id || null
+              fromAvatarUrl = p.avatar_url || null
+            }
+          } catch {
+            /* ignore */
           }
+          onInvite({
+            id: payload.new.id,
+            fromId: payload.new.from_id,
+            fromNick,
+            fromAvatarId,
+            fromAvatarUrl,
+            mode: payload.new.mode,
+            roomCode: payload.new.room_code,
+            status: payload.new.status,
+          })
         },
       )
       .subscribe()

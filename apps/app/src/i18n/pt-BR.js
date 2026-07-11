@@ -387,6 +387,8 @@ export default {
     inviteParty: 'Convidar party',
     inviteSent: 'Convite enviado para {name}',
     inviteFail: 'Não foi possível convidar',
+    invitePopupTitle: '{name} te convidou',
+    invitePopupHint: 'Entre na lobby deles para jogar juntos',
     remove: 'Remover',
     sentRequests: 'Pedidos enviados',
     pending: 'Pendente',

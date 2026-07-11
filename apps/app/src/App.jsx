@@ -1,9 +1,16 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Coffee } from 'lucide-react'
 import { I18nProvider, useI18n } from './i18n'
 import { AuthProvider, useAuth } from './lib/auth'
 import { unlockAudio } from './lib/sound'
+import {
+  acceptInvite,
+  declineInvite,
+  listIncomingInvites,
+  subscribeInvites,
+} from './lib/friends'
+import { displayName } from './lib/profile'
 import StatusBar from './components/StatusBar'
 import HomeHub from './components/HomeHub'
 import LeaderboardPanel from './components/LeaderboardPanel'
@@ -20,6 +27,8 @@ import DailyGame from './components/modes/DailyGame'
 import GauntletGame from './components/modes/GauntletGame'
 import DesktopUpdateOverlay from './components/DesktopUpdateOverlay'
 import LogoMark from './components/LogoMark'
+import MatchInvitePopup from './components/MatchInvitePopup'
+import AppToast from './components/AppToast'
 
 function AppShell() {
   const { t } = useI18n()
@@ -30,6 +39,122 @@ function AppShell() {
   const [status, setStatus] = useState({ phase: 'hub' })
   const [authOpen, setAuthOpen] = useState(false)
   const [peekProfileId, setPeekProfileId] = useState(null)
+  const [incomingInvite, setIncomingInvite] = useState(null)
+  const [inviteBusy, setInviteBusy] = useState(false)
+  const [toast, setToast] = useState(null)
+  const toastTimer = useRef(null)
+  const seenInviteKeys = useRef(new Set())
+  const historyRef = useRef([])
+  const navSnapshot = useRef({
+    screen: 'hub',
+    room: null,
+    friendsMode: 'party',
+    status: { phase: 'hub' },
+  })
+
+  useEffect(() => {
+    navSnapshot.current = { screen, room, friendsMode, status }
+  }, [screen, room, friendsMode, status])
+
+  const showToast = useCallback((message) => {
+    if (toastTimer.current) clearTimeout(toastTimer.current)
+    setToast(message)
+    toastTimer.current = setTimeout(() => setToast(null), 2800)
+  }, [])
+
+  const goHome = useCallback(() => {
+    historyRef.current = []
+    setScreen('hub')
+    setRoom(null)
+    setStatus({ phase: 'hub' })
+  }, [])
+
+  const goBack = useCallback(() => {
+    const prev = historyRef.current.pop()
+    if (!prev) {
+      goHome()
+      return
+    }
+    setScreen(prev.screen)
+    setRoom(prev.room ?? null)
+    if (prev.friendsMode) setFriendsMode(prev.friendsMode)
+    setStatus(
+      prev.status ?? {
+        phase: prev.screen === 'hub' ? 'hub' : prev.screen,
+        gameMode: ['major', 'duel', 'party', 'daily', 'gauntlet'].includes(prev.screen)
+          ? prev.screen
+          : undefined,
+      },
+    )
+  }, [goHome])
+
+  const navigateTo = useCallback((next) => {
+    const cur = navSnapshot.current
+    const nextScreen = next.screen ?? cur.screen
+    const nextRoom = 'room' in next ? next.room : cur.room
+    const screenChanged = nextScreen !== cur.screen
+    const roomChanged = (nextRoom?.code || null) !== (cur.room?.code || null)
+    if (screenChanged || roomChanged) {
+      historyRef.current.push({
+        screen: cur.screen,
+        room: cur.room,
+        friendsMode: cur.friendsMode,
+        status: cur.status,
+      })
+      if (historyRef.current.length > 30) historyRef.current.shift()
+    }
+    if (next.screen != null) setScreen(next.screen)
+    if ('room' in next) setRoom(next.room)
+    if (next.friendsMode != null) setFriendsMode(next.friendsMode)
+    if (next.status != null) setStatus(next.status)
+  }, [])
+
+  const startMatchRoom = useCallback(
+    (startedRoom) => {
+      if (!startedRoom) return
+      navigateTo({
+        screen: startedRoom.mode === 'duel' ? 'duel' : 'party',
+        room: startedRoom,
+        status: { phase: 'setup', gameMode: startedRoom.mode },
+      })
+    },
+    [navigateTo],
+  )
+
+  const openFriends = useCallback(
+    (mode = 'party') => {
+      navigateTo({
+        screen: 'friends',
+        friendsMode: mode === 'duel' ? 'duel' : 'party',
+        room: null,
+        status: { phase: 'friends' },
+      })
+    },
+    [navigateTo],
+  )
+
+  const openMode = useCallback(
+    (modeId) => {
+      navigateTo({
+        screen: modeId,
+        room: null,
+        status: { phase: 'setup', gameMode: modeId },
+      })
+    },
+    [navigateTo],
+  )
+
+  const pushIncomingInvite = useCallback(
+    (inv) => {
+      if (!inv || !profile?.id) return
+      if (String(inv.fromId) === String(profile.id)) return
+      const key = String(inv.id ?? inv.roomCode)
+      if (!key || seenInviteKeys.current.has(key)) return
+      seenInviteKeys.current.add(key)
+      setIncomingInvite((prev) => prev || inv)
+    },
+    [profile?.id],
+  )
 
   useEffect(() => {
     try {
@@ -41,12 +166,6 @@ function AppShell() {
     }
   }, [])
 
-  const goHome = useCallback(() => {
-    setScreen('hub')
-    setRoom(null)
-    setStatus({ phase: 'hub' })
-  }, [])
-
   useEffect(() => {
     const unlock = () => unlockAudio()
     window.addEventListener('pointerdown', unlock, { once: true })
@@ -56,6 +175,62 @@ function AppShell() {
       window.removeEventListener('keydown', unlock)
     }
   }, [])
+
+  useEffect(() => {
+    if (!profile?.id || loading) return undefined
+    let alive = true
+    listIncomingInvites(profile.id).then((list) => {
+      if (!alive || !list?.length) return
+      pushIncomingInvite(list[0])
+    })
+    const unsub = subscribeInvites(profile.id, (inv) => {
+      if (alive) pushIncomingInvite(inv)
+    })
+    return () => {
+      alive = false
+      unsub()
+    }
+  }, [profile?.id, loading, pushIncomingInvite])
+
+  useEffect(
+    () => () => {
+      if (toastTimer.current) clearTimeout(toastTimer.current)
+    },
+    [],
+  )
+
+  const handleAcceptInvite = useCallback(
+    async (invite) => {
+      if (!invite || !profile) return
+      setInviteBusy(true)
+      const res = await acceptInvite({
+        profile: { ...profile, nickname: displayName(profile) },
+        invite,
+      })
+      setInviteBusy(false)
+      if (res.error) {
+        const mapped = t(`room.${res.error}`)
+        showToast(mapped !== `room.${res.error}` ? mapped : res.error)
+        setIncomingInvite(null)
+        return
+      }
+      setIncomingInvite(null)
+      startMatchRoom(res.room)
+    },
+    [profile, showToast, startMatchRoom, t],
+  )
+
+  const handleDeclineInvite = useCallback(
+    async (invite) => {
+      if (!invite || !profile) {
+        setIncomingInvite(null)
+        return
+      }
+      setIncomingInvite(null)
+      await declineInvite({ profileId: profile.id, invite })
+    },
+    [profile],
+  )
 
   if (loading) {
     return (
@@ -71,18 +246,6 @@ function AppShell() {
 
   if (isAuthed && isAdmin) {
     return <AdminShell />
-  }
-
-  const openFriends = (mode = 'party') => {
-    setFriendsMode(mode === 'duel' ? 'duel' : 'party')
-    setScreen('friends')
-    setStatus({ phase: 'friends' })
-  }
-
-  const openMode = (modeId) => {
-    setRoom(null)
-    setScreen(modeId)
-    setStatus({ phase: 'setup', gameMode: modeId })
   }
 
   const quietPhase = ['hub', 'leaderboard', 'friends', 'history', 'setup', 'profile'].includes(
@@ -117,12 +280,10 @@ function AppShell() {
         extra={status.extra}
         onHome={goHome}
         onOpenLeaderboard={() => {
-          setScreen('leaderboard')
-          setStatus({ phase: 'leaderboard' })
+          navigateTo({ screen: 'leaderboard', status: { phase: 'leaderboard' } })
         }}
         onOpenProfile={() => {
-          setScreen('profile')
-          setStatus({ phase: 'hub' })
+          navigateTo({ screen: 'profile', status: { phase: 'hub' } })
         }}
         onNeedAuth={() => setAuthOpen(true)}
       />
@@ -146,20 +307,17 @@ function AppShell() {
           {screen === 'leaderboard' && (
             <LeaderboardPanel
               profile={profile}
-              onBack={goHome}
+              onBack={goBack}
               onNeedAuth={() => setAuthOpen(true)}
             />
           )}
 
           {screen === 'profile' && (
             <ProfilePage
-              onBack={goHome}
+              onBack={goBack}
               onNeedAuth={() => setAuthOpen(true)}
-              onStartMatch={(startedRoom) => {
-                setRoom(startedRoom)
-                setScreen(startedRoom.mode === 'duel' ? 'duel' : 'party')
-                setStatus({ phase: 'setup', gameMode: startedRoom.mode })
-              }}
+              onStartMatch={startMatchRoom}
+              onInviteSent={(name) => showToast(t('friends.inviteSent', { name }))}
             />
           )}
 
@@ -167,13 +325,10 @@ function AppShell() {
             <FriendsHub
               profile={profile}
               initialMode={friendsMode}
-              onBack={goHome}
+              onBack={goBack}
               onNeedAuth={() => setAuthOpen(true)}
-              onStart={(startedRoom) => {
-                setRoom(startedRoom)
-                setScreen(startedRoom.mode === 'duel' ? 'duel' : 'party')
-                setStatus({ phase: 'setup', gameMode: startedRoom.mode })
-              }}
+              onStart={startMatchRoom}
+              onInviteSent={(name) => showToast(t('friends.inviteSent', { name }))}
             />
           )}
 
@@ -208,6 +363,13 @@ function AppShell() {
       </AnimatePresence>
 
       <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
+      <AppToast message={toast} />
+      <MatchInvitePopup
+        invite={incomingInvite}
+        busy={inviteBusy}
+        onAccept={handleAcceptInvite}
+        onDecline={handleDeclineInvite}
+      />
 
       {peekProfileId && (
         <PublicProfileModal

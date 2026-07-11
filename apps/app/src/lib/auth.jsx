@@ -165,34 +165,60 @@ export function AuthProvider({ children }) {
     profileRef.current = next
     setProfile(next)
 
-    if (session?.user && isSupabaseConfigured) {
-      // Keep auth metadata small — do not put photo data URLs in JWT claims
-      const { error: metaError } = await supabase.auth.updateUser({
-        data: {
-          nickname: next.nickname,
-          avatarId: next.avatarId,
-          showcaseBadge: next.showcaseBadge,
-        },
-      })
-      const { error: upsertError } = await supabase.from('profiles').upsert({
-        id: session.user.id,
-        nickname: next.nickname || 'Player',
-        email: session.user.email,
-        avatar_id: next.avatarId || 'cs4fun',
-        avatar_url: next.avatarUrl || null,
-        showcase_badge: next.showcaseBadge || null,
-        steam_url: next.steamUrl || null,
-        profile_public: next.profilePublic !== false,
-        setup_preset_enabled: next.setupPresetEnabled,
-        setup_preset_mode: next.setupPresetMode,
-        setup_preset_mentality: next.setupPresetMentality,
-        setup_preset_map: next.setupPresetMap,
-        updated_at: new Date().toISOString(),
-      })
-      if (metaError || upsertError) {
-        return { error: metaError?.message || upsertError?.message || 'save_failed', profile: next }
+    if (!isSupabaseConfigured) return next
+
+    // Prefer a fresh auth session — React `session` can be stale ("Auth session missing!")
+    let liveSession = session
+    {
+      const { data } = await supabase.auth.getSession()
+      liveSession = data.session ?? null
+      if (!liveSession?.user) {
+        const refreshed = await supabase.auth.refreshSession()
+        liveSession = refreshed.data.session ?? null
       }
     }
+
+    if (!liveSession?.user) {
+      if (session?.user) setSession(null)
+      return { error: 'not_authenticated', profile: next }
+    }
+
+    if (liveSession !== session) setSession(liveSession)
+
+    // JWT metadata is optional; preset + profile fields live on `profiles`
+    const { error: metaError } = await supabase.auth.updateUser({
+      data: {
+        nickname: next.nickname,
+        avatarId: next.avatarId,
+        showcaseBadge: next.showcaseBadge,
+      },
+    })
+
+    const { error: upsertError } = await supabase.from('profiles').upsert({
+      id: liveSession.user.id,
+      nickname: next.nickname || 'Player',
+      email: liveSession.user.email,
+      avatar_id: next.avatarId || 'cs4fun',
+      avatar_url: next.avatarUrl || null,
+      showcase_badge: next.showcaseBadge || null,
+      steam_url: next.steamUrl || null,
+      profile_public: next.profilePublic !== false,
+      setup_preset_enabled: next.setupPresetEnabled,
+      setup_preset_mode: next.setupPresetMode,
+      setup_preset_mentality: next.setupPresetMentality,
+      setup_preset_map: next.setupPresetMap,
+      updated_at: new Date().toISOString(),
+    })
+
+    if (upsertError) {
+      return { error: upsertError.message || 'save_failed', profile: next }
+    }
+
+    // Ignore metadata-only auth glitches if the profiles row saved
+    if (metaError && !/auth session missing/i.test(metaError.message || '')) {
+      return { error: metaError.message || 'save_failed', profile: next }
+    }
+
     return next
   }, [session])
 

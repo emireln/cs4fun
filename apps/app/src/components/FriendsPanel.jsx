@@ -35,6 +35,8 @@ export default function FriendsPanel({
   onNeedAuth,
   showHeader = true,
   className = '',
+  onPendingChange,
+  onInviteSent,
 }) {
   const { t } = useI18n()
   const { isAuthed } = useAuth()
@@ -62,6 +64,7 @@ export default function FriendsPanel({
     setRequests(r)
     setOutgoing(out)
     setInvites(inv)
+    onPendingChange?.(r.length)
 
     const stats = {}
     await Promise.all(
@@ -118,7 +121,12 @@ export default function FriendsPanel({
     setBusy(true)
     setMsg('')
     const res = await inviteFriendToMatch({
-      from: { ...profile, nickname: displayName(profile) },
+      from: {
+        ...profile,
+        nickname: displayName(profile),
+        avatarId: profile.avatarId,
+        avatarUrl: profile.avatarUrl,
+      },
       friend,
       mode,
     })
@@ -127,6 +135,7 @@ export default function FriendsPanel({
       setMsg(res.error || t('friends.inviteFail'))
       return
     }
+    onInviteSent?.(friend.nickname)
     setMsg(t('friends.inviteSent', { name: friend.nickname }))
     onStart(res.room)
   }

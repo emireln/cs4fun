@@ -1,12 +1,36 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ArrowLeft } from 'lucide-react'
 import { useI18n } from '../i18n'
 import RoomLobby from './RoomLobby'
 import FriendsPanel from './FriendsPanel'
+import CountBadge from './CountBadge'
+import { countIncomingFriendRequests } from '../lib/friends'
 
-export default function FriendsHub({ profile, initialMode = 'party', onBack, onStart, onNeedAuth }) {
+export default function FriendsHub({
+  profile,
+  initialMode = 'party',
+  onBack,
+  onStart,
+  onNeedAuth,
+  onInviteSent,
+}) {
   const { t } = useI18n()
   const [tab, setTab] = useState('lobby') // lobby | friends
+  const [friendRequestCount, setFriendRequestCount] = useState(0)
+
+  useEffect(() => {
+    let alive = true
+    const refresh = async () => {
+      const n = await countIncomingFriendRequests(profile.id)
+      if (alive) setFriendRequestCount(n)
+    }
+    refresh()
+    const id = setInterval(refresh, 8000)
+    return () => {
+      alive = false
+      clearInterval(id)
+    }
+  }, [profile.id])
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:py-8">
@@ -24,6 +48,7 @@ export default function FriendsHub({ profile, initialMode = 'party', onBack, onS
           </TabBtn>
           <TabBtn active={tab === 'friends'} onClick={() => setTab('friends')}>
             {t('friends.tabFriends')}
+            <CountBadge count={friendRequestCount} />
           </TabBtn>
         </div>
       </div>
@@ -37,7 +62,13 @@ export default function FriendsHub({ profile, initialMode = 'party', onBack, onS
           embedded
         />
       ) : (
-        <FriendsPanel profile={profile} onStart={onStart} onNeedAuth={onNeedAuth} />
+        <FriendsPanel
+          profile={profile}
+          onStart={onStart}
+          onNeedAuth={onNeedAuth}
+          onPendingChange={setFriendRequestCount}
+          onInviteSent={onInviteSent}
+        />
       )}
     </div>
   )
@@ -48,7 +79,7 @@ function TabBtn({ active, onClick, children }) {
     <button
       type="button"
       onClick={onClick}
-      className={`min-w-0 flex-1 rounded border px-3 py-2.5 text-xs font-bold uppercase tracking-wider sm:px-4 ${
+      className={`inline-flex min-w-0 flex-1 items-center justify-center rounded border px-3 py-2.5 text-xs font-bold uppercase tracking-wider sm:px-4 ${
         active ? 'border-cs-gold bg-cs-gold/15 text-cs-gold' : 'border-cs-border text-cs-muted'
       }`}
     >
