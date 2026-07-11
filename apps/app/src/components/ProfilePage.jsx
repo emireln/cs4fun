@@ -43,7 +43,7 @@ const AUTH_TABS = ['edit', 'friends', 'badges', 'history']
 const GUEST_TABS = ['edit', 'friends']
 
 export default function ProfilePage({ onBack, onNeedAuth, onStartMatch, onInviteSent }) {
-  const { t, locale, setLocale } = useI18n()
+  const { t, locale, setLocale, currency, setCurrency } = useI18n()
   const { profile, isAuthed, updateProfile, signOut, displayName, changePassword, deleteAccount } =
     useAuth()
   const [tab, setTab] = useState('edit')
@@ -194,6 +194,10 @@ export default function ProfilePage({ onBack, onNeedAuth, onStartMatch, onInvite
 
   const toggleLocale = () => {
     setLocale(locale === 'en' ? 'pt-BR' : 'en')
+  }
+
+  const toggleCurrency = () => {
+    setCurrency(currency === 'USD' ? 'BRL' : 'USD')
   }
 
   const handleShareProfile = async () => {
@@ -644,6 +648,20 @@ export default function ProfilePage({ onBack, onNeedAuth, onStartMatch, onInvite
                 >
                   <Languages className="h-4 w-4" />
                   {locale === 'en' ? t('lang.en') : t('lang.pt')}
+                </button>
+              </div>
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-cs-border/60 pt-3">
+                <div>
+                  <div className="text-sm font-semibold text-cs-text">{t('nav.currency')}</div>
+                  <p className="mt-0.5 text-xs text-cs-muted">{t('profile.currencyHint')}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={toggleCurrency}
+                  aria-label={t('nav.currency')}
+                  className="inline-flex items-center gap-2 rounded border border-cs-gold/50 bg-cs-gold/15 px-4 py-2 text-xs font-bold tracking-wider uppercase text-cs-gold"
+                >
+                  {currency === 'BRL' ? t('currency.brl') : t('currency.usd')}
                 </button>
               </div>
             </div>

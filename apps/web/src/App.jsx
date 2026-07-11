@@ -137,7 +137,7 @@ export default function App() {
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
         >
-          <LogoMark className="h-80 w-80 cursor-pointer sm:h-[28rem] sm:w-[28rem]" />
+          <LogoMark className="h-36 w-auto max-w-[min(100%,28rem)] cursor-pointer sm:h-48" />
         </motion.div>
 
         <motion.h1

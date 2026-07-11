@@ -10,6 +10,8 @@ import {
   buildCareerUserTeam,
   buildWeekOpponent,
   createNewCareerState,
+  migrateCareerState,
+  updateOrgIdentity,
   effectiveMentalityId,
   loadCareerSave,
   saveCareerSave,
@@ -21,6 +23,7 @@ import { resolveSeriesVeto } from '../../lib/gameModes'
 import { createPlaybackController, streamLiveSeries } from '../../lib/matchPlayback'
 import { saveGameResult } from '../../lib/history'
 import CareerLocked from '../career/CareerLocked'
+import CareerSetup from '../career/CareerSetup'
 import CareerHub from '../career/CareerHub'
 import CareerMarket from '../career/CareerMarket'
 import CareerCamp from '../career/CareerCamp'
@@ -36,7 +39,7 @@ export default function CareerGame({ profile, onHome, onStatus, onNeedAuth }) {
   const { isAuthed } = useAuth()
   const [boot, setBoot] = useState('loading') // loading | ready | locked
   const [state, setState] = useState(null)
-  const [view, setView] = useState('hub') // hub | market | camp | match | major | week_result | season_end
+  const [view, setView] = useState('hub') // setup | hub | market | camp | match | major | week_result | season_end
   const [saving, setSaving] = useState(false)
   const [enemy, setEnemy] = useState(null)
   const [userTeam, setUserTeam] = useState(null)
@@ -94,17 +97,19 @@ export default function CareerGame({ profile, onHome, onStatus, onNeedAuth }) {
         return
       }
       if (res.exists && res.state) {
-        setState(res.state)
-        setView(res.state.phase === PHASE.SEASON_END ? 'season_end' : res.state.phase === PHASE.CAMP ? 'camp' : 'hub')
+        const migrated = migrateCareerState(res.state)
+        setState(migrated)
+        if (migrated !== res.state) await saveCareerSave(migrated)
+        setView(
+          migrated.phase === PHASE.SEASON_END
+            ? 'season_end'
+            : migrated.phase === PHASE.CAMP
+              ? 'camp'
+              : 'hub',
+        )
       } else {
-        const fresh = createNewCareerState({
-          orgName: `${profile?.nickname || 'ORG'}`,
-          nickname: profile?.nickname,
-          seed: `career-${profile?.id}-${Date.now()}`,
-        })
-        setState(fresh)
-        await saveCareerSave(fresh)
-        setView('hub')
+        setState(null)
+        setView('setup')
       }
       setBoot('ready')
     })()
@@ -112,6 +117,27 @@ export default function CareerGame({ profile, onHome, onStatus, onNeedAuth }) {
       cancelled = true
     }
   }, [isAuthed, profile?.id, profile?.nickname])
+
+  const createOrg = async ({ orgName, shortName, orgLogo }) => {
+    const fresh = createNewCareerState({
+      orgName,
+      shortName,
+      orgLogo,
+      nickname: profile?.nickname,
+      seed: `career-${profile?.id}-${Date.now()}`,
+    })
+    setSaving(true)
+    setState(fresh)
+    await saveCareerSave(fresh)
+    setSaving(false)
+    setView('hub')
+  }
+
+  const saveOrgIdentity = async (patch) => {
+    if (!state) return
+    const next = updateOrgIdentity(state, patch)
+    await persist(next)
+  }
 
   useEffect(() => {
     onStatus?.({
@@ -263,7 +289,15 @@ export default function CareerGame({ profile, onHome, onStatus, onNeedAuth }) {
     return <CareerLocked onNeedAuth={onNeedAuth} onHome={onHome} />
   }
 
-  if (!state) return null
+  if (view === 'setup' || !state) {
+    return (
+      <CareerSetup
+        nickname={profile?.nickname}
+        saving={saving}
+        onCreate={createOrg}
+      />
+    )
+  }
 
   if (view === 'market') {
     return (
@@ -306,8 +340,9 @@ export default function CareerGame({ profile, onHome, onStatus, onNeedAuth }) {
         <MatchLive
           logs={logs}
           title={t('career.weekN', { n: state.week })}
-          homeName={userTeam?.shortName || 'YOU'}
+          homeName={userTeam?.shortName || state.shortName || 'YOU'}
           awayName={enemy?.shortName || 'OPP'}
+          homeLogoSrc={state.orgLogo || null}
           mapName={liveMapName}
           mapOrder={veto?.mapOrder || []}
           mapResults={mapResults}
@@ -349,7 +384,7 @@ export default function CareerGame({ profile, onHome, onStatus, onNeedAuth }) {
         extra={
           <button
             type="button"
-            className="btn-gold rounded px-5 py-2.5 text-xs uppercase"
+            className="btn-gold mt-0 rounded px-6 py-2.5 text-xs uppercase tracking-wider"
             onClick={() => {
               if (state.phase === PHASE.CAMP) setView('camp')
               else setView('hub')
@@ -449,6 +484,7 @@ export default function CareerGame({ profile, onHome, onStatus, onNeedAuth }) {
       onOpenMarket={() => setView('market')}
       onOpenCamp={() => setView('camp')}
       onPlayWeek={startWeekMatch}
+      onUpdateOrg={saveOrgIdentity}
       onStartMajor={async () => {
         const team = buildCareerUserTeam(state)
         setUserTeam(team)

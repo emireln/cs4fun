@@ -5,6 +5,7 @@ import { getMapAsset } from '../data/maps'
 import { useI18n } from '../i18n'
 import { playMatchEvent, unlockAudio } from '../lib/sound'
 import TeamLogo from './TeamLogo'
+import OrgMark from './career/OrgMark'
 
 const TYPE_STYLE = {
   ace: { icon: Flame, color: 'text-cs-gold', bg: 'bg-cs-gold/15 border-cs-gold/40', labelKey: 'live.feedAce' },
@@ -62,6 +63,8 @@ export default function MatchLive({
   title,
   homeName = 'YOU',
   awayName = 'OPP',
+  homeLogoSrc = null,
+  awayLogoSrc = null,
   mapName = null,
   mapOrder = [],
   mapResults = [],
@@ -204,7 +207,11 @@ export default function MatchLive({
           <div className="mt-6 flex items-end justify-between gap-3">
             <div className="min-w-0 flex-1">
               <div className="flex min-w-0 items-center gap-2">
-                <TeamLogo name={homeName} size="sm" decorative />
+                {homeLogoSrc ? (
+                  <OrgMark src={homeLogoSrc} name={homeName} size="sm" />
+                ) : (
+                  <TeamLogo name={homeName} size="sm" decorative />
+                )}
                 <div className="truncate text-xs uppercase tracking-wider text-cs-muted">{homeName}</div>
               </div>
               <motion.div
@@ -220,7 +227,11 @@ export default function MatchLive({
             <div className="min-w-0 flex-1 text-right">
               <div className="flex min-w-0 items-center justify-end gap-2">
                 <div className="truncate text-xs uppercase tracking-wider text-cs-muted">{awayName}</div>
-                <TeamLogo name={awayName} size="sm" decorative />
+                {awayLogoSrc ? (
+                  <OrgMark src={awayLogoSrc} name={awayName} size="sm" />
+                ) : (
+                  <TeamLogo name={awayName} size="sm" decorative />
+                )}
               </div>
               <motion.div
                 key={`t-${them}`}

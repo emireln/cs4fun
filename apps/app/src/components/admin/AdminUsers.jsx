@@ -3,10 +3,13 @@ import { Search, X } from 'lucide-react'
 import { useI18n } from '../../i18n'
 import {
   adminBanUser,
+  adminForceSignout,
   adminGetUser,
   adminListUsers,
   adminPurgeUserHistory,
+  adminResetCareer,
   adminResetProfile,
+  adminSetNickname,
   adminUnbanUser,
 } from '../../lib/admin'
 
@@ -22,6 +25,7 @@ export default function AdminUsers() {
   const [selected, setSelected] = useState(null)
   const [detail, setDetail] = useState(null)
   const [banReason, setBanReason] = useState('')
+  const [editNick, setEditNick] = useState('')
   const [busy, setBusy] = useState(false)
 
   const load = useCallback(async () => {
@@ -54,62 +58,18 @@ export default function AdminUsers() {
     try {
       const data = await adminGetUser(id)
       setDetail(data)
+      setEditNick(data?.nickname || '')
     } catch (e) {
       setError(e?.message || 'error')
     }
   }
 
-  const ban = async () => {
+  const run = async (fn) => {
     if (!selected) return
     setBusy(true)
     setError('')
     try {
-      await adminBanUser(selected, banReason)
-      await openUser(selected)
-      await load()
-    } catch (e) {
-      setError(e?.message || 'error')
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  const unban = async () => {
-    if (!selected) return
-    setBusy(true)
-    setError('')
-    try {
-      await adminUnbanUser(selected)
-      await openUser(selected)
-      await load()
-    } catch (e) {
-      setError(e?.message || 'error')
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  const purge = async () => {
-    if (!selected || !window.confirm(t('admin.confirmPurge'))) return
-    setBusy(true)
-    setError('')
-    try {
-      await adminPurgeUserHistory(selected)
-      await openUser(selected)
-      await load()
-    } catch (e) {
-      setError(e?.message || 'error')
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  const resetProfile = async () => {
-    if (!selected || !window.confirm(t('admin.confirmReset'))) return
-    setBusy(true)
-    setError('')
-    try {
-      await adminResetProfile(selected)
+      await fn()
       await openUser(selected)
       await load()
     } catch (e) {
@@ -212,7 +172,7 @@ export default function AdminUsers() {
 
       {selected && (
         <div className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-black/70 p-4 backdrop-blur-sm sm:items-center">
-          <div className="panel relative my-auto w-full max-w-lg rounded-xl p-5">
+          <div className="panel relative my-auto max-h-[min(92dvh,40rem)] w-full max-w-lg overflow-y-auto rounded-xl p-5">
             <button
               type="button"
               className="absolute top-3 right-3 text-cs-muted hover:text-cs-text"
@@ -245,6 +205,25 @@ export default function AdminUsers() {
                   <Stat label={t('admin.statStreak')} value={detail.stats?.max_streak} />
                 </div>
 
+                {detail.career?.exists ? (
+                  <div className="rounded border border-cs-gold/30 bg-cs-gold/5 px-3 py-2 text-xs">
+                    <div className="font-display text-[10px] tracking-wider text-cs-gold uppercase">
+                      {t('admin.careerSave')}
+                    </div>
+                    <p className="mt-1 text-cs-text">
+                      {detail.career.orgName || '—'} ({detail.career.shortName || '—'})
+                    </p>
+                    <p className="mt-0.5 font-mono text-cs-muted">
+                      S{detail.career.season || '?'} W{detail.career.week || '?'} · $
+                      {Number(detail.career.budget || 0).toLocaleString()} ·{' '}
+                      {t('admin.careerScore', { n: detail.career.season_score || 0 })} ·{' '}
+                      {t('admin.careerMajors', { n: detail.career.majors_won || 0 })}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-xs text-cs-muted">{t('admin.careerEmpty')}</p>
+                )}
+
                 {detail.steamUrl ? (
                   <a
                     href={detail.steamUrl}
@@ -262,6 +241,25 @@ export default function AdminUsers() {
                   </p>
                 ) : (
                   <>
+                    <div className="flex flex-wrap gap-2">
+                      <input
+                        value={editNick}
+                        onChange={(e) => setEditNick(e.target.value.slice(0, 16))}
+                        className="min-w-0 flex-1 rounded border border-cs-border bg-cs-bg/60 px-3 py-2 text-sm outline-none focus:border-cs-gold/50"
+                        placeholder={t('admin.setNickname')}
+                      />
+                      <button
+                        type="button"
+                        disabled={busy || editNick.trim().length < 2}
+                        className="btn-ghost rounded px-3 py-2 text-[10px] uppercase tracking-wider disabled:opacity-40"
+                        onClick={() =>
+                          run(() => adminSetNickname(selected, editNick.trim()))
+                        }
+                      >
+                        {t('admin.saveNickname')}
+                      </button>
+                    </div>
+
                     {detail.bannedAt ? (
                       <div className="space-y-2">
                         <p className="text-sm text-cs-loss">
@@ -272,7 +270,7 @@ export default function AdminUsers() {
                           type="button"
                           disabled={busy}
                           className="btn-gold rounded px-4 py-2 text-xs uppercase tracking-wider"
-                          onClick={unban}
+                          onClick={() => run(() => adminUnbanUser(selected))}
                         >
                           {t('admin.unban')}
                         </button>
@@ -290,7 +288,7 @@ export default function AdminUsers() {
                           type="button"
                           disabled={busy}
                           className="rounded border border-cs-loss/40 bg-cs-loss/15 px-4 py-2 text-xs font-bold uppercase tracking-wider text-cs-loss"
-                          onClick={ban}
+                          onClick={() => run(() => adminBanUser(selected, banReason))}
                         >
                           {t('admin.ban')}
                         </button>
@@ -302,15 +300,43 @@ export default function AdminUsers() {
                         type="button"
                         disabled={busy}
                         className="btn-ghost rounded px-3 py-2 text-[10px] uppercase tracking-wider"
-                        onClick={resetProfile}
+                        onClick={() => {
+                          if (!window.confirm(t('admin.confirmForceSignout'))) return
+                          run(() => adminForceSignout(selected))
+                        }}
+                      >
+                        {t('admin.forceSignout')}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={busy}
+                        className="btn-ghost rounded px-3 py-2 text-[10px] uppercase tracking-wider"
+                        onClick={() => {
+                          if (!window.confirm(t('admin.confirmReset'))) return
+                          run(() => adminResetProfile(selected))
+                        }}
                       >
                         {t('admin.resetProfile')}
                       </button>
                       <button
                         type="button"
+                        disabled={busy || !detail.career?.exists}
+                        className="rounded border border-cs-warn/40 px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-cs-warn disabled:opacity-40"
+                        onClick={() => {
+                          if (!window.confirm(t('admin.confirmResetCareer'))) return
+                          run(() => adminResetCareer(selected))
+                        }}
+                      >
+                        {t('admin.resetCareer')}
+                      </button>
+                      <button
+                        type="button"
                         disabled={busy}
                         className="rounded border border-cs-warn/40 px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-cs-warn"
-                        onClick={purge}
+                        onClick={() => {
+                          if (!window.confirm(t('admin.confirmPurge'))) return
+                          run(() => adminPurgeUserHistory(selected))
+                        }}
                       >
                         {t('admin.purgeHistory')}
                       </button>

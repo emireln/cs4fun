@@ -198,7 +198,9 @@ Auth redirect URL for production: `https://app.cs4fun.online`.
 ### Admin console
 
 - Privilege: rows in `public.app_admins` (RLS on, **no** client policies — promote only via SQL editor)
-- Bans: `profiles.banned_at` / `ban_reason` via `admin_ban_user` / `admin_unban_user` RPCs
+- Bans: `profiles.banned_at` / `ban_reason` via `admin_ban_user` / `admin_unban_user` RPCs (also sets `sessions_revoked_at` + closes host rooms)
+- Force sign-out: `admin_force_signout` — client polls `get_my_access` and signs out when JWT `iat` is before revoke time
+- Career: signed-in only (hub + App gate + RPC `auth.uid()`); admin can view/reset career saves
 - Signed-in admins land in a separate AdminShell (no game hub). Banned players see a banned screen.
 - Promote an existing Auth user:
 

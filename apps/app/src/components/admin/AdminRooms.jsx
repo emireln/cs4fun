@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useI18n } from '../../i18n'
-import { adminCloseRoom, adminListRooms } from '../../lib/admin'
+import { adminCloseAllRooms, adminCloseRoom, adminListRooms } from '../../lib/admin'
 
 export default function AdminRooms() {
   const { t } = useI18n()
@@ -39,6 +39,20 @@ export default function AdminRooms() {
     }
   }
 
+  const closeAll = async () => {
+    if (!window.confirm(t('admin.confirmCloseAllRooms'))) return
+    setBusy('__all__')
+    setError('')
+    try {
+      await adminCloseAllRooms()
+      await load()
+    } catch (e) {
+      setError(e?.message || 'error')
+    } finally {
+      setBusy(null)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
@@ -46,13 +60,23 @@ export default function AdminRooms() {
           <h2 className="font-display text-xl font-bold text-cs-gold">{t('admin.rooms')}</h2>
           <p className="mt-1 text-sm text-cs-muted">{t('admin.roomsHint')}</p>
         </div>
-        <button
-          type="button"
-          className="btn-ghost rounded px-3 py-2 text-xs uppercase tracking-wider"
-          onClick={load}
-        >
-          {t('admin.refresh')}
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            className="btn-ghost rounded px-3 py-2 text-xs uppercase tracking-wider"
+            onClick={load}
+          >
+            {t('admin.refresh')}
+          </button>
+          <button
+            type="button"
+            disabled={busy === '__all__' || rooms.length === 0}
+            className="rounded border border-cs-loss/40 px-3 py-2 text-xs font-bold uppercase tracking-wider text-cs-loss disabled:opacity-40"
+            onClick={closeAll}
+          >
+            {t('admin.closeAllRooms')}
+          </button>
+        </div>
       </div>
 
       {error ? <p className="text-sm text-cs-loss">{error}</p> : null}

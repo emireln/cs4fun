@@ -2,17 +2,18 @@ import { isSupabaseConfigured, supabase } from './supabase'
 
 export async function fetchMyAccess() {
   if (!isSupabaseConfigured) {
-    return { isAdmin: false, banned: false, banReason: null }
+    return { isAdmin: false, banned: false, banReason: null, sessionsRevokedAt: null }
   }
   const { data, error } = await supabase.rpc('get_my_access')
   if (error) {
     console.warn('get_my_access', error.message)
-    return { isAdmin: false, banned: false, banReason: null }
+    return { isAdmin: false, banned: false, banReason: null, sessionsRevokedAt: null }
   }
   return {
     isAdmin: Boolean(data?.is_admin),
     banned: Boolean(data?.banned),
     banReason: data?.ban_reason || null,
+    sessionsRevokedAt: data?.sessions_revoked_at || null,
   }
 }
 
@@ -81,6 +82,12 @@ export async function adminCloseRoom(code) {
   return data
 }
 
+export async function adminCloseAllRooms() {
+  const { data, error } = await supabase.rpc('admin_close_all_rooms')
+  if (error) throw error
+  return data
+}
+
 export async function adminPurgeUserHistory(id) {
   const { data, error } = await supabase.rpc('admin_purge_user_history', { p_id: id })
   if (error) throw error
@@ -89,6 +96,39 @@ export async function adminPurgeUserHistory(id) {
 
 export async function adminResetProfile(id) {
   const { data, error } = await supabase.rpc('admin_reset_profile', { p_id: id })
+  if (error) throw error
+  return data
+}
+
+export async function adminGetCareerSave(id) {
+  const { data, error } = await supabase.rpc('admin_get_career_save', { p_id: id })
+  if (error) throw error
+  return data
+}
+
+export async function adminResetCareer(id) {
+  const { data, error } = await supabase.rpc('admin_reset_career', { p_id: id })
+  if (error) throw error
+  return data
+}
+
+export async function adminDeleteGame(gameId) {
+  const { data, error } = await supabase.rpc('admin_delete_game', { p_game_id: gameId })
+  if (error) throw error
+  return data
+}
+
+export async function adminSetNickname(id, nickname) {
+  const { data, error } = await supabase.rpc('admin_set_nickname', {
+    p_id: id,
+    p_nickname: nickname,
+  })
+  if (error) throw error
+  return data
+}
+
+export async function adminForceSignout(id) {
+  const { data, error } = await supabase.rpc('admin_force_signout', { p_id: id })
   if (error) throw error
   return data
 }

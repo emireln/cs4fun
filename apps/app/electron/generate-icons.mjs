@@ -1,6 +1,6 @@
 /**
- * Generates Electron desktop icon (solid bg + rounded), tray (transparent),
- * public favicons, and NSIS installer bitmaps (no text).
+ * Generates Electron desktop icon (solid bg + rounded), tray, public favicons,
+ * UI brand mark, and NSIS installer bitmaps (no text).
  *
  * Source: repo-root logo.png
  * Run: node electron/generate-icons.mjs
@@ -28,13 +28,84 @@ if (!fs.existsSync(sourceLogo)) {
 }
 
 /**
- * Trim transparent padding then fit into a square so the mark fills the box
- * (source art is wide with large empty margins).
+ * Tight brand mark for in-app / landing UI (natural aspect, transparent bg).
  */
-async function resizeLogo(size, fill = 0.92) {
-  const trimmed = await sharp(sourceLogo).trim({ threshold: 12 }).ensureAlpha().toBuffer()
+async function brandMarkPng(maxWidth = 1024) {
+  const trimmed = await sharp(sourceLogo).trim({ threshold: 18 }).ensureAlpha().raw().toBuffer({
+    resolveWithObject: true,
+  })
+  const { data, info } = trimmed
+  for (let i = 0; i < data.length; i += 4) {
+    if (data[i] < 18 && data[i + 1] < 18 && data[i + 2] < 18) data[i + 3] = 0
+  }
+  const cleared = await sharp(data, {
+    raw: { width: info.width, height: info.height, channels: 4 },
+  })
+    .png()
+    .toBuffer()
+
+  const tight = await sharp(cleared).trim({ threshold: 1 }).toBuffer()
+  const meta = await sharp(tight).metadata()
+  const pad = Math.max(2, Math.round(Math.max(meta.width, meta.height) * 0.02))
+  const padded = await sharp(tight)
+    .extend({
+      top: pad,
+      bottom: pad,
+      left: pad,
+      right: pad,
+      background: { r: 0, g: 0, b: 0, alpha: 0 },
+    })
+    .png()
+    .toBuffer()
+
+  return sharp(padded)
+    .resize({ width: maxWidth, withoutEnlargement: true })
+    .png()
+    .toBuffer()
+}
+
+/**
+ * Full wide mark on carbon badge — NEVER cover/crop.
+ * Fit by width into a padded safe zone so scope + S stay intact.
+ */
+async function badgePng(size = 32) {
+  const r = Math.max(2, Math.round(size * 0.16))
+  const pad = Math.max(3, Math.round(size * 0.2))
+  const maxW = Math.max(8, size - pad * 2)
+  const mark = await brandMarkPng(2048)
+  const logo = await sharp(mark)
+    .resize({ width: maxW })
+    .png()
+    .toBuffer()
+  const meta = await sharp(logo).metadata()
+  // If height somehow exceeds safe area, shrink further by height
+  let finalLogo = logo
+  let finalMeta = meta
+  const maxH = size - pad * 2
+  if (meta.height > maxH) {
+    finalLogo = await sharp(mark)
+      .resize({ height: maxH })
+      .png()
+      .toBuffer()
+    finalMeta = await sharp(finalLogo).metadata()
+  }
+  const left = Math.max(0, Math.round((size - finalMeta.width) / 2))
+  const top = Math.max(0, Math.round((size - finalMeta.height) / 2))
+  const bgSvg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+  <rect width="${size}" height="${size}" rx="${r}" ry="${r}" fill="${BG}"/>
+</svg>`
+  return sharp(Buffer.from(bgSvg))
+    .composite([{ input: finalLogo, top, left }])
+    .png()
+    .toBuffer()
+}
+
+/** Transparent square with full mark contained (installer overlays) */
+async function resizeLogo(size, fill = 0.85) {
+  const mark = await brandMarkPng(2048)
   const inner = Math.max(1, Math.round(size * fill))
-  const fitted = await sharp(trimmed)
+  const fitted = await sharp(mark)
     .resize(inner, inner, {
       fit: 'contain',
       background: { r: 0, g: 0, b: 0, alpha: 0 },
@@ -56,27 +127,14 @@ async function resizeLogo(size, fill = 0.92) {
     .toBuffer()
 }
 
-/** Desktop / taskbar / installer icon — solid fill, rounded corners */
 async function desktopIconPng(size = 512) {
-  const r = Math.round(size * 0.18)
-  const pad = Math.round(size * 0.08)
-  const inner = size - pad * 2
-  const logo = await resizeLogo(inner)
-  const bgSvg = `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-  <rect width="${size}" height="${size}" rx="${r}" ry="${r}" fill="${BG}"/>
-</svg>`
-  return sharp(Buffer.from(bgSvg))
-    .composite([{ input: logo, top: pad, left: pad }])
-    .png()
-    .toBuffer()
+  return badgePng(size)
 }
 
-/** Installer sidebar 164×314 — solid bg + logo, no text / lines */
 async function sidebarPng() {
   const w = 164
   const h = 314
-  const logo = await resizeLogo(96)
+  const logo = await resizeLogo(96, 0.9)
   const bgSvg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
   <rect width="${w}" height="${h}" fill="${BG}"/>
@@ -89,11 +147,10 @@ async function sidebarPng() {
     .toBuffer({ resolveWithObject: true })
 }
 
-/** Installer header 150×57 — solid bg + logo, no text */
 async function headerPng() {
   const w = 150
   const h = 57
-  const logo = await resizeLogo(44)
+  const logo = await resizeLogo(44, 0.9)
   const bgSvg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
   <rect width="${w}" height="${h}" fill="${BG}"/>
@@ -156,32 +213,44 @@ async function main() {
   }
   fs.writeFileSync(path.join(buildDir, 'icon.ico'), await pngToIco(pngBuffers))
 
-  // Public favicons + brand avatar (app + web)
-  const favicon512 = await resizeLogo(512)
-  const favicon192 = await resizeLogo(192)
-  const brand256 = await resizeLogo(256)
+  // UI brand mark (natural aspect) — do NOT square-pad this
+  const brandUi = await brandMarkPng(1024)
+  const favicon512 = await badgePng(512)
+  const favicon192 = await badgePng(192)
+  const favicon48 = await badgePng(48)
+  const favicon32 = await badgePng(32)
+  const favicon16 = await badgePng(16)
+  const brand256 = await badgePng(256)
 
-  fs.writeFileSync(path.join(appRoot, 'public', 'logo.png'), favicon512)
+  fs.writeFileSync(path.join(appRoot, 'public', 'logo.png'), brandUi)
+  fs.writeFileSync(path.join(appRoot, 'public', 'favicon.png'), favicon512)
+  fs.writeFileSync(path.join(appRoot, 'public', 'favicon-32.png'), favicon32)
+  fs.writeFileSync(
+    path.join(appRoot, 'public', 'favicon.ico'),
+    await pngToIco([favicon16, favicon32, favicon48]),
+  )
+  fs.writeFileSync(path.join(appRoot, 'public', 'logo-192.png'), favicon192)
   fs.writeFileSync(path.join(appRoot, 'public', 'avatars', 'cs4fun.png'), brand256)
 
   const webPublic = path.join(appRoot, '..', 'web', 'public')
-  try {
-    fs.mkdirSync(webPublic, { recursive: true })
-    fs.writeFileSync(path.join(webPublic, 'logo.png'), favicon512)
-  } catch {
-    /* web workspace optional */
-  }
-
-  // Apple-touch / PWA-sized copy
-  fs.writeFileSync(path.join(appRoot, 'public', 'logo-192.png'), favicon192)
-
-  // Transparent tray (logo already has transparent bg)
-  await sharp(await resizeLogo(32)).toFile(path.join(buildDir, 'tray.png'))
-  await sharp(await resizeLogo(128)).toFile(path.join(buildDir, 'tray@2x.png'))
+  fs.mkdirSync(webPublic, { recursive: true })
+  fs.writeFileSync(path.join(webPublic, 'logo.png'), brandUi)
+  fs.writeFileSync(path.join(webPublic, 'favicon.png'), favicon512)
+  fs.writeFileSync(path.join(webPublic, 'favicon-32.png'), favicon32)
   fs.writeFileSync(
-    path.join(buildDir, 'tray.ico'),
-    await pngToIco([await resizeLogo(16), await resizeLogo(32)]),
+    path.join(webPublic, 'favicon.ico'),
+    await pngToIco([favicon16, favicon32, favicon48]),
   )
+  fs.writeFileSync(path.join(webPublic, 'logo-192.png'), favicon192)
+
+  // Tray — same uncropped carbon badge
+  const tray16 = await badgePng(16)
+  const tray32 = await badgePng(32)
+  const tray64 = await badgePng(64)
+  const tray128 = await badgePng(128)
+  await sharp(tray32).toFile(path.join(buildDir, 'tray.png'))
+  await sharp(tray128).toFile(path.join(buildDir, 'tray@2x.png'))
+  fs.writeFileSync(path.join(buildDir, 'tray.ico'), await pngToIco([tray16, tray32, tray64]))
 
   const side = await sidebarPng()
   writeBmp24(path.join(buildDir, 'installerSidebar.bmp'), 164, 314, side.data)

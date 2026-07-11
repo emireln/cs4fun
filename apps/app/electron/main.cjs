@@ -25,12 +25,12 @@ function desktopIconImage() {
   return nativeImage.createEmpty()
 }
 
-/** Transparent logo — tray */
+/** Carbon badge — tray (do not fall back to wide UI logo.png) */
 function trayIconImage() {
   const ico = assetPath('build', 'tray.ico')
+  const png2x = assetPath('build', 'tray@2x.png')
   const png = assetPath('build', 'tray.png')
-  const logo = assetPath('public', 'logo.png')
-  for (const p of [ico, png, logo]) {
+  for (const p of [ico, png2x, png]) {
     if (!fs.existsSync(p)) continue
     const img = nativeImage.createFromPath(p)
     if (!img.isEmpty()) return img

@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useI18n } from '../../i18n'
-import { adminListGames } from '../../lib/admin'
+import { adminDeleteGame, adminListGames } from '../../lib/admin'
 
-const MODES = ['', 'major', 'duel', 'party', 'daily', 'career', 'box']
+const MODES = ['', 'major', 'duel', 'party', 'daily', 'career', 'box', 'gauntlet']
 
 export default function AdminGames() {
   const { t } = useI18n()
@@ -11,6 +11,7 @@ export default function AdminGames() {
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [busy, setBusy] = useState(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -29,6 +30,20 @@ export default function AdminGames() {
   useEffect(() => {
     load()
   }, [load])
+
+  const remove = async (id) => {
+    if (!window.confirm(t('admin.confirmDeleteGame'))) return
+    setBusy(id)
+    setError('')
+    try {
+      await adminDeleteGame(id)
+      await load()
+    } catch (e) {
+      setError(e?.message || 'error')
+    } finally {
+      setBusy(null)
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -69,12 +84,13 @@ export default function AdminGames() {
                 <th className="px-3 py-2.5 font-semibold">{t('admin.colMode')}</th>
                 <th className="px-3 py-2.5 font-semibold">{t('admin.colResult')}</th>
                 <th className="px-3 py-2.5 font-semibold">{t('admin.colScore')}</th>
+                <th className="px-3 py-2.5 font-semibold" />
               </tr>
             </thead>
             <tbody className="divide-y divide-cs-border/50">
               {games.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-3 py-6 text-cs-muted">
+                  <td colSpan={6} className="px-3 py-6 text-cs-muted">
                     {t('admin.empty')}
                   </td>
                 </tr>
@@ -91,6 +107,16 @@ export default function AdminGames() {
                       {g.wins != null ? ` ${g.wins}-${g.losses}` : ''}
                     </td>
                     <td className="px-3 py-2.5 font-mono text-cs-gold">{g.score}</td>
+                    <td className="px-3 py-2.5 text-right">
+                      <button
+                        type="button"
+                        disabled={busy === g.id}
+                        className="rounded border border-cs-loss/40 px-2 py-1 text-[10px] font-bold uppercase text-cs-loss disabled:opacity-50"
+                        onClick={() => remove(g.id)}
+                      >
+                        {t('admin.deleteGame')}
+                      </button>
+                    </td>
                   </tr>
                 ))
               )}

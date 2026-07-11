@@ -41,6 +41,7 @@ export default function AdminOverview() {
     { label: t('admin.statRooms'), value: stats?.rooms_active ?? 0 },
     { label: t('admin.statGamesToday'), value: stats?.games_today ?? 0 },
     { label: t('admin.statGames7d'), value: stats?.games_7d ?? 0 },
+    { label: t('admin.statCareerSaves'), value: stats?.career_saves ?? 0 },
   ]
 
   const byMode = stats?.games_by_mode_7d || {}

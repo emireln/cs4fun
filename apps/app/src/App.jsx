@@ -148,14 +148,27 @@ function AppShell() {
 
   const openMode = useCallback(
     (modeId) => {
+      if (modeId === 'career' && !isAuthed) {
+        setAuthOpen(true)
+        return
+      }
       navigateTo({
         screen: modeId,
         room: null,
         status: { phase: 'setup', gameMode: modeId },
       })
     },
-    [navigateTo],
+    [navigateTo, isAuthed],
   )
+
+  // Career is signed-in only — never leave guests on the career screen
+  useEffect(() => {
+    if (screen === 'career' && !isAuthed && !loading) {
+      setScreen('hub')
+      setStatus({ phase: 'hub' })
+      setAuthOpen(true)
+    }
+  }, [screen, isAuthed, loading])
 
   const pushIncomingInvite = useCallback(
     (inv) => {
@@ -427,7 +440,7 @@ function AppShell() {
               href="https://cs4fun.online"
               className="group inline-flex items-center gap-2 text-cs-muted transition hover:text-cs-gold"
             >
-              <LogoMark className="h-16 w-16 shrink-0" />
+              <LogoMark className="h-10 w-auto shrink-0" />
               <span className="font-display text-[10px] font-bold tracking-[0.22em] sm:text-[11px]">
                 {t('meta.footer')}
               </span>

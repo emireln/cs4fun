@@ -70,7 +70,7 @@ export default function AuthModal({ open, onClose }) {
         </button>
 
         <div className="group mb-4 flex items-center gap-3">
-          <LogoMark className="h-32 w-32 cursor-pointer" />
+          <LogoMark className="h-16 w-auto max-w-[12rem] cursor-pointer" />
           <h2 className="font-display text-lg font-bold text-cs-gold">{t('auth.title')}</h2>
         </div>
 

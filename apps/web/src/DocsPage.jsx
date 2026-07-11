@@ -123,7 +123,7 @@ export default function DocsPage({ lang, onNavigate, onToggleLang, langLabel }) 
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45 }}
           >
-            <LogoMark className="mb-4 h-44 w-44 cursor-pointer sm:h-52 sm:w-52" />
+            <LogoMark className="mb-3 h-24 w-auto max-w-[16rem] cursor-pointer sm:mb-4 sm:h-28" />
             <h1 className="font-display text-3xl font-extrabold tracking-tight sm:text-4xl">
               <span className="gold-text">{t.title}</span>
             </h1>

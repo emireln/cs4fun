@@ -108,7 +108,7 @@ export default function GameOver({
           {blurb ? <p className="mx-auto mt-2 max-w-md text-sm text-cs-muted">{blurb}</p> : null}
           {place != null && <p className="mt-2 text-cs-gold">{t('results.partyPlace', { place })}</p>}
 
-          <div className="mt-4 inline-flex flex-wrap items-center justify-center gap-3 rounded border border-cs-border bg-cs-bg/50 px-4 py-2 font-mono text-sm">
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-3 rounded border border-cs-border bg-cs-bg/50 px-4 py-2 font-mono text-sm">
             {wins != null && (
               <span className="text-cs-win">
                 {wins}
@@ -160,7 +160,9 @@ export default function GameOver({
               ))}
             </div>
           )}
-          {extra}
+          {extra ? (
+            <div className="mt-5 flex w-full flex-col items-center gap-2">{extra}</div>
+          ) : null}
         </div>
 
         <div className="border-t border-cs-border px-3 py-4 sm:px-4">

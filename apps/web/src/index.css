@@ -165,11 +165,13 @@ canvas {
   background: #11151c;
 }
 
-/* Brand logo mark (PNG) */
+/* Brand logo mark — tight natural-aspect PNG; size via Tailwind h-* + w-auto */
 .logo-mark {
   display: block;
   flex-shrink: 0;
+  max-width: 100%;
   object-fit: contain;
+  object-position: center;
   cursor: pointer;
   transition: transform 0.2s ease;
 }

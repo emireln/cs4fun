@@ -1,3 +1,4 @@
+import { useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   Star,
@@ -7,22 +8,26 @@ import {
   Trophy,
   Wallet,
   Calendar,
+  TrendingUp,
+  History,
+  Pencil,
+  ImagePlus,
+  Trash2,
 } from 'lucide-react'
 import { useI18n } from '../../i18n'
+import { compressAvatarFile } from '../../lib/avatarImage'
 import LineupRadar from '../LineupRadar'
 import TeamLogo from '../TeamLogo'
+import OrgMark from './OrgMark'
 import {
   CAREER_WEEKS,
   PHASE,
-  tierForScore,
   totalWeeklySalary,
   weekKind,
   lineupComplete,
+  rosterPower,
+  nextTierProgress,
 } from '../../lib/career'
-
-function formatCash(n) {
-  return `$${Math.round(Number(n) || 0).toLocaleString('en-US')}`
-}
 
 export default function CareerHub({
   state,
@@ -30,44 +35,159 @@ export default function CareerHub({
   onOpenMarket,
   onOpenCamp,
   onStartMajor,
+  onUpdateOrg,
   onHome,
   saving,
 }) {
-  const { t } = useI18n()
-  const tier = tierForScore(state.seasonScore || 0)
+  const { t, money } = useI18n()
   const kind = weekKind(state.week)
   const ready = lineupComplete(state.lineup)
   const salary = totalWeeklySalary(state.lineup)
+  const power = rosterPower(state)
+  const { current: tier, next: nextTier, pct, remaining } = nextTierProgress(state.seasonScore || 0)
+  const week = Math.min(Math.max(1, state.week), CAREER_WEEKS)
+  const history = [...(state.results || [])].reverse()
+  const [editing, setEditing] = useState(false)
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-6 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] sm:py-8">
       <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
-        <div>
+        <div className="min-w-0 flex-1">
           <p className="inline-flex items-center gap-1.5 font-display text-[10px] tracking-[0.25em] text-cs-gold uppercase">
             <Star className="h-3.5 w-3.5 fill-cs-gold" />
             {t('modes.career.title')}
           </p>
-          <h1 className="font-display text-2xl font-bold sm:text-3xl">{state.orgName}</h1>
-          <p className="mt-1 text-sm text-cs-muted">
-            {t('career.seasonWeek', { season: state.season, week: Math.min(state.week, CAREER_WEEKS) })}
-            {' · '}
-            {t(tier.labelKey)}
-          </p>
+          <div className="mt-1 flex min-w-0 items-center gap-3">
+            <OrgMark state={state} size="lg" eager />
+            <div className="min-w-0">
+              <h1 className="truncate font-display text-2xl font-bold sm:text-3xl">{state.orgName}</h1>
+              <p className="font-mono text-xs tracking-wider text-cs-gold/80">{state.shortName}</p>
+              <p className="mt-1 text-sm text-cs-muted">
+                {t('career.seasonWeek', { season: state.season, week })}
+                {' · '}
+                {t(tier.labelKey)}
+                {state.majorsWonCareer > 0
+                  ? ` · ${t('career.majorsWon', { n: state.majorsWonCareer })}`
+                  : ''}
+              </p>
+            </div>
+          </div>
         </div>
-        <button type="button" className="btn-ghost rounded px-3 py-2 text-xs uppercase" onClick={onHome}>
-          {t('common.home')}
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            className="btn-ghost inline-flex items-center gap-1.5 rounded px-3 py-2 text-xs uppercase"
+            onClick={() => setEditing((v) => !v)}
+          >
+            <Pencil className="h-3.5 w-3.5" />
+            {t('career.editOrg')}
+          </button>
+          <button type="button" className="btn-ghost rounded px-3 py-2 text-xs uppercase" onClick={onHome}>
+            {t('common.home')}
+          </button>
+        </div>
       </div>
 
-      <div className="mb-4 grid gap-2 sm:grid-cols-4">
-        <Stat icon={Wallet} label={t('career.budget')} value={formatCash(state.budget)} />
-        <Stat icon={Calendar} label={t('career.salaryWeek')} value={formatCash(salary)} />
+      {editing && (
+        <OrgIdentityEditor
+          state={state}
+          saving={saving}
+          onCancel={() => setEditing(false)}
+          onSave={async (patch) => {
+            await onUpdateOrg?.(patch)
+            setEditing(false)
+          }}
+        />
+      )}
+
+      {/* Season calendar */}
+      <div className="mb-4 panel rounded-xl p-3 sm:p-4">
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="font-display text-[10px] tracking-[0.2em] text-cs-gold uppercase">
+            {t('career.seasonPath')}
+          </h2>
+          <span className="font-mono text-[10px] text-cs-muted">
+            {t('career.weekOf', { week, total: CAREER_WEEKS })}
+          </span>
+        </div>
+        <div className="grid grid-cols-8 gap-1 sm:gap-1.5">
+          {Array.from({ length: CAREER_WEEKS }, (_, i) => {
+            const n = i + 1
+            const result = (state.results || []).find(
+              (r) => r.week === n && (r.season == null || r.season === state.season),
+            )
+            const isCamp = n === 4
+            const isNow = n === week && state.phase !== PHASE.MAJOR && state.phase !== PHASE.SEASON_END
+            const done = Boolean(result) || n < week
+            return (
+              <div
+                key={n}
+                title={
+                  isCamp
+                    ? t('career.pathCamp')
+                    : result
+                      ? `${result.opponentName || ''} · ${result.won ? 'W' : 'L'}`
+                      : t('career.weekN', { n })
+                }
+                className={`flex aspect-square flex-col items-center justify-center rounded border text-[9px] font-bold sm:text-[10px] ${
+                  isNow
+                    ? 'border-cs-gold bg-cs-gold/20 text-cs-gold'
+                    : result?.won
+                      ? 'border-cs-win/40 bg-cs-win/10 text-cs-win'
+                      : result && !result.won
+                        ? 'border-cs-loss/40 bg-cs-loss/10 text-cs-loss'
+                        : done
+                          ? 'border-cs-border bg-cs-bg/40 text-cs-muted'
+                          : 'border-cs-border/60 text-cs-muted/70'
+                }`}
+              >
+                {isCamp ? <Tent className="h-3 w-3" /> : n}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Tier growth */}
+      <div className="mb-4 panel rounded-xl p-3 sm:p-4">
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="inline-flex items-center gap-1.5 font-display text-[10px] tracking-[0.2em] text-cs-gold uppercase">
+            <TrendingUp className="h-3.5 w-3.5" />
+            {t('career.orgGrowth')}
+          </h2>
+          <span className="font-mono text-[10px] text-cs-muted">
+            {nextTier
+              ? t('career.toNextTier', { tier: t(nextTier.labelKey), n: remaining })
+              : t('career.maxTier')}
+          </span>
+        </div>
+        <div className="mb-1 flex justify-between text-[10px] uppercase tracking-wider text-cs-muted">
+          <span>{t(tier.labelKey)}</span>
+          <span>{nextTier ? t(nextTier.labelKey) : t('career.tierDynasty')}</span>
+        </div>
+        <div className="h-2 overflow-hidden rounded-full bg-cs-bg">
+          <motion.div
+            className="h-full rounded-full bg-gradient-to-r from-cs-gold/70 to-cs-gold"
+            initial={false}
+            animate={{ width: `${Math.round(pct * 100)}%` }}
+            transition={{ type: 'spring', stiffness: 120, damping: 20 }}
+          />
+        </div>
+        <p className="mt-2 text-xs text-cs-muted">
+          {t('career.powerBlurb', { power: power.toFixed(2), score: state.seasonScore || 0 })}
+        </p>
+      </div>
+
+      <div className="mb-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+        <Stat icon={Wallet} label={t('career.budget')} value={money(state.budget)} />
+        <Stat icon={Calendar} label={t('career.salaryWeek')} value={money(salary)} />
         <Stat
           icon={Swords}
           label={t('career.record')}
           value={`${state.record?.wins || 0}–${state.record?.losses || 0}`}
         />
         <Stat icon={Trophy} label={t('career.seasonScore')} value={String(state.seasonScore || 0)} />
+        <Stat icon={TrendingUp} label={t('career.teamPower')} value={power.toFixed(2)} />
       </div>
 
       {state.camp?.weeksLeft > 0 && (
@@ -147,40 +267,175 @@ export default function CareerHub({
             {saving && <p className="mt-2 text-[10px] text-cs-muted">{t('career.saving')}</p>}
           </div>
 
-          {state.results?.length > 0 && (
-            <div className="panel rounded-xl p-4">
-              <h2 className="mb-2 font-display text-[10px] tracking-[0.2em] text-cs-gold uppercase">
-                {t('career.recent')}
-              </h2>
-              <ul className="space-y-1.5 text-xs">
-                {[...state.results].slice(-5).reverse().map((r, i) => (
-                  <li key={`${r.week}-${i}`} className="flex justify-between gap-2">
+          <div className="panel rounded-xl p-4">
+            <h2 className="mb-2 inline-flex items-center gap-1.5 font-display text-[10px] tracking-[0.2em] text-cs-gold uppercase">
+              <History className="h-3.5 w-3.5" />
+              {t('career.seasonHistory')}
+            </h2>
+            {history.length === 0 ? (
+              <p className="text-xs text-cs-muted">{t('career.historyEmpty')}</p>
+            ) : (
+              <ul className="max-h-56 space-y-1.5 overflow-y-auto overscroll-contain text-xs">
+                {history.map((r, i) => (
+                  <li
+                    key={`${r.season || state.season}-${r.week}-${r.at || i}`}
+                    className="flex items-center justify-between gap-2 rounded border border-cs-border/60 bg-cs-bg/30 px-2 py-1.5"
+                  >
                     <span className="inline-flex min-w-0 items-center gap-1.5 text-cs-muted">
                       <TeamLogo name={r.opponentName} size="xs" decorative />
                       <span className="truncate">
-                        {t('career.weekN', { n: r.week })} · {r.opponentName}
+                        {r.season && r.season !== state.season ? `S${r.season} ` : ''}
+                        {t('career.weekN', { n: r.week })}
+                        {r.kind === 'camp' ? ` · ${t('career.pathCamp')}` : ''}
+                        {' · '}
+                        {r.opponentName || '—'}
                       </span>
                     </span>
-                    <span className={r.won ? 'text-cs-win' : 'text-cs-loss'}>
+                    <span className={`shrink-0 font-mono ${r.won ? 'text-cs-win' : 'text-cs-loss'}`}>
                       {r.won ? t('career.win') : t('career.loss')}
+                      {r.power != null ? ` · ${Number(r.power).toFixed(2)}` : ''}
                     </span>
                   </li>
                 ))}
               </ul>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>
   )
 }
 
+function OrgIdentityEditor({ state, onSave, onCancel, saving }) {
+  const { t } = useI18n()
+  const fileRef = useRef(null)
+  const [orgName, setOrgName] = useState(state.orgName || '')
+  const [shortName, setShortName] = useState(state.shortName || 'ORG')
+  const [orgLogo, setOrgLogo] = useState(state.orgLogo || null)
+  const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  const handleLogo = async (file) => {
+    if (!file) return
+    setBusy(true)
+    setError('')
+    try {
+      setOrgLogo(await compressAvatarFile(file))
+    } catch {
+      setError(t('career.logoError'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const submit = async (e) => {
+    e.preventDefault()
+    const name = orgName.trim()
+    const tag = shortName.trim().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8)
+    if (name.length < 2) {
+      setError(t('career.orgNameRequired'))
+      return
+    }
+    if (tag.length < 2) {
+      setError(t('career.orgTagRequired'))
+      return
+    }
+    await onSave({ orgName: name, shortName: tag, orgLogo })
+  }
+
+  return (
+    <form onSubmit={submit} className="mb-4 panel space-y-3 rounded-xl p-4">
+      <h2 className="font-display text-[10px] tracking-[0.2em] text-cs-gold uppercase">
+        {t('career.editOrg')}
+      </h2>
+      <div className="flex flex-wrap items-center gap-3">
+        <button
+          type="button"
+          disabled={busy || saving}
+          onClick={() => fileRef.current?.click()}
+          className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl border border-cs-gold/40 bg-cs-bg/60"
+          aria-label={t('career.uploadLogo')}
+        >
+          {orgLogo ? (
+            <img src={orgLogo} alt="" className="h-full w-full object-cover" />
+          ) : (
+            <ImagePlus className="h-6 w-6 text-cs-gold/80" />
+          )}
+        </button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          className="hidden"
+          onChange={(e) => handleLogo(e.target.files?.[0])}
+        />
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            className="btn-ghost rounded px-3 py-1.5 text-[10px] uppercase"
+            onClick={() => fileRef.current?.click()}
+            disabled={busy || saving}
+          >
+            {t('career.uploadLogo')}
+          </button>
+          {orgLogo && (
+            <button
+              type="button"
+              className="btn-ghost inline-flex items-center gap-1 rounded px-3 py-1.5 text-[10px] uppercase text-cs-loss"
+              onClick={() => setOrgLogo(null)}
+            >
+              <Trash2 className="h-3 w-3" />
+              {t('career.clearLogo')}
+            </button>
+          )}
+        </div>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="block">
+          <span className="mb-1 block text-[10px] uppercase tracking-wider text-cs-muted">
+            {t('career.orgName')}
+          </span>
+          <input
+            value={orgName}
+            onChange={(e) => setOrgName(e.target.value.slice(0, 32))}
+            className="w-full rounded-lg border border-cs-border bg-cs-bg/60 px-3 py-2.5 text-sm outline-none focus:border-cs-gold/50"
+            maxLength={32}
+          />
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-[10px] uppercase tracking-wider text-cs-muted">
+            {t('career.orgTag')}
+          </span>
+          <input
+            value={shortName}
+            onChange={(e) =>
+              setShortName(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8))
+            }
+            className="w-full rounded-lg border border-cs-border bg-cs-bg/60 px-3 py-2.5 font-mono text-sm tracking-wider outline-none focus:border-cs-gold/50"
+            maxLength={8}
+          />
+        </label>
+      </div>
+      {error && <p className="text-xs text-cs-loss">{error}</p>}
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="submit"
+          disabled={busy || saving}
+          className="btn-gold rounded px-4 py-2 text-xs uppercase disabled:opacity-40"
+        >
+          {t('career.saveOrg')}
+        </button>
+        <button type="button" className="btn-ghost rounded px-4 py-2 text-xs uppercase" onClick={onCancel}>
+          {t('common.cancel')}
+        </button>
+      </div>
+    </form>
+  )
+}
+
 function Stat({ icon: Icon, label, value }) {
   return (
-    <motion.div
-      layout
-      className="panel flex items-center gap-3 rounded-xl px-3 py-2.5"
-    >
+    <motion.div layout className="panel flex items-center gap-3 rounded-xl px-3 py-2.5">
       <Icon className="h-4 w-4 shrink-0 text-cs-gold" />
       <div className="min-w-0">
         <div className="text-[10px] uppercase tracking-wider text-cs-muted">{label}</div>

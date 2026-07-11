@@ -8,13 +8,38 @@ import { DEFAULT_SETUP_PRESET, normalizeSetupPresetFields } from './setupPreset'
 
 const AuthContext = createContext(null)
 
-const EMPTY_ACCESS = { isAdmin: false, banned: false, banReason: null }
+const EMPTY_ACCESS = {
+  isAdmin: false,
+  banned: false,
+  banReason: null,
+  sessionsRevokedAt: null,
+}
 
 /** Guest local ids are `p_……`; signed-in profiles use auth UUIDs. */
 function isAuthUserId(id) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
     String(id || ''),
   )
+}
+
+function jwtIssuedAtMs(accessToken) {
+  try {
+    const part = String(accessToken || '').split('.')[1]
+    if (!part) return 0
+    const json = atob(part.replace(/-/g, '+').replace(/_/g, '/'))
+    const payload = JSON.parse(json)
+    return Number(payload?.iat || 0) * 1000
+  } catch {
+    return 0
+  }
+}
+
+function isSessionRevoked(access, session) {
+  if (!access?.sessionsRevokedAt || !session?.access_token) return false
+  const revoked = new Date(access.sessionsRevokedAt).getTime()
+  if (!Number.isFinite(revoked) || revoked <= 0) return false
+  const issued = jwtIssuedAtMs(session.access_token)
+  return issued > 0 && revoked > issued
 }
 
 async function resolveLiveSession() {
@@ -322,6 +347,35 @@ export function AuthProvider({ children }) {
     setSession(null)
     setAccess(EMPTY_ACCESS)
   }, [])
+
+  // Re-check ban / force-signout while signed in (admin actions take effect without reload)
+  useEffect(() => {
+    if (!isSupabaseConfigured || !session?.user) return undefined
+    let cancelled = false
+
+    const tick = async () => {
+      const next = await refreshAccess(session.user)
+      if (cancelled) return
+      // Banned users stay signed-in so BannedScreen can render; force-signout clears the session.
+      if (!next.banned && isSessionRevoked(next, session)) {
+        await signOut()
+      }
+    }
+
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') tick()
+    }
+
+    const id = window.setInterval(tick, 45_000)
+    document.addEventListener('visibilitychange', onVisible)
+    tick()
+
+    return () => {
+      cancelled = true
+      window.clearInterval(id)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [session, refreshAccess, signOut])
 
   const changePassword = useCallback(
     async ({ currentPassword, newPassword }) => {

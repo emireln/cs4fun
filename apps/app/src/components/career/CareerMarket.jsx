@@ -1,19 +1,27 @@
-import { useMemo, useState } from 'react'
-import { ArrowLeft, UserMinus, UserPlus } from 'lucide-react'
+import { useDeferredValue, useMemo, useState } from 'react'
+import { ArrowLeft, Search, UserMinus, UserPlus } from 'lucide-react'
 import { useI18n } from '../../i18n'
 import { ROLES } from '../../data/constants'
-import { marketPool, releasePlayer, signPlayer, contractCost } from '../../lib/career'
+import { marketPool, releasePlayer, signPlayer, contractCost, weeklySalary } from '../../lib/career'
 import TeamLogo from '../TeamLogo'
 
 export default function CareerMarket({ state, onChange, onBack }) {
-  const { t } = useI18n()
+  const { t, money } = useI18n()
   const [filter, setFilter] = useState('all')
+  const [query, setQuery] = useState('')
+  const [sort, setSort] = useState('rating')
   const [msg, setMsg] = useState('')
+  const deferredQuery = useDeferredValue(query)
   const openSlot = ROLES.find((r) => !state.lineup?.[r.id])?.id || null
 
   const pool = useMemo(
-    () => marketPool(state, { role: filter === 'all' ? null : filter, limit: 20 }),
-    [state, filter],
+    () =>
+      marketPool(state, {
+        role: filter === 'all' ? null : filter,
+        query: deferredQuery,
+        sort,
+      }),
+    [state, filter, deferredQuery, sort],
   )
 
   const handleRelease = (slotId) => {
@@ -48,7 +56,7 @@ export default function CareerMarket({ state, onChange, onBack }) {
       </button>
       <h1 className="mb-1 font-display text-2xl font-bold">{t('career.marketTitle')}</h1>
       <p className="mb-4 text-sm text-cs-muted">
-        {t('career.budget')}: <span className="font-mono text-cs-gold">${state.budget}</span>
+        {t('career.budget')}: <span className="font-mono text-cs-gold">{money(state.budget)}</span>
         {openSlot ? ` · ${t('career.signingFor', { slot: openSlot })}` : ` · ${t('career.releaseToSign')}`}
       </p>
       {msg && <p className="mb-3 text-xs text-cs-gold">{msg}</p>}
@@ -72,7 +80,7 @@ export default function CareerMarket({ state, onChange, onBack }) {
                     <div className="truncate text-sm font-semibold">{p?.name || '—'}</div>
                     {p && (
                       <div className="font-mono text-[10px] text-cs-gold">
-                        ${p.salary || contractCost(p)}/w · ${p.buyout || contractCost(p)}
+                        {money(p.salary || weeklySalary(p))}/w · {money(p.buyout || contractCost(p))}
                       </div>
                     )}
                   </div>
@@ -93,50 +101,87 @@ export default function CareerMarket({ state, onChange, onBack }) {
         </div>
       </div>
 
-      <div className="mb-3 flex flex-wrap gap-1.5">
-        <FilterChip active={filter === 'all'} onClick={() => setFilter('all')} label={t('career.filterAll')} />
-        {ROLES.map((r) => (
-          <FilterChip
-            key={r.id}
-            active={filter === r.id}
-            onClick={() => setFilter(r.id)}
-            label={r.short}
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+        <label className="relative min-w-0 flex-1">
+          <Search className="pointer-events-none absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2 text-cs-muted" />
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t('career.searchPlayers')}
+            className="w-full rounded-lg border border-cs-border bg-cs-bg/60 py-2.5 pr-3 pl-9 text-sm text-cs-text outline-none placeholder:text-cs-muted focus:border-cs-gold/50"
+            autoComplete="off"
+            spellCheck={false}
           />
-        ))}
+        </label>
+        <select
+          value={sort}
+          onChange={(e) => setSort(e.target.value)}
+          className="rounded-lg border border-cs-border bg-cs-bg/60 px-3 py-2.5 text-xs uppercase tracking-wider text-cs-muted outline-none focus:border-cs-gold/50"
+          aria-label={t('career.sortLabel')}
+        >
+          <option value="rating">{t('career.sortRating')}</option>
+          <option value="cost">{t('career.sortCostAsc')}</option>
+          <option value="cost_desc">{t('career.sortCostDesc')}</option>
+          <option value="name">{t('career.sortName')}</option>
+          <option value="team">{t('career.sortTeam')}</option>
+        </select>
       </div>
 
-      <div className="grid gap-2 sm:grid-cols-2">
-        {pool.map((p) => (
-          <div
-            key={p.id}
-            className="flex items-center justify-between gap-2 rounded-lg border border-cs-border bg-cs-panel/70 px-3 py-2.5"
-          >
-            <div className="flex min-w-0 items-center gap-2">
-              <TeamLogo name={p.fromTeam} size="sm" decorative />
-              <div className="min-w-0">
-                <div className="truncate font-display text-sm font-bold">{p.name}</div>
-                <div className="flex min-w-0 items-center gap-1 text-[10px] text-cs-muted">
-                  <span className="truncate">
-                    {p.role} · {p.fromTeam} · {Number(p.rating).toFixed(2)}
-                  </span>
-                </div>
-                <div className="font-mono text-[10px] text-cs-gold">
-                  ${p.cost} · ${p.salary}/w
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap gap-1.5">
+          <FilterChip active={filter === 'all'} onClick={() => setFilter('all')} label={t('career.filterAll')} />
+          {ROLES.map((r) => (
+            <FilterChip
+              key={r.id}
+              active={filter === r.id}
+              onClick={() => setFilter(r.id)}
+              label={r.short}
+            />
+          ))}
+        </div>
+        <p className="font-mono text-[10px] text-cs-muted">
+          {t('career.marketCount', { n: pool.length })}
+        </p>
+      </div>
+
+      {pool.length === 0 ? (
+        <p className="rounded-lg border border-dashed border-cs-border px-4 py-8 text-center text-sm text-cs-muted">
+          {t('career.marketEmpty')}
+        </p>
+      ) : (
+        <div className="grid max-h-[min(70dvh,36rem)] gap-2 overflow-y-auto overscroll-contain pr-0.5 sm:grid-cols-2">
+          {pool.map((p) => (
+            <div
+              key={p.id}
+              className="flex items-center justify-between gap-2 rounded-lg border border-cs-border bg-cs-panel/70 px-3 py-2.5"
+            >
+              <div className="flex min-w-0 items-center gap-2">
+                <TeamLogo name={p.fromTeam} size="sm" decorative />
+                <div className="min-w-0">
+                  <div className="truncate font-display text-sm font-bold">{p.name}</div>
+                  <div className="truncate text-[10px] text-cs-muted">
+                    {p.role} · {p.fromTeam}
+                    {p.year ? ` · ${p.year}` : ''} · {Number(p.rating).toFixed(2)}
+                  </div>
+                  <div className="font-mono text-[10px] text-cs-gold">
+                    {money(p.cost)} · {money(p.salary)}/w
+                  </div>
                 </div>
               </div>
+              <button
+                type="button"
+                disabled={!openSlot || state.budget < p.cost}
+                className="btn-gold inline-flex shrink-0 items-center gap-1 rounded px-2.5 py-1.5 text-[10px] uppercase disabled:opacity-40"
+                onClick={() => handleSign(p)}
+              >
+                <UserPlus className="h-3 w-3" />
+                {t('career.sign')}
+              </button>
             </div>
-            <button
-              type="button"
-              disabled={!openSlot || state.budget < p.cost}
-              className="btn-gold inline-flex shrink-0 items-center gap-1 rounded px-2.5 py-1.5 text-[10px] uppercase disabled:opacity-40"
-              onClick={() => handleSign(p)}
-            >
-              <UserPlus className="h-3 w-3" />
-              {t('career.sign')}
-            </button>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

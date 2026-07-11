@@ -2,6 +2,12 @@ import { createContext, useContext, useMemo, useState, useCallback, useEffect } 
 import en from './en'
 import ptBR from './pt-BR'
 import { LOCALE_STORAGE_KEY, normalizeLocale, resolveInitialLocale } from './locale'
+import {
+  CURRENCY_STORAGE_KEY,
+  normalizeCurrency,
+  resolveInitialCurrency,
+  formatMoney,
+} from '../lib/currency'
 
 const DICTS = { en, 'pt-BR': ptBR }
 const I18nContext = createContext(null)
@@ -12,12 +18,23 @@ function getByPath(obj, path) {
 
 export function I18nProvider({ children }) {
   const [locale, setLocaleState] = useState(() => resolveInitialLocale())
+  const [currency, setCurrencyState] = useState(() => resolveInitialCurrency())
 
   const setLocale = useCallback((next) => {
     const normalized = normalizeLocale(next) || 'en'
     setLocaleState(normalized)
     try {
       localStorage.setItem(LOCALE_STORAGE_KEY, normalized)
+    } catch {
+      /* ignore */
+    }
+  }, [])
+
+  const setCurrency = useCallback((next) => {
+    const normalized = normalizeCurrency(next)
+    setCurrencyState(normalized)
+    try {
+      localStorage.setItem(CURRENCY_STORAGE_KEY, normalized)
     } catch {
       /* ignore */
     }
@@ -44,7 +61,15 @@ export function I18nProvider({ children }) {
     [dict],
   )
 
-  const value = useMemo(() => ({ locale, setLocale, t, dict }), [locale, setLocale, t, dict])
+  const money = useCallback(
+    (amountUsd, opts) => formatMoney(amountUsd, currency, opts),
+    [currency],
+  )
+
+  const value = useMemo(
+    () => ({ locale, setLocale, currency, setCurrency, t, money, dict }),
+    [locale, setLocale, currency, setCurrency, t, money, dict],
+  )
 
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>
 }
