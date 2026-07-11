@@ -70,7 +70,7 @@
         }
       ],
       "icon": "icon.ico",
-      "artifactName": "${productName}-Setup-${version}.${ext}"
+      "artifactName": "cs4fun-Setup-${version}.${ext}"
     },
     "nsis": {
       "oneClick": false,

@@ -167,17 +167,34 @@ jobs:
         shell: pwsh
         run: |
           $release = "apps/app/release"
-          $exe = Get-ChildItem $release -Filter "cs4fun-Setup-*.exe" |
-            Where-Object { $_.Name -ne "cs4fun-Setup.exe" } |
+          $exe = Get-ChildItem $release -File |
+            Where-Object { $_.Name -match '(?i)^cs4fun-setup-\d.*\.exe$' } |
             Sort-Object LastWriteTime -Descending |
             Select-Object -First 1
           if (-not $exe) { throw "No cs4fun-Setup-*.exe found in $release" }
-          Copy-Item $exe.FullName (Join-Path $release "cs4fun-Setup.exe") -Force
-          if (-not (Test-Path (Join-Path $release "latest.yml"))) {
+          # Canonical name: cs4fun-Setup-{version}.exe (Linux nginx is case-sensitive)
+          $versionedName = [regex]::Replace($exe.Name, '(?i)^cs4fun-setup-', 'cs4fun-Setup-')
+          $versioned = Join-Path $release $versionedName
+          if ($exe.FullName -ne $versioned) {
+            Move-Item -LiteralPath $exe.FullName -Destination $versioned -Force
+          }
+          $blockSrc = Join-Path $release ($exe.Name + '.blockmap')
+          $blockDest = "$versioned.blockmap"
+          if (Test-Path -LiteralPath $blockSrc) {
+            Move-Item -LiteralPath $blockSrc -Destination $blockDest -Force
+          }
+          Copy-Item -LiteralPath $versioned -Destination (Join-Path $release "cs4fun-Setup.exe") -Force
+          $yml = Join-Path $release "latest.yml"
+          if (-not (Test-Path $yml)) {
             throw "latest.yml missing — electron-builder publish/generic config required for auto-updates"
           }
-          Write-Host "Prepared $($exe.Name) + cs4fun-Setup.exe + latest.yml (v${{ steps.bump.outputs.version }})"
+          $ymlText = [regex]::Replace((Get-Content $yml -Raw), '(?i)cs4fun-setup-', 'cs4fun-Setup-')
+          Set-Content -Path $yml -Value $ymlText -NoNewline
+          Write-Host "Prepared $versionedName + cs4fun-Setup.exe + latest.yml (v${{ steps.bump.outputs.version }})"
           Get-ChildItem $release | Select-Object Name, Length
+          Write-Host "--- latest.yml ---"
+          Get-Content $yml
+          if (-not (Test-Path -LiteralPath $versioned)) { throw "versioned exe missing: $versionedName" }
 
       - name: Upload installer artifact
         uses: actions/upload-artifact@v4
@@ -223,27 +240,52 @@ jobs:
           VPS_PORT: ${{ secrets.VPS_PORT }}
           VPS_USER: ${{ secrets.VPS_USER }}
         run: |
+          set -euo pipefail
           shopt -s nullglob
-          files=(
-            installer/cs4fun-Setup.exe
-            installer/cs4fun-Setup-*.exe
-            installer/cs4fun-Setup-*.exe.blockmap
-            installer/latest.yml
-          )
-          # Drop globs that didn't match
-          upload=()
-          for f in "${files[@]}"; do
+          ls -la installer || true
+
+          # Normalize casing: electron-builder may emit CS4FUN-Setup-* on Windows;
+          # Linux nginx is case-sensitive and latest.yml must match the file on disk.
+          python3 - <<'PY'
+          import pathlib, re, sys
+          d = pathlib.Path("installer")
+          for p in list(d.iterdir()):
+              if not p.is_file():
+                  continue
+              name = p.name
+              m = re.match(r"(?i)^cs4fun-setup(-.+)?$", name)
+              if not m:
+                  continue
+              suffix = m.group(1) or ""
+              dest = d / f"cs4fun-Setup{suffix}"
+              if p.resolve() != dest.resolve():
+                  print(f"normalize {name} -> {dest.name}")
+                  p.replace(dest)
+          yml = d / "latest.yml"
+          if not yml.exists():
+              sys.exit("latest.yml missing")
+          text = yml.read_text(encoding="utf-8")
+          text2 = re.sub(r"(?i)cs4fun-setup-", "cs4fun-Setup-", text)
+          yml.write_text(text2, encoding="utf-8")
+          print("--- latest.yml ---")
+          print(yml.read_text(encoding="utf-8"))
+          # Require versioned exe named in yaml
+          m = re.search(r"(?m)^\s*url:\s*(\S+)", text2)
+          if not m:
+              sys.exit("latest.yml missing url:")
+          need = d / m.group(1).strip()
+          if not need.is_file():
+              print("files:", sorted(x.name for x in d.iterdir()))
+              sys.exit(f"missing {need.name} referenced by latest.yml")
+          print(f"ok: {need.name} present")
+          PY
+
+          upload=(installer/latest.yml)
+          for f in installer/cs4fun-Setup.exe installer/cs4fun-Setup-*.exe installer/cs4fun-Setup-*.exe.blockmap; do
             [[ -f "$f" ]] && upload+=("$f")
           done
-          if [[ ${#upload[@]} -eq 0 ]]; then
-            echo "No installer files in artifact" >&2
-            ls -laR installer || true
-            exit 1
-          fi
-          if [[ ! -f installer/latest.yml ]]; then
-            echo "latest.yml missing — auto-update feed required" >&2
-            exit 1
-          fi
+          echo "Uploading:"
+          printf '  %s\n' "${upload[@]}"
           scp -i ~/.ssh/deploy_key -P "${VPS_PORT}" -o IdentitiesOnly=yes \
             "${upload[@]}" \
             "${VPS_USER}@${VPS_HOST}:/var/www/cs4fun/download/"
