@@ -1,6 +1,7 @@
 import catalog from '../data/boxCases.json'
 import { mulberry32, hashString } from './seed'
 import { formatMoney, getDisplayCurrency } from './currency'
+import { utcWeekKey } from './challenges'
 
 /** Official-ish case odds (weapon cases). Gold = knives/gloves special item. */
 export const RARITY_WEIGHTS = {
@@ -214,6 +215,8 @@ export function scoreBoxBattle({ won, totalValue, bestDrop, rounds }) {
 /* ─── Local stats (best drops, battles) ─── */
 
 const STATS_KEY = 'cs4fun_box_stats_v1'
+/** Max skins kept in the profile vault grid */
+export const VAULT_LIMIT = 20
 
 function emptyBoxStats() {
   return {
@@ -229,14 +232,24 @@ function emptyBoxStats() {
     favoriteCaseId: null,
     casePlays: {},
     recentDrops: [],
+    vault: [],
   }
+}
+
+function clampVault(vault) {
+  if (!Array.isArray(vault) || !vault.length) return []
+  return [...vault]
+    .sort((a, b) => (b?.value || 0) - (a?.value || 0))
+    .slice(0, VAULT_LIMIT)
 }
 
 export function readBoxStats(playerId) {
   if (!playerId) return emptyBoxStats()
   try {
     const all = JSON.parse(localStorage.getItem(STATS_KEY) || '{}')
-    return { ...emptyBoxStats(), ...(all[playerId] || {}) }
+    const stats = { ...emptyBoxStats(), ...(all[playerId] || {}) }
+    stats.vault = clampVault(stats.vault)
+    return stats
   } catch {
     return emptyBoxStats()
   }
@@ -289,8 +302,35 @@ export function recordBoxBattle(playerId, { won, caseId, myDrops, myTotal, oppTo
     })),
     ...(stats.recentDrops || []),
   ].slice(0, 12)
+
+  // Vault: keep top VAULT_LIMIT unique-ish pulls by value
+  const vaultMap = new Map()
+  for (const d of [...(stats.vault || []), ...myDrops]) {
+    const key = `${d.name}|${d.wear || ''}|${d.rarity}`
+    const prev = vaultMap.get(key)
+    if (!prev || d.value > prev.value) {
+      vaultMap.set(key, {
+        name: d.name,
+        value: d.value,
+        rarity: d.rarity,
+        image: d.image,
+        wear: d.wear,
+        caseName: d.caseName,
+        at: d.at || Date.now(),
+      })
+    }
+  }
+  stats.vault = clampVault([...vaultMap.values()])
+
   writeBoxStats(playerId, stats)
   return stats
+}
+
+/** Featured case for the UTC week (deterministic). */
+export function caseOfTheWeek() {
+  const cases = listCases()
+  if (!cases.length) return null
+  return cases[hashString(`caseweek:${utcWeekKey()}`) % cases.length]
 }
 
 export function botNickname(seed) {

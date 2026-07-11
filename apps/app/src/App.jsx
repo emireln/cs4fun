@@ -26,12 +26,17 @@ import PartyGame from './components/modes/PartyGame'
 import DailyGame from './components/modes/DailyGame'
 import CareerGame from './components/modes/CareerGame'
 import BoxGame from './components/modes/BoxGame'
+import GauntletGame from './components/modes/GauntletGame'
+import SurvivorGame from './components/modes/SurvivorGame'
 import DesktopUpdateOverlay from './components/DesktopUpdateOverlay'
 import AppDocs from './components/AppDocs'
 import MatchInvitePopup from './components/MatchInvitePopup'
 import AppToast from './components/AppToast'
 import ConnectionLostModal from './components/ConnectionLostModal'
 import { useOnlineStatus } from './hooks/useOnlineStatus'
+import { writeLastSession } from './lib/lastSession'
+
+const PLAY_MODES = ['major', 'duel', 'party', 'daily', 'career', 'box', 'gauntlet', 'survivor']
 
 function AppShell() {
   const { t } = useI18n()
@@ -91,9 +96,7 @@ function AppShell() {
     setStatus(
       prev.status ?? {
         phase: prev.screen === 'hub' ? 'hub' : prev.screen,
-        gameMode: ['major', 'duel', 'party', 'daily', 'career', 'box'].includes(prev.screen)
-          ? prev.screen
-          : undefined,
+        gameMode: PLAY_MODES.includes(prev.screen) ? prev.screen : undefined,
       },
     )
   }, [goHome])
@@ -152,6 +155,7 @@ function AppShell() {
         setAuthOpen(true)
         return
       }
+      writeLastSession({ mode: modeId })
       navigateTo({
         screen: modeId,
         room: null,
@@ -301,7 +305,7 @@ function AppShell() {
         phase={status.phase || (screen === 'hub' ? 'hub' : screen)}
         gameMode={
           status.gameMode ||
-          (['major', 'duel', 'party', 'daily', 'career', 'box'].includes(screen) ? screen : null)
+          (PLAY_MODES.includes(screen) ? screen : null)
         }
         extra={status.extra}
         onHome={goHome}
@@ -369,7 +373,7 @@ function AppShell() {
           )}
 
           {screen === 'major' && (
-            <MajorGame profile={profile} onHome={goHome} onStatus={setStatus} />
+            <MajorGame profile={profile} onHome={goHome} onStatus={setStatus} onNeedAuth={() => setAuthOpen(true)} />
           )}
           {screen === 'duel' && (
             <DuelGame
@@ -378,6 +382,7 @@ function AppShell() {
               onHome={goHome}
               onStatus={setStatus}
               onNeedFriends={() => openFriends('duel')}
+              onNeedAuth={() => setAuthOpen(true)}
             />
           )}
           {screen === 'party' && (
@@ -387,10 +392,11 @@ function AppShell() {
               onHome={goHome}
               onStatus={setStatus}
               onNeedFriends={() => openFriends('party')}
+              onNeedAuth={() => setAuthOpen(true)}
             />
           )}
           {screen === 'daily' && (
-            <DailyGame profile={profile} onHome={goHome} onStatus={setStatus} />
+            <DailyGame profile={profile} onHome={goHome} onStatus={setStatus} onNeedAuth={() => setAuthOpen(true)} />
           )}
           {screen === 'career' && (
             <CareerGame
@@ -407,7 +413,14 @@ function AppShell() {
               onHome={goHome}
               onStatus={setStatus}
               onNeedFriends={() => openFriends('box')}
+              onNeedAuth={() => setAuthOpen(true)}
             />
+          )}
+          {screen === 'gauntlet' && (
+            <GauntletGame profile={profile} onHome={goHome} onStatus={setStatus} onNeedAuth={() => setAuthOpen(true)} />
+          )}
+          {screen === 'survivor' && (
+            <SurvivorGame profile={profile} onHome={goHome} onStatus={setStatus} onNeedAuth={() => setAuthOpen(true)} />
           )}
         </motion.main>
       </AnimatePresence>

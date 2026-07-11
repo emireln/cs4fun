@@ -79,6 +79,16 @@ const docsCopy = {
             text: 'One UTC seed for the world. Ratings stay hidden (always almanac), matches are BO1, and the global board resets each day.',
           },
           {
+            id: 'gauntlet',
+            title: 'Chaos Gauntlet',
+            text: 'Draft once, then survive BO1 waves with cursed modifiers. The longer your streak, the louder the share card.',
+          },
+          {
+            id: 'survivor',
+            title: 'Survivor Pool',
+            text: 'Six seats enter with generated lineups. Lowest power is cut each round until only one remains.',
+          },
+          {
             id: 'career',
             title: 'Career',
             text: 'Signed-in only. Build an org from historical legends, manage contracts and budget, hit bootcamp, grind league weeks vs bot orgs, then run a Major. Share a season finale card — dynasty vibes.',
@@ -89,11 +99,11 @@ const docsCopy = {
         id: 'friends',
         title: 'Friends & multiplayer',
         body: [
-          'Open Friends from the hub to add people by nickname/tag, accept requests, and invite them to a 1v1, party, or Box Battle — no room code required. A private room is created under the hood when you invite.',
+          'Open Friends from the hub to add people by nickname/tag, accept requests, and invite them to a 1v1, party, or Box Battle — no room code required. A private room is created when you invite.',
           'You can still use the classic code lobby if you prefer sharing a 6-character code.',
           'Each friend shows head-to-head stats: matches played, wins, and losses. After a friend duel or Box Battle finishes, those numbers update automatically.',
           'On each friend card you can also compare Box vaults — your career best drop versus theirs.',
-          'Without an account, friends and rooms work locally on the same browser/device. With Supabase sign-in, invites and ranks sync across devices.',
+          'Without an account, friends and rooms work in this browser. With sign-in, invites and ranks sync.',
         ],
       },
       {
@@ -102,6 +112,7 @@ const docsCopy = {
         body: [
           'Set a tag, avatar, and optional Steam profile link on your profile. Guests play fully offline for drafts and sims; sign in to sync history, badges, and public ranks.',
           'Your profile shows career best Box drop when you have one. Badges cover Majors, duels, dailies, Career org runs, and Box Battle (wins, golds, Coverts, jackpots, and open volume).',
+          'Weekly challenges, daily quests, streak rewards, and cosmetics add longer-term goals. Titles, frames, and rings are cosmetic bragging rights you can equip from Profile.',
           'Leaderboards cover daily, duel, box, career, and more (auth users). Showcase a badge on your profile once you unlock them.',
           'Optional low-volume match sounds (shots, bomb beeps, radio cues) can be toggled in Account.',
           'Support the project anytime via Buy Me a Coffee — linked from the landing page, game footer, and result screen.',
@@ -201,12 +212,22 @@ const docsCopy = {
           {
             id: 'box',
             title: 'Box Battle',
-            text: 'Monte até 10 cases reais do CS (manual ou automático), abra no reel e dispute o maior valor de vault. Solo vs BOT ou convide um amigo. Vitórias e drops raros desbloqueiam conquistas de Box; o melhor drop da carreira aparece no perfil.',
+            text: 'Monte até 10 caixas reais do CS (manual ou automático), abra no reel e dispute o maior valor de vault. Solo vs BOT ou convide um amigo. Vitórias e drops raros desbloqueiam conquistas de Box; o melhor drop da carreira aparece no perfil.',
           },
           {
             id: 'daily',
             title: 'Diário Cego',
             text: 'Uma seed UTC para o mundo. Ratings ficam ocultos (sempre almanaque), partidas são BO1, e o ranking global reinicia todo dia.',
+          },
+          {
+            id: 'gauntlet',
+            title: 'Gauntlet do Caos',
+            text: 'Faça um draft e sobreviva a ondas BO1 com modificadores amaldiçoados. Quanto maior a sequência, mais forte o card de share.',
+          },
+          {
+            id: 'survivor',
+            title: 'Pool Sobrevivente',
+            text: 'Seis vagas entram com lineups geradas. O menor power cai a cada rodada até sobrar só um.',
           },
           {
             id: 'career',
@@ -223,7 +244,7 @@ const docsCopy = {
           'Ainda dá para usar a sala clássica com código de 6 caracteres se preferir.',
           'Cada amigo mostra estatísticas de confronto direto: partidas, vitórias e derrotas. Depois de um duelo ou Box Battle entre amigos, os números atualizam sozinhos.',
           'No card de cada amigo você também compara os vaults de Box — seu melhor drop da carreira contra o deles.',
-          'Sem conta, amigos e salas funcionam localmente no mesmo navegador/dispositivo. Com login no Supabase, convites e rankings sincronizam entre aparelhos.',
+          'Sem conta, amigos e salas funcionam neste navegador. Com login, convites e rankings sincronizam.',
         ],
       },
       {
@@ -232,6 +253,7 @@ const docsCopy = {
         body: [
           'Defina tag, avatar e um link opcional do perfil Steam. Convidados jogam drafts e sims offline; entre na conta para sincronizar histórico, conquistas e rankings públicos.',
           'O perfil mostra o melhor drop de Box da carreira quando houver um. Conquistas cobrem Majors, duelos, diários, Carreira e Box Battle (vitórias, golds, Coverts, jackpots e volume de opens).',
+          'Desafios semanais, quests diárias, recompensas de sequência e cosméticos dão metas de longo prazo. Títulos, molduras e anéis são bragging rights que você equipa no Perfil.',
           'Os rankings incluem tabelas diárias, de duelo, box, carreira e mais (usuários autenticados). Exiba uma conquista no perfil quando desbloquear.',
           'Sons de partida em volume baixo (tiros, beep da bomba, rádio) podem ser ligados em Conta.',
           'Apoie o projeto pelo Buy Me a Coffee — link na landing, no rodapé do jogo e na tela de resultado.',

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, shell, Tray, Menu, nativeImage, ipcMain } = require('electron')
+const { app, BrowserWindow, shell, Tray, Menu, nativeImage, ipcMain, Notification } = require('electron')
 const path = require('node:path')
 const fs = require('node:fs')
 
@@ -261,6 +261,36 @@ function checkForUpdates({ manual }) {
     })
 }
 
+function utcDayKey(date = new Date()) {
+  return date.toISOString().slice(0, 10)
+}
+
+function scheduleDailyChallengeNotification() {
+  if (isDev || !app.isPackaged || !Notification.isSupported()) return
+  const storePath = path.join(app.getPath('userData'), 'daily-toast.json')
+  const tryShow = () => {
+    const today = utcDayKey()
+    let lastShown = null
+    try {
+      lastShown = JSON.parse(fs.readFileSync(storePath, 'utf8'))?.day
+    } catch {
+      /* first run */
+    }
+    if (lastShown === today) return
+    try {
+      new Notification({
+        title: 'cs4fun',
+        body: 'Blind Daily is live. Weekly challenges and cosmetics are waiting.',
+      }).show()
+      fs.writeFileSync(storePath, JSON.stringify({ day: today }), 'utf8')
+    } catch (err) {
+      console.error('daily notification failed', err)
+    }
+  }
+  setTimeout(tryShow, 4000)
+  setInterval(tryShow, 60 * 60 * 1000)
+}
+
 app.whenReady().then(() => {
   if (process.platform === 'win32') {
     app.setAppUserModelId('online.cs4fun.app')
@@ -268,6 +298,7 @@ app.whenReady().then(() => {
   mainWindow = createWindow()
   createTray(mainWindow)
   setupAutoUpdater()
+  scheduleDailyChallengeNotification()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       mainWindow = createWindow()

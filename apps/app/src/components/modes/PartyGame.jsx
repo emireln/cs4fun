@@ -4,13 +4,14 @@ import { useI18n } from '../../i18n'
 import { useDraftSession } from '../../hooks/useDraftSession'
 import { generateSharedRolls, teamPowerScore } from '../../lib/gameModes'
 import { saveGameResult } from '../../lib/history'
+import { recordFriendMatch } from '../../lib/friends'
 import { subscribeRoom, updateRoom } from '../../lib/rooms'
 import { initialSoloSetupState, retrySoloSetupState } from '../../lib/setupPreset'
 import DraftPlay from '../DraftPlay'
 import GameOver from '../GameOver'
 import ModeSetup from '../ModeSetup'
 
-export default function PartyGame({ profile, room, onHome, onStatus, onNeedFriends }) {
+export default function PartyGame({ profile, room, onHome, onStatus, onNeedFriends, onNeedAuth }) {
   const { t } = useI18n()
   const [localRoom, setLocalRoom] = useState(room)
   const [boot] = useState(() => {
@@ -44,6 +45,28 @@ export default function PartyGame({ profile, room, onHome, onStatus, onNeedFrien
     if (!localRoom?.code) return undefined
     return subscribeRoom(localRoom.code, (next) => setLocalRoom(next))
   }, [localRoom?.code])
+
+  useEffect(() => {
+    if (!localRoom || localRoom.status !== 'rematch') return
+    draft.reset()
+    setRanking([])
+    setPlace(null)
+    setSubmitInfo(null)
+    setWaitingFriends(false)
+    setStep('draft')
+    if (localRoom.hostId === profile.id) {
+      updateRoom(localRoom.code, (r) => ({
+        ...r,
+        status: 'drafting',
+        players: r.players.map((p) => ({
+          ...p,
+          ready: false,
+          lineup: null,
+          power: 0,
+        })),
+      }))
+    }
+  }, [localRoom?.status]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     onStatus?.({
@@ -81,9 +104,19 @@ export default function PartyGame({ profile, room, onHome, onStatus, onNeedFrien
         won: myPlace === 1,
         score,
         lineup: mine?.lineup || draft.lineup,
-        meta: { place: myPlace, power, room: localRoom?.code },
+        meta: { place: myPlace, power, room: localRoom?.code, friendMatch: Boolean(localRoom?.code) },
         board: 'party',
       })
+      if (localRoom?.code) {
+        for (const p of sorted) {
+          if (p.id === profile.id) continue
+          await recordFriendMatch({
+            profileId: profile.id,
+            friendId: p.id,
+            won: myPlace === 1,
+          })
+        }
+      }
       setSubmitInfo(res)
       setStep('results')
     })()
@@ -126,7 +159,9 @@ export default function PartyGame({ profile, room, onHome, onStatus, onNeedFrien
         }
         onLaunch={async () => {
           if (waitingFriends) return
-          const power = teamPowerScore(draft.lineup, cfg.mentality, cfg.mapPriority)
+          const power = teamPowerScore(draft.lineup, cfg.mentality, cfg.mapPriority, {
+            cursedCap: cfg.cursedCap,
+          })
 
           if (localRoom) {
             const updated = await updateRoom(localRoom.code, (r) => ({
@@ -156,9 +191,17 @@ export default function PartyGame({ profile, room, onHome, onStatus, onNeedFrien
               won: myPlace === 1,
               score,
               lineup: draft.lineup,
-              meta: { place: myPlace, power, room: localRoom?.code },
+              meta: { place: myPlace, power, room: localRoom?.code, friendMatch: true },
               board: 'party',
             })
+            for (const p of sorted) {
+              if (p.id === profile.id) continue
+              await recordFriendMatch({
+                profileId: profile.id,
+                friendId: p.id,
+                won: myPlace === 1,
+              })
+            }
             setSubmitInfo(res)
             setStep('results')
             return
@@ -203,6 +246,18 @@ export default function PartyGame({ profile, room, onHome, onStatus, onNeedFrien
       submitInfo={submitInfo}
       sharePayload={{ mode: 'party', nickname: profile.nickname }}
       onHome={onHome}
+      onNeedAuth={onNeedAuth}
+      onRematch={
+        localRoom?.code
+          ? () => {
+              updateRoom(localRoom.code, (r) => ({
+                ...r,
+                status: 'rematch',
+                seed: `${r.mode}-${r.code}-${Date.now()}`,
+              }))
+            }
+          : null
+      }
       onRetry={() => {
         draft.reset()
         setWaitingFriends(false)

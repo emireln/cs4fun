@@ -25,6 +25,7 @@ function easeOutQuint(t) {
 
 export default function BoxOpenReel({ drop, label, delay = 0, onDone }) {
   const { t, money } = useI18n()
+  const [phase, setPhase] = useState('idle')
   const [targetX, setTargetX] = useState(0)
   const sounded = useRef(false)
   const viewportRef = useRef(null)
@@ -98,8 +99,8 @@ export default function BoxOpenReel({ drop, label, delay = 0, onDone }) {
       return
     }
     const start = spinStarted.current || now
-    const t = Math.min(1, (now - start) / SPIN_MS)
-    const eased = easeOutQuint(t)
+    const progress = Math.min(1, (now - start) / SPIN_MS)
+    const eased = easeOutQuint(progress)
     const from = 40
     const pos = from + (targetX - from) * eased
     x.set(pos)
@@ -308,7 +309,7 @@ export default function BoxOpenReel({ drop, label, delay = 0, onDone }) {
               {drop.name}
             </div>
             <div className="mt-0.5 text-[11px] text-cs-muted">
-              {t(`box.rarity.${drop.rarity}`)} · {drop.wear}
+              {t(`box.rarity.${drop.rarity}`)} · {t(`box.wear.${drop.wear}`)}
             </div>
           </motion.div>
         )}

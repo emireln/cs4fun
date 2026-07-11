@@ -38,12 +38,14 @@ import { normalizePublicSections, PUBLIC_SECTION_KEYS } from '../lib/publicSecti
 import { countIncomingFriendRequests } from '../lib/friends'
 import BestDropCard from './BestDropCard'
 import SteamIcon from './SteamIcon'
-import { readBoxStats } from '../lib/boxBattle'
+import { readBoxStats, VAULT_LIMIT } from '../lib/boxBattle'
 import MapThumb from './MapThumb'
 import CountBadge from './CountBadge'
+import BoxDropCard from './box/BoxDropCard'
+import { COSMETIC_DEFS, equipCosmetic, syncCosmeticUnlocks, titleLoadout } from '../lib/cosmetics'
 
-const AUTH_TABS = ['edit', 'friends', 'badges', 'history']
-const GUEST_TABS = ['edit', 'friends']
+const AUTH_TABS = ['edit', 'cosmetics', 'friends', 'badges', 'history']
+const GUEST_TABS = ['edit', 'cosmetics', 'friends']
 
 export default function ProfilePage({ onBack, onNeedAuth, onStartMatch, onInviteSent }) {
   const { t, locale, setLocale, currency, setCurrency } = useI18n()
@@ -76,6 +78,7 @@ export default function ProfilePage({ onBack, onNeedAuth, onStartMatch, onInvite
   const [stats, setStats] = useState(null)
   const [history, setHistory] = useState([])
   const [soundOn, setSoundOn] = useState(() => isSoundEnabled())
+  const [cosmetics, setCosmetics] = useState(() => syncCosmeticUnlocks(profile.id))
 
   const [curPass, setCurPass] = useState('')
   const [newPass, setNewPass] = useState('')
@@ -132,6 +135,10 @@ export default function ProfilePage({ onBack, onNeedAuth, onStartMatch, onInvite
     const allowed = isAuthed ? AUTH_TABS : GUEST_TABS
     if (!allowed.includes(tab)) setTab('edit')
   }, [isAuthed, tab])
+
+  useEffect(() => {
+    setCosmetics(syncCosmeticUnlocks(profile.id))
+  }, [profile.id, tab])
 
   const ownedIds = new Set(owned.map((b) => b.id || b.badge_id))
   const showcaseDef = defs.find((d) => d.id === showcaseBadge)
@@ -257,6 +264,10 @@ export default function ProfilePage({ onBack, onNeedAuth, onStartMatch, onInvite
     }))
   }
 
+  const handleEquipCosmetic = (id) => {
+    setCosmetics(equipCosmetic(profile.id, id))
+  }
+
   const openPasswordModal = () => {
     setPassMsg(null)
     setCurPass('')
@@ -356,12 +367,19 @@ export default function ProfilePage({ onBack, onNeedAuth, onStartMatch, onInvite
             }
             badgeIcon={showcaseIcon}
             ultra={isAuthed && ownedIds.has('completionist')}
+            frameId={cosmetics.equippedFrame}
+            ringId={cosmetics.equippedRing}
             size="xl"
           />
           <div className="min-w-0 flex-1">
             <h1 className="truncate font-display text-2xl font-bold text-cs-gold lg:text-3xl">
               {displayName}
             </h1>
+            {titleLoadout(profile.id, t) && (
+              <p className="mt-0.5 text-xs font-semibold tracking-wide text-cs-gold/90">
+                {titleLoadout(profile.id, t)}
+              </p>
+            )}
             <p className="text-sm text-cs-muted lg:text-base">
               {isAuthed ? profile.email : t('profile.guestBlurb')}
             </p>
@@ -510,6 +528,7 @@ export default function ProfilePage({ onBack, onNeedAuth, onStartMatch, onInvite
       </div>
 
       {tab === 'edit' && (
+        <>
         <div className="grid gap-4 lg:grid-cols-2 lg:gap-6 lg:items-start">
           <div className="panel space-y-5 rounded-xl p-5 lg:p-6">
             {!isAuthed && (
@@ -930,6 +949,57 @@ export default function ProfilePage({ onBack, onNeedAuth, onStartMatch, onInvite
             )}
           </div>
         </div>
+        <BoxVaultGrid profileId={profile.id} />
+        </>
+      )}
+
+      {tab === 'cosmetics' && (
+        <div className="space-y-4">
+          <div className="panel rounded-xl p-4 sm:p-6">
+            <h2 className="font-display text-xl font-bold text-cs-gold">{t('cosmetics.title')}</h2>
+            <p className="mt-1 text-sm text-cs-muted">{t('cosmetics.blurb')}</p>
+            <div className="mt-5 space-y-5">
+              {[
+                { kind: 'title', label: t('cosmetics.titles'), equipped: cosmetics.equippedTitle },
+                { kind: 'frame', label: t('cosmetics.frames'), equipped: cosmetics.equippedFrame },
+                { kind: 'ring', label: t('cosmetics.rings'), equipped: cosmetics.equippedRing },
+              ].map((group) => (
+                <section key={group.kind}>
+                  <h3 className="mb-2 font-display text-[10px] font-bold uppercase tracking-[0.2em] text-cs-gold">
+                    {group.label}
+                  </h3>
+                  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                    {COSMETIC_DEFS.filter((def) => def.kind === group.kind).map((def) => {
+                      const unlocked = (cosmetics.owned || []).includes(def.id) || def.unlock === 'default'
+                      const equipped = group.equipped === def.id
+                      return (
+                        <button
+                          key={def.id}
+                          type="button"
+                          disabled={!unlocked}
+                          onClick={() => handleEquipCosmetic(def.id)}
+                          className={`rounded-xl border px-3 py-3 text-left transition ${
+                            equipped
+                              ? 'border-cs-gold bg-cs-gold/15 text-cs-gold'
+                              : unlocked
+                                ? 'border-cs-border bg-cs-bg/40 hover:border-cs-gold/40'
+                                : 'border-cs-border bg-cs-bg/20 opacity-45 grayscale'
+                          }`}
+                        >
+                          <div className="font-display text-sm font-bold">{t(def.labelKey)}</div>
+                          <div className="mt-1 text-[10px] uppercase tracking-wider text-cs-muted">
+                            {equipped ? t('cosmetics.equipped') : unlocked ? t('cosmetics.equip') : t('cosmetics.locked')}
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </section>
+              ))}
+            </div>
+          </div>
+          <BoxVaultGrid profileId={profile.id} />
+        </div>
       )}
 
       {tab === 'friends' && (
@@ -1153,5 +1223,31 @@ function Chip({ label, value }) {
       <span className="text-cs-muted">{label} </span>
       <span className="text-cs-gold">{value ?? 0}</span>
     </span>
+  )
+}
+
+function BoxVaultGrid({ profileId }) {
+  const { t } = useI18n()
+  const vault = (readBoxStats(profileId)?.vault || []).slice(0, VAULT_LIMIT)
+  return (
+    <div className="panel mt-4 rounded-xl p-4 sm:p-6">
+      <h2 className="mb-3 font-display text-[10px] font-bold uppercase tracking-[0.2em] text-cs-gold">
+        {t('box.vaultGrid')}
+        {vault.length ? (
+          <span className="ml-2 font-mono font-normal normal-case tracking-normal text-cs-muted">
+            {vault.length}/{VAULT_LIMIT}
+          </span>
+        ) : null}
+      </h2>
+      {vault.length ? (
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-5">
+          {vault.map((drop, i) => (
+            <BoxDropCard key={`${drop.name}-${drop.wear || ''}-${i}`} drop={drop} compact />
+          ))}
+        </div>
+      ) : (
+        <p className="text-sm text-cs-muted">{t('box.vaultEmpty')}</p>
+      )}
+    </div>
   )
 }

@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Dices, Package, Sparkles, Swords, Trash2, Users, X } from 'lucide-react'
 import { useI18n } from '../../i18n'
-import { autoPickCases, getCase, listCases, readBoxStats, RARITY_META } from '../../lib/boxBattle'
+import { autoPickCases, caseOfTheWeek, getCase, listCases, readBoxStats, RARITY_META } from '../../lib/boxBattle'
 
 const MAX_OPENS = 10
 
@@ -15,6 +15,7 @@ export default function BoxSetup({
 }) {
   const { t, money } = useI18n()
   const cases = useMemo(() => listCases(), [])
+  const weeklyCase = useMemo(() => caseOfTheWeek(), [])
   const stats = useMemo(() => readBoxStats(profile?.id), [profile?.id])
   const [queue, setQueue] = useState(() =>
     initialCaseId ? [initialCaseId] : cases[0] ? [cases[0].id] : [],
@@ -46,8 +47,18 @@ export default function BoxSetup({
     setQueue(autoPickCases(n, `${profile?.id || 'p'}-surprise-${Date.now()}`))
   }
 
+  const startBattle = () => {
+    if (!queue.length) return
+    onStart({
+      caseId: queue[0],
+      caseIds: queue,
+      rounds: queue.length,
+      vsBot,
+    })
+  }
+
   return (
-    <div className="mx-auto max-w-5xl px-4 py-6 pb-[calc(5rem+env(safe-area-inset-bottom,0px))]">
+    <div className="mx-auto max-w-5xl px-4 py-6 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] sm:pb-[calc(5rem+env(safe-area-inset-bottom,0px))]">
       <div className="mb-6 text-center">
         <p className="font-display text-xs tracking-[0.28em] text-cs-gold uppercase">{t('box.eyebrow')}</p>
         <h1 className="mt-2 font-display text-3xl font-bold gold-text sm:text-4xl">{t('modes.box.title')}</h1>
@@ -82,7 +93,7 @@ export default function BoxSetup({
               </div>
               <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-cs-muted">
                 <span style={{ color: RARITY_META[stats.bestDrop.rarity]?.color }}>
-                  {RARITY_META[stats.bestDrop.rarity]?.label}
+                  {t(`box.rarity.${stats.bestDrop.rarity}`)}
                 </span>
                 <span className="font-mono text-cs-gold">{money(stats.bestDrop.value)}</span>
               </div>
@@ -111,6 +122,35 @@ export default function BoxSetup({
             className="inline-flex items-center gap-2 rounded border border-cs-border px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-cs-muted hover:border-cs-gold/40"
           >
             <Users className="h-4 w-4" /> {t('box.vsFriends')}
+          </button>
+        </div>
+      )}
+
+      {!locked && weeklyCase && (
+        <div className="mb-5 flex flex-col gap-3 overflow-hidden rounded-xl border border-cs-gold/35 bg-gradient-to-r from-cs-gold/15 via-cs-panel to-cs-panel p-4 sm:flex-row sm:items-center">
+          {weeklyCase.image && (
+            <img
+              src={weeklyCase.image}
+              alt=""
+              className="h-20 w-28 shrink-0 object-contain"
+              loading="lazy"
+              referrerPolicy="no-referrer"
+            />
+          )}
+          <div className="min-w-0 flex-1">
+            <p className="font-display text-[10px] font-bold uppercase tracking-[0.22em] text-cs-gold">
+              {t('box.caseOfWeekTitle')}
+            </p>
+            <h2 className="truncate font-display text-lg font-bold">{weeklyCase.short || weeklyCase.name}</h2>
+            <p className="mt-1 text-xs text-cs-muted">{t('box.caseOfWeekHint')}</p>
+          </div>
+          <button
+            type="button"
+            className="btn-gold rounded px-4 py-2 text-xs uppercase tracking-wider"
+            disabled={queue.length >= MAX_OPENS}
+            onClick={() => addCase(weeklyCase.id)}
+          >
+            {t('box.addCase')}
           </button>
         </div>
       )}
@@ -251,15 +291,8 @@ export default function BoxSetup({
           <button
             type="button"
             disabled={!queue.length}
-            className="btn-gold inline-flex w-full items-center justify-center gap-2 rounded px-8 py-3 text-xs uppercase tracking-[0.18em] disabled:opacity-40 sm:w-auto"
-            onClick={() =>
-              onStart({
-                caseId: queue[0],
-                caseIds: queue,
-                rounds: queue.length,
-                vsBot,
-              })
-            }
+            className="btn-gold hidden w-full items-center justify-center gap-2 rounded px-8 py-3 text-xs uppercase tracking-[0.18em] disabled:opacity-40 sm:inline-flex sm:w-auto"
+            onClick={startBattle}
           >
             <Package className="h-4 w-4" />
             {t('box.startBattle')}
@@ -268,6 +301,29 @@ export default function BoxSetup({
       )}
 
       <BoxCareerStats stats={stats} />
+
+      {/* Mobile sticky start — same pattern as draft Scout bar */}
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-cs-border/80 bg-[#0a0c10] px-3 pt-2.5 pb-[max(0.5rem,env(safe-area-inset-bottom,0px))] sm:hidden">
+        <div className="mx-auto flex max-w-5xl items-center gap-2">
+          <div className="min-w-0 flex-1">
+            <p className="truncate font-mono text-[11px] text-cs-gold">
+              {t('box.opensCount', { n: queue.length || 0 })}
+            </p>
+            <p className="truncate text-[10px] text-cs-muted">
+              {queue.length ? t('box.queueLabel', { n: queue.length }) : t('box.needOneCase')}
+            </p>
+          </div>
+          <button
+            type="button"
+            disabled={!queue.length}
+            className="btn-gold inline-flex min-h-[48px] flex-[1.4] items-center justify-center gap-2 rounded px-4 py-3 text-xs uppercase tracking-[0.15em] disabled:opacity-40"
+            onClick={startBattle}
+          >
+            <Package className="h-4 w-4" />
+            {t('box.startBattle')}
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

@@ -11,6 +11,8 @@ import {
   Calendar,
   Download,
   Package,
+  Zap,
+  Skull,
 } from 'lucide-react'
 import docsCopy from '@cs4fun/docs-copy'
 import { useI18n } from '../i18n'
@@ -33,6 +35,8 @@ const MODE_ICONS = {
   box: Package,
   daily: Calendar,
   career: Star,
+  gauntlet: Zap,
+  survivor: Skull,
 }
 
 /** In-app docs — same content as landing /docs; Back returns to the app hub. */

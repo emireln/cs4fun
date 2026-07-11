@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Swords, Users, Trophy, Calendar, Package, ArrowLeft, Star, Lock, Flame } from 'lucide-react'
+import { Swords, Users, Trophy, Calendar, Package, ArrowLeft, Star, Lock, Flame, Zap, Skull } from 'lucide-react'
 import { useI18n } from '../i18n'
 import { useAuth } from '../lib/auth'
 import { getDailyStreak } from '../lib/dailyStreak'
+import { caseOfTheWeek } from '../lib/boxBattle'
 import LogoMark from './LogoMark'
 
 const MODE_META = [
@@ -12,6 +13,8 @@ const MODE_META = [
   { id: 'party', icon: Users },
   { id: 'box', icon: Package },
   { id: 'daily', icon: Calendar },
+  { id: 'gauntlet', icon: Zap },
+  { id: 'survivor', icon: Skull },
   { id: 'career', icon: Star, starred: true },
 ]
 
@@ -107,6 +110,7 @@ export default function HomeHub({ onSelectMode, onOpenFriends, onNeedAuth }) {
 }
 
 function ModeGrid({ streak, onSelectMode, t, isAuthed }) {
+  const weeklyCase = useMemo(() => caseOfTheWeek(), [])
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {MODE_META.map((mode, i) => {
@@ -156,6 +160,17 @@ function ModeGrid({ streak, onSelectMode, t, isAuthed }) {
             {isDaily && !streak.playedToday && streak.currentStreak === 0 && (
               <div className="mt-2 text-[10px] uppercase tracking-wider text-cs-muted">
                 {t('daily.playToday')}
+              </div>
+            )}
+            {mode.id === 'box' && (
+              <div className="mt-2 text-[10px] font-semibold uppercase tracking-wider text-cs-gold/80">
+                {t('box.caseOfWeekTag')}
+                {weeklyCase?.short ? ` · ${weeklyCase.short}` : ''}
+              </div>
+            )}
+            {mode.id === 'gauntlet' && (
+              <div className="mt-2 text-[10px] uppercase tracking-wider text-cs-muted">
+                {t('modes.gauntlet.tag')}
               </div>
             )}
           </motion.button>

@@ -14,6 +14,9 @@ import { simulateMapVeto } from '../../engine/simulation'
 import { createPlaybackController, streamLiveSeries } from '../../lib/matchPlayback'
 import { saveGameResult } from '../../lib/history'
 import { recordFriendMatch } from '../../lib/friends'
+import { pickMatchHighlight } from '../../lib/matchHighlight'
+import { saveLastMatchLog } from '../../lib/lastMatchLog'
+import { titleLoadout } from '../../lib/cosmetics'
 import { subscribeRoom, updateRoom } from '../../lib/rooms'
 import { initialSoloSetupState, retrySoloSetupState } from '../../lib/setupPreset'
 import ModeSetup from '../ModeSetup'
@@ -25,7 +28,7 @@ import HypeBanner from '../HypeBanner'
 import GameOver from '../GameOver'
 import TeamLogo from '../TeamLogo'
 
-export default function DuelGame({ profile, room: initialRoom = null, onHome, onStatus, onNeedFriends }) {
+export default function DuelGame({ profile, room: initialRoom = null, onHome, onStatus, onNeedFriends, onNeedAuth }) {
   const { t } = useI18n()
   const [liveRoom, setLiveRoom] = useState(initialRoom)
   const [boot] = useState(() => {
@@ -63,6 +66,7 @@ export default function DuelGame({ profile, room: initialRoom = null, onHome, on
   const simStarted = useRef(false)
   const autoLockRef = useRef(false)
   const liveRef = useRef(true)
+  const logsRef = useRef([])
   const playbackRef = useRef(createPlaybackController(1))
   const callsRef = useRef({})
   const mapSimulatingRef = useRef(false)
@@ -111,7 +115,9 @@ export default function DuelGame({ profile, room: initialRoom = null, onHome, on
                 draftFilled: filled,
                 lineup: draft.complete ? draft.lineup : p.lineup,
                 power: draft.complete
-                  ? teamPowerScore(draft.lineup, cfg.mentality, cfg.mapPriority)
+                  ? teamPowerScore(draft.lineup, cfg.mentality, cfg.mapPriority, {
+                      cursedCap: cfg.cursedCap,
+                    })
                   : p.power,
               }
             : p,
@@ -277,33 +283,40 @@ export default function DuelGame({ profile, room: initialRoom = null, onHome, on
   // Rematch signal from room
   useEffect(() => {
     if (!liveRoom || liveRoom.status !== 'rematch') return
-    if (step === 'results' || step === 'draft' || step === 'arming') {
-      draft.reset()
-      simStarted.current = false
-      setSeries(null)
-      setLogs([])
-      setVeto(null)
-      setEnemyTeam(null)
-      setUserTeam(null)
-      setWaitingOpp(false)
-      setStep('draft')
-      if (liveRoom.hostId === profile.id) {
-        updateRoom(liveRoom.code, (r) => ({
-          ...r,
-          status: 'drafting',
-          match: null,
-          playback: null,
-          pickEndsAt: Date.now() + 90_000,
-          players: r.players.map((p) => ({
-            ...p,
-            lineup: null,
-            power: 0,
-            draftPhase: 'scouting',
-            draftFilled: 0,
-            ready: false,
-          })),
-        }))
-      }
+    playbackRef.current?.abort?.()
+    liveRef.current = false
+    draft.reset()
+    simStarted.current = false
+    setSeries(null)
+    setLogs([])
+    logsRef.current = []
+    setVeto(null)
+    setEnemyTeam(null)
+    setUserTeam(null)
+    setWaitingOpp(false)
+    setSimulating(false)
+    setPaused(false)
+    setHype(null)
+    setMapResults([])
+    setSeriesScore({ user: 0, enemy: 0 })
+    setLiveMvp(null)
+    setStep('draft')
+    liveRef.current = true
+    if (liveRoom.hostId === profile.id) {
+      updateRoom(liveRoom.code, (r) => ({
+        ...r,
+        status: 'drafting',
+        match: null,
+        playback: null,
+        pickEndsAt: Date.now() + 90_000,
+        players: r.players.map((p) => ({
+          ...p,
+          lineup: null,
+          power: 0,
+          draftPhase: 'scouting',
+          draftFilled: 0,
+        })),
+      }))
     }
   }, [liveRoom?.status]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -368,7 +381,11 @@ export default function DuelGame({ profile, room: initialRoom = null, onHome, on
       },
       onLog: (log) => {
         if (!liveRef.current) return
-        setLogs((prev) => [...prev, log])
+        setLogs((prev) => {
+          const next = [...prev, log]
+          logsRef.current = next
+          return next
+        })
         if (log.type === 'clutch' || log.type === 'ace' || log.type === 'eco') {
           setHype(log.type)
           setTimeout(() => {
@@ -415,7 +432,7 @@ export default function DuelGame({ profile, room: initialRoom = null, onHome, on
       wins: result.userWon ? 1 : 0,
       losses: result.userWon ? 0 : 1,
       lineup: draft.lineup,
-      meta: { maps: `${result.userMaps}-${result.enemyMaps}`, friend: isFriend },
+      meta: { maps: `${result.userMaps}-${result.enemyMaps}`, friend: isFriend, friendMatch: isFriend },
       board: 'duel',
     })
     setSubmitInfo(res)
@@ -429,6 +446,15 @@ export default function DuelGame({ profile, room: initialRoom = null, onHome, on
     if (liveRoom?.code) {
       updateRoom(liveRoom.code, (r) => ({ ...r, status: 'finished' }))
     }
+    saveLastMatchLog({
+      mode: 'duel',
+      logs: logsRef.current,
+      won: result.userWon,
+      homeName: userTeam?.shortName,
+      awayName: enemyTeam?.shortName,
+      mapOrder: finalVeto?.mapOrder || [],
+      mapResults: result.maps,
+    })
     setStep('results')
   }
 
@@ -629,7 +655,9 @@ export default function DuelGame({ profile, room: initialRoom = null, onHome, on
                   ? {
                       ...p,
                       lineup: draft.lineup,
-                      power: teamPowerScore(draft.lineup, cfg.mentality, cfg.mapPriority),
+                      power: teamPowerScore(draft.lineup, cfg.mentality, cfg.mapPriority, {
+                      cursedCap: cfg.cursedCap,
+                    }),
                       draftPhase: 'locked',
                       draftFilled: 5,
                     }
@@ -748,8 +776,14 @@ export default function DuelGame({ profile, room: initialRoom = null, onHome, on
       mentality={mentality}
       mapPriority={cfg?.mapPriority}
       submitInfo={submitInfo}
-      sharePayload={{ mode: 'duel', nickname: profile.nickname }}
+      sharePayload={{
+        mode: 'duel',
+        nickname: profile.nickname,
+        highlight: pickMatchHighlight(logsRef.current, t) || titleLoadout(profile.id, t),
+      }}
+      highlight={pickMatchHighlight(logsRef.current, t) || titleLoadout(profile.id, t)}
       onHome={onHome}
+      onNeedAuth={onNeedAuth}
       onRetry={() => {
         draft.reset()
         simStarted.current = false

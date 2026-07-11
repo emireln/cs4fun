@@ -177,7 +177,60 @@ export function createNewCareerState({
     seed: s,
     mentalityId: 'tactical',
     mapPriority: 'Mirage',
+    rivals: rollCareerRivals(s),
   }
+}
+
+const RIVAL_NAMES = [
+  { name: 'Neon Wolves', shortName: 'NEON' },
+  { name: 'Black Ice', shortName: 'ICE' },
+  { name: 'Volt Esports', shortName: 'VOLT' },
+  { name: 'Iron Lotus', shortName: 'LOTUS' },
+  { name: 'Signal Red', shortName: 'SIG' },
+  { name: 'Night Audit', shortName: 'AUDIT' },
+]
+
+export function rollCareerRivals(seed) {
+  const rng = mulberry32(hashString(`rivals:${seed}`))
+  const pool = [...RIVAL_NAMES]
+  const out = []
+  for (let i = 0; i < 3 && pool.length; i++) {
+    const idx = Math.floor(rng() * pool.length)
+    const pick = pool.splice(idx, 1)[0]
+    out.push({
+      id: `rival-${i}-${pick.shortName}`,
+      name: pick.name,
+      shortName: pick.shortName,
+      heat: 1,
+      lastResult: null,
+    })
+  }
+  return out
+}
+
+/** Bump heat on loss vs a named rival; decay slightly on win. */
+export function updateRivalsAfterMatch(rivals, { won, opponentName }) {
+  const list = Array.isArray(rivals) ? rivals.map((r) => ({ ...r })) : []
+  const hit = list.find(
+    (r) =>
+      String(opponentName || '').includes(r.name) ||
+      String(opponentName || '').toUpperCase().includes(r.shortName),
+  )
+  if (hit) {
+    hit.heat = Math.max(1, Math.min(5, hit.heat + (won ? -1 : 1)))
+    hit.lastResult = won ? 'W' : 'L'
+  }
+  return list
+}
+
+export function rivalPowerScale(rivals, opponentName) {
+  const hit = (rivals || []).find(
+    (r) =>
+      String(opponentName || '').includes(r.name) ||
+      String(opponentName || '').toUpperCase().includes(r.shortName),
+  )
+  if (!hit) return 1
+  return 1 + hit.heat * 0.03
 }
 
 /** Reprice old tiny-economy saves into USD org scale. */
@@ -194,6 +247,7 @@ export function migrateCareerState(state) {
           .slice(0, 8) ||
         'ORG',
       orgLogo: state.orgLogo || null,
+      rivals: state.rivals?.length ? state.rivals : rollCareerRivals(state.seed),
     }
   }
 
@@ -226,6 +280,7 @@ export function migrateCareerState(state) {
         .slice(0, 8) ||
       'ORG',
     orgLogo: state.orgLogo || null,
+    rivals: state.rivals?.length ? state.rivals : rollCareerRivals(state.seed),
   }
 }
 
@@ -377,6 +432,10 @@ export function afterMatchResult(state, { won, opponentName }) {
 
   let week = state.week + 1
   let phase = PHASE.HUB
+  const rivals = updateRivalsAfterMatch(state.rivals || rollCareerRivals(state.seed), {
+    won,
+    opponentName,
+  })
   if (week === 4) phase = PHASE.CAMP
   else if (week > CAREER_WEEKS) phase = PHASE.MAJOR
 
@@ -389,6 +448,7 @@ export function afterMatchResult(state, { won, opponentName }) {
     results,
     week,
     phase,
+    rivals,
     seasonScore: scoreCareerSeason({ ...state, record }, { majorWon: false }),
   }
 }
@@ -439,6 +499,7 @@ export function startNextSeason(state) {
     bridgeLoanTakenSeason: null,
     mapPriority: state.mapPriority || 'Mirage',
     mentalityId: state.mentalityId || 'tactical',
+    rivals: (state.rivals || []).map((r) => ({ ...r, heat: Math.max(1, Math.round(r.heat * 0.7)) })),
   }
 }
 

@@ -18,7 +18,7 @@ import DraftPlay from '../DraftPlay'
 import TournamentView from '../TournamentView'
 import GameOver from '../GameOver'
 
-export default function DailyGame({ profile, onHome, onStatus }) {
+export default function DailyGame({ profile, onHome, onStatus, onNeedAuth }) {
   const { t } = useI18n()
   const [boot] = useState(() => initialSoloSetupState(profile, { lockedMode: 'almanac' }))
   const [step, setStep] = useState(boot.step)
@@ -204,6 +204,7 @@ export default function DailyGame({ profile, onHome, onStatus }) {
         remainLabel,
       }}
       onHome={onHome}
+      onNeedAuth={onNeedAuth}
       onRetry={() => {
         draft.reset()
         const next = retrySoloSetupState(profile, { lockedMode: 'almanac' })

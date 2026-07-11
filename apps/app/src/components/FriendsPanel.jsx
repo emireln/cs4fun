@@ -28,6 +28,8 @@ import { displayName } from '../lib/profile'
 import { readBoxStats } from '../lib/boxBattle'
 import { fetchPublicProfile } from '../lib/publicProfile'
 import { fetchUserStats } from '../lib/history'
+import { getFriendWeekBoard } from '../lib/friendWeek'
+import { createClan, joinClan, leaveClan, getMyClan } from '../lib/clans'
 
 function pickBestDrop(...candidates) {
   return candidates
@@ -66,6 +68,9 @@ export default function FriendsPanel({
   const [selected, setSelected] = useState(null)
   const [busy, setBusy] = useState(false)
   const [viewProfileId, setViewProfileId] = useState(null)
+  const [clanTag, setClanTag] = useState('')
+  const [myClan, setMyClan] = useState(() => getMyClan(profile?.id))
+  const [clanMsg, setClanMsg] = useState('')
 
   const refresh = async () => {
     registerLocalPlayer({ ...profile, nickname: displayName(profile) })
@@ -95,6 +100,7 @@ export default function FriendsPanel({
     )
     setH2h(stats)
     setFriendDrops(drops)
+    setMyClan(getMyClan(profile.id))
   }
 
   useEffect(() => {
@@ -177,6 +183,25 @@ export default function FriendsPanel({
     onStart(res.room)
   }
 
+  const friendWeek = getFriendWeekBoard(profile.id, friends)
+
+  const handleClanAction = (action) => {
+    setClanMsg('')
+    const tag = clanTag.trim()
+    const res =
+      action === 'create'
+        ? createClan(profile.id, displayName(profile), tag)
+        : action === 'join'
+          ? joinClan(profile.id, displayName(profile), tag)
+          : leaveClan(profile.id)
+    if (res?.error) {
+      setClanMsg(t(`clans.errors.${res.error}`))
+      return
+    }
+    setClanTag('')
+    setMyClan(getMyClan(profile.id))
+  }
+
   return (
     <div className={className}>
       {showHeader && (
@@ -198,6 +223,56 @@ export default function FriendsPanel({
           )}
         </div>
       )}
+
+      <div className="panel mb-4 rounded-xl p-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h3 className="font-display text-[10px] font-bold uppercase tracking-[0.2em] text-cs-gold">
+              {t('clans.title')}
+            </h3>
+            <p className="mt-1 text-xs text-cs-muted">{t('clans.blurb')}</p>
+          </div>
+          {myClan ? (
+            <div className="text-right">
+              <div className="font-display text-lg font-bold text-cs-gold">[{myClan.tag}]</div>
+              <div className="text-[10px] text-cs-muted">
+                {t('clans.members')}: {myClan.members?.length || 0}/5
+              </div>
+            </div>
+          ) : null}
+        </div>
+        {myClan ? (
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <div className="min-w-0 flex-1 truncate text-xs text-cs-muted">
+              {(myClan.members || []).map((m) => m.nickname).join(' · ')}
+            </div>
+            <button
+              type="button"
+              className="btn-ghost rounded px-3 py-1.5 text-[10px] uppercase text-cs-loss"
+              onClick={() => handleClanAction('leave')}
+            >
+              {t('clans.leave')}
+            </button>
+          </div>
+        ) : (
+          <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+            <input
+              value={clanTag}
+              onChange={(e) => setClanTag(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5))}
+              placeholder={t('clans.tagPlaceholder')}
+              maxLength={5}
+              className="min-w-0 flex-1 rounded border border-cs-border bg-cs-bg/60 px-3 py-2 font-mono text-sm tracking-widest outline-none focus:border-cs-gold/50"
+            />
+            <button type="button" className="btn-gold rounded px-4 py-2 text-xs uppercase" onClick={() => handleClanAction('create')}>
+              {t('clans.create')}
+            </button>
+            <button type="button" className="btn-ghost rounded px-4 py-2 text-xs uppercase" onClick={() => handleClanAction('join')}>
+              {t('clans.join')}
+            </button>
+          </div>
+        )}
+        {clanMsg && <p className="mt-2 text-xs text-cs-gold">{clanMsg}</p>}
+      </div>
 
       {invites.length > 0 && (
         <div className="mb-4 space-y-2">
@@ -379,6 +454,31 @@ export default function FriendsPanel({
       <h3 className="mb-2 font-display text-[10px] tracking-[0.2em] text-cs-gold uppercase">
         {t('friends.list')} ({friends.length})
       </h3>
+      <div className="panel mb-4 rounded-xl p-4">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h3 className="font-display text-[10px] font-bold uppercase tracking-[0.2em] text-cs-gold">
+            {t('friends.friendWeekTitle')}
+          </h3>
+          <span className="font-mono text-[10px] text-cs-muted">{friendWeek.week}</span>
+        </div>
+        {friendWeek.rows.some((row) => row.points > 0) ? (
+          <ul className="space-y-1.5">
+            {friendWeek.rows.slice(0, 5).map((row, i) => (
+              <li
+                key={row.id}
+                className="flex items-center justify-between rounded border border-cs-border/60 bg-cs-bg/30 px-2.5 py-1.5 text-xs"
+              >
+                <span className="truncate">
+                  #{i + 1} {row.nickname}
+                </span>
+                <span className="font-mono text-cs-gold">{t('friends.friendWeekPoints', { n: row.points })}</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-xs text-cs-muted">{t('friends.friendWeekEmpty')}</p>
+        )}
+      </div>
       {friends.length === 0 ? (
         <p className="panel rounded-xl p-6 text-center text-sm text-cs-muted">{t('friends.empty')}</p>
       ) : (

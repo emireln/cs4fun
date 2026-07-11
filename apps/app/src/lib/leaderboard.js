@@ -73,6 +73,7 @@ export async function fetchLeaderboard(board, { dayKey, limit = TOP_LIMIT } = {}
         nickname: row.nickname,
         score: row.score,
         meta: row.meta || {},
+        day_key: row.day_key,
         created_at: row.created_at,
       }))
     }

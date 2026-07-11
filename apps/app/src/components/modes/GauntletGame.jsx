@@ -10,6 +10,8 @@ import {
 } from '../../lib/gameModes'
 import { createPlaybackController, streamLiveSeries } from '../../lib/matchPlayback'
 import { saveGameResult } from '../../lib/history'
+import { titleLoadout } from '../../lib/cosmetics'
+import { pickMatchHighlight } from '../../lib/matchHighlight'
 import { initialSoloSetupState, retrySoloSetupState } from '../../lib/setupPreset'
 import ModeSetup from '../ModeSetup'
 import DraftPlay from '../DraftPlay'
@@ -20,7 +22,7 @@ import GameOver from '../GameOver'
 import TeamLogo from '../TeamLogo'
 import { pick } from '../../data/constants'
 
-export default function GauntletGame({ profile, onHome, onStatus }) {
+export default function GauntletGame({ profile, onHome, onStatus, onNeedAuth }) {
   const { t, locale } = useI18n()
   const [boot] = useState(() => initialSoloSetupState(profile))
   const [step, setStep] = useState(boot.step)
@@ -333,8 +335,14 @@ export default function GauntletGame({ profile, onHome, onStatus }) {
       mentality={mentality}
       mapPriority={cfg.mapPriority}
       submitInfo={submitInfo}
-      sharePayload={{ mode: 'gauntlet', nickname: profile.nickname }}
+      sharePayload={{
+        mode: 'gauntlet',
+        nickname: profile.nickname,
+        highlight: pickMatchHighlight(logs, t) || titleLoadout(profile.id, t),
+      }}
+      highlight={pickMatchHighlight(logs, t) || titleLoadout(profile.id, t)}
       onHome={onHome}
+      onNeedAuth={onNeedAuth}
       onRetry={() => {
         draft.reset()
         playbackRef.current.abort()

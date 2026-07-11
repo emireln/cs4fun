@@ -82,12 +82,30 @@ export default function ProfileAvatar({
   ultra = false,
   size = 'md',
   className = '',
+  frameId = null,
+  ringId = null,
 }) {
   const avatar = getAvatar(avatarId)
   const BadgeIcon = BADGE_ICONS[badgeIcon] || Award
   const hasPhoto = Boolean(avatarUrl)
   const highlighted = Boolean(ultra)
   const LucideIcon = avatar.kind === 'icon' ? AVATAR_ICONS[avatar.icon] : null
+
+  const frameClass =
+    frameId === 'frame_gold'
+      ? 'border-cs-gold shadow-[0_0_16px_rgba(232,197,71,0.45)]'
+      : frameId === 'frame_fire'
+        ? 'border-orange-400 shadow-[0_0_16px_rgba(251,146,60,0.45)]'
+        : frameId === 'frame_weekly'
+          ? 'border-emerald-400/80 shadow-[0_0_14px_rgba(52,211,153,0.35)]'
+          : null
+
+  const ringClass =
+    ringId === 'ring_ember'
+      ? 'ring-2 ring-orange-400/70 ring-offset-1 ring-offset-[#0a0c10]'
+      : ringId === 'ring_case'
+        ? 'ring-2 ring-cs-gold/70 ring-offset-1 ring-offset-[#0a0c10]'
+        : ''
 
   return (
     <div className={`relative inline-flex shrink-0 ${className}`}>
@@ -99,10 +117,11 @@ export default function ProfileAvatar({
       )}
       <div
         className={`${SIZE_MAP[size] || SIZE_MAP.md} relative flex items-center justify-center overflow-hidden rounded-full border-2 ${
-          highlighted
+          frameClass ||
+          (highlighted
             ? 'border-cs-gold shadow-[0_0_18px_rgba(232,197,71,0.55),0_0_4px_rgba(232,197,71,0.9)] ring-2 ring-cs-gold/35 ring-offset-1 ring-offset-[#0a0c10]'
-            : 'border-cs-gold/40 shadow-[0_0_20px_rgba(232,197,71,0.15)]'
-        }`}
+            : 'border-cs-gold/40 shadow-[0_0_20px_rgba(232,197,71,0.15)]')
+        } ${ringClass}`}
         style={{ background: hasPhoto ? '#0a0c10' : avatar.bg }}
       >
         {hasPhoto ? (

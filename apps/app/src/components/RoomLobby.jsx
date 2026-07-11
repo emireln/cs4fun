@@ -5,6 +5,8 @@ import { useI18n } from '../i18n'
 import { useAuth } from '../lib/auth'
 import { createRoom, joinRoom, subscribeRoom, updateRoom } from '../lib/rooms'
 import { displayName, ensureGuestNickname, randomGuestTag } from '../lib/profile'
+import { equippedTitleLabel, titleLoadout } from '../lib/cosmetics'
+import { PROP_OPTIONS, readProps, setPropPick } from '../lib/props'
 
 export default function RoomLobby({ profile, initialMode = 'party', onBack, onStart, embedded = false }) {
   const { t } = useI18n()
@@ -16,10 +18,19 @@ export default function RoomLobby({ profile, initialMode = 'party', onBack, onSt
   const [joinCode, setJoinCode] = useState('')
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
+  const [propsRow, setPropsRow] = useState({ picks: {} })
 
   useEffect(() => {
     if (!room?.code) return undefined
     return subscribeRoom(room.code, (next) => setRoom({ ...next }))
+  }, [room?.code])
+
+  useEffect(() => {
+    if (!room?.code) {
+      setPropsRow({ picks: {} })
+      return
+    }
+    setPropsRow(readProps(room.code))
   }, [room?.code])
 
   /** Guests without a tag get a random one so they can paste a code and play. */
@@ -121,6 +132,17 @@ export default function RoomLobby({ profile, initialMode = 'party', onBack, onSt
   }
 
   const shell = embedded ? 'w-full' : 'mx-auto w-full max-w-5xl px-4 py-8 sm:py-10'
+  const showProps = room?.code && (room.mode === 'duel' || room.mode === 'box')
+  const titleForPlayer = (playerId) => {
+    if (playerId === profile.id) return titleLoadout(profile.id, t) || equippedTitleLabel(profile.id, t)
+    try {
+      const all = JSON.parse(localStorage.getItem('cs4fun_cosmetics_v1') || '{}')
+      if (!all[playerId]) return null
+    } catch {
+      return null
+    }
+    return titleLoadout(playerId, t) || equippedTitleLabel(playerId, t)
+  }
 
   if (!room) {
     return (
@@ -244,22 +266,66 @@ export default function RoomLobby({ profile, initialMode = 'party', onBack, onSt
           {t('room.players')} ({room.players.length}/{room.maxPlayers})
         </h3>
         <ul className="grid gap-2 sm:grid-cols-2">
-          {room.players.map((p) => (
+          {room.players.map((p) => {
+            const title = titleForPlayer(p.id)
+            return (
             <li
               key={p.id}
               className="flex items-center justify-between rounded border border-cs-border bg-cs-bg/40 px-3 py-2.5 text-sm"
             >
-              <span>
-                {p.nickname}
-                {p.isHost ? ` · ${t('room.host')}` : ''}
-                {p.id === profile.id ? ` (${t('room.you')})` : ''}
+              <span className="min-w-0">
+                <span className="block truncate">
+                  {p.nickname}
+                  {p.isHost ? ` · ${t('room.host')}` : ''}
+                  {p.id === profile.id ? ` (${t('room.you')})` : ''}
+                </span>
+                {title ? (
+                  <span className="mt-0.5 block truncate text-[10px] uppercase tracking-wider text-cs-gold/80">
+                    {title}
+                  </span>
+                ) : null}
               </span>
               <span className={p.ready ? 'text-cs-win' : 'text-cs-muted'}>
                 {p.ready ? t('room.ready') : t('room.notReady')}
               </span>
             </li>
-          ))}
+          )})}
         </ul>
+
+        {showProps && (
+          <div className="mt-5 rounded-xl border border-cs-border bg-cs-bg/40 p-3">
+            <div className="mb-2">
+              <p className="font-display text-[10px] font-bold uppercase tracking-[0.2em] text-cs-gold">
+                {t('props.title')}
+              </p>
+              <p className="text-xs text-cs-muted">{t('props.blurb')}</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {PROP_OPTIONS.map((prop) => {
+                const active = propsRow.picks?.[profile.id] === prop.id
+                return (
+                  <button
+                    key={prop.id}
+                    type="button"
+                    onClick={() => setPropsRow(setPropPick(room.code, profile.id, prop.id))}
+                    className={`rounded border px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider ${
+                      active
+                        ? 'border-cs-gold bg-cs-gold/15 text-cs-gold'
+                        : 'border-cs-border text-cs-muted hover:border-cs-gold/40'
+                    }`}
+                  >
+                    {t(prop.labelKey)}
+                  </button>
+                )
+              })}
+            </div>
+            {propsRow.picks?.[profile.id] ? (
+              <p className="mt-2 text-[10px] text-cs-muted">
+                {t('props.yourPick')}: {t(PROP_OPTIONS.find((p) => p.id === propsRow.picks?.[profile.id])?.labelKey)}
+              </p>
+            ) : null}
+          </div>
+        )}
 
         <div className="mt-8 flex flex-col gap-2 sm:flex-row sm:items-center">
           <button type="button" className="btn-ghost flex-1 rounded py-2.5 text-sm" onClick={toggleReady}>

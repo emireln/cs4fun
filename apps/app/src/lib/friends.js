@@ -679,6 +679,17 @@ export async function getFriendH2H(profileId, friendId) {
 export async function recordFriendMatch({ profileId, friendId, won }) {
   if (!profileId || !friendId || profileId === friendId) return
 
+  try {
+    const { recordFriendWeekPoint } = await import('./friendWeek')
+    recordFriendWeekPoint(profileId, friendId, { won })
+    const { addClanWeekPoints } = await import('./clans')
+    addClanWeekPoints(profileId, won ? 3 : 1)
+    const { emitEngagementEvent } = await import('./challenges')
+    emitEngagementEvent(profileId, { type: 'friend_match' })
+  } catch {
+    /* optional */
+  }
+
   if (isSupabaseConfigured) {
     const { data: session } = await supabase.auth.getSession()
     if (session?.session?.user) {

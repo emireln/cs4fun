@@ -11,7 +11,7 @@ import DraftPlay from '../DraftPlay'
 import TournamentView from '../TournamentView'
 import GameOver from '../GameOver'
 
-export default function MajorGame({ profile, onHome, onStatus }) {
+export default function MajorGame({ profile, onHome, onStatus, onNeedAuth }) {
   const { t } = useI18n()
   const [boot] = useState(() => initialSoloSetupState(profile))
   const [step, setStep] = useState(boot.step)
@@ -164,6 +164,7 @@ export default function MajorGame({ profile, onHome, onStatus }) {
       submitInfo={submitInfo}
       sharePayload={{ mode: 'major', nickname: profile.nickname }}
       onHome={onHome}
+      onNeedAuth={onNeedAuth}
       onRetry={() => {
         draft.reset()
         const next = retrySoloSetupState(profile)

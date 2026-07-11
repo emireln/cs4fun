@@ -1,11 +1,16 @@
 import { ROLES } from '../data/constants'
 import { formatMoney, getDisplayCurrency } from './currency'
 import { RARITY_META } from './boxBattle'
-import { teamLogoCandidates } from '../data/teamLogos'
 
-const FONT = 'Arial, Helvetica, sans-serif'
 const CARD_W = 1080
 const CARD_H = 1350
+
+/** Prefer app fonts when already loaded; never block render on webfonts. */
+function fontStack(kind = 'body') {
+  if (kind === 'display') return '"Orbitron", "Arial Black", Arial, sans-serif'
+  if (kind === 'mono') return '"IBM Plex Mono", Consolas, monospace'
+  return '"Rajdhani", "Segoe UI", Arial, sans-serif'
+}
 
 function brandLogoSrc() {
   const base = typeof import.meta !== 'undefined' && import.meta.env?.BASE_URL ? import.meta.env.BASE_URL : '/'
@@ -30,15 +35,6 @@ async function loadBrandLogo() {
   return loadImage(brandLogoSrc())
 }
 
-async function loadTeamLogo(name) {
-  for (const src of teamLogoCandidates(name)) {
-    const img = await loadImage(src)
-    if (img) return img
-  }
-  return null
-}
-
-/** Draw image letterboxed inside a box (object-fit: contain). */
 function drawContain(ctx, img, x, y, w, h) {
   if (!img || !img.width || !img.height) return
   const scale = Math.min(w / img.width, h / img.height)
@@ -57,9 +53,76 @@ function fitText(ctx, text, maxWidth) {
   return `${s}…`
 }
 
+function roundRect(ctx, x, y, w, h, r) {
+  const rad = Math.min(r, w / 2, h / 2)
+  ctx.beginPath()
+  ctx.moveTo(x + rad, y)
+  ctx.arcTo(x + w, y, x + w, y + h, rad)
+  ctx.arcTo(x + w, y + h, x, y + h, rad)
+  ctx.arcTo(x, y + h, x, y, rad)
+  ctx.arcTo(x, y, x + w, y, rad)
+  ctx.closePath()
+}
+
+function paintAtmosphere(ctx, W, H, won) {
+  const base = ctx.createLinearGradient(0, 0, W * 0.2, H)
+  base.addColorStop(0, '#07090d')
+  base.addColorStop(0.55, '#0e1218')
+  base.addColorStop(1, won ? '#141008' : '#140a0a')
+  ctx.fillStyle = base
+  ctx.fillRect(0, 0, W, H)
+
+  // Soft brand glow behind the hero result
+  const glow = ctx.createRadialGradient(W * 0.5, H * 0.28, 20, W * 0.5, H * 0.28, W * 0.55)
+  glow.addColorStop(0, won ? 'rgba(232,197,71,0.28)' : 'rgba(232,93,93,0.22)')
+  glow.addColorStop(0.45, won ? 'rgba(232,197,71,0.08)' : 'rgba(232,93,93,0.06)')
+  glow.addColorStop(1, 'rgba(0,0,0,0)')
+  ctx.fillStyle = glow
+  ctx.fillRect(0, 0, W, H)
+
+  // Subtle carbon grain (sparse, not a full grid)
+  ctx.fillStyle = 'rgba(255,255,255,0.015)'
+  for (let i = 0; i < 90; i++) {
+    const x = ((i * 97) % W) + (i % 7)
+    const y = ((i * 53) % (H - 120)) + 40
+    ctx.fillRect(x, y, 2, 2)
+  }
+
+  // Gold edge frame
+  ctx.strokeStyle = won ? 'rgba(232,197,71,0.35)' : 'rgba(232,93,93,0.28)'
+  ctx.lineWidth = 3
+  roundRect(ctx, 28, 28, W - 56, H - 56, 28)
+  ctx.stroke()
+
+  // Top accent bar
+  const bar = ctx.createLinearGradient(0, 0, W, 0)
+  bar.addColorStop(0, 'transparent')
+  bar.addColorStop(0.2, won ? '#e8c547' : '#e85d5d')
+  bar.addColorStop(0.8, won ? '#e8c547' : '#e85d5d')
+  bar.addColorStop(1, 'transparent')
+  ctx.fillStyle = bar
+  ctx.fillRect(80, 28, W - 160, 4)
+}
+
+function modeLabel(mode, locale) {
+  const m = String(mode || 'cs4fun').toLowerCase()
+  const map = {
+    major: ['THE MAJOR', 'O MAJOR'],
+    duel: ['KNIFE FIGHT', 'BRIGA DE FACA'],
+    party: ['POWER PARTY', 'POWER PARTY'],
+    daily: ['BLIND DAILY', 'DIÁRIO CEGO'],
+    gauntlet: ['CHAOS GAUNTLET', 'GAUNTLET DO CAOS'],
+    box: ['BOX BATTLE', 'BOX BATTLE'],
+    career: ['CAREER', 'CARREIRA'],
+    survivor: ['SURVIVOR', 'SURVIVOR'],
+  }
+  const pair = map[m]
+  if (!pair) return String(mode).toUpperCase()
+  return locale === 'pt-BR' ? pair[1] : pair[0]
+}
+
 /**
- * Draw a shareable result card to canvas (no external deps).
- * Returns a Blob (PNG) or null.
+ * Shareable result PNG — brand-first, logo-light, built to look good in Discord/IG/Twitter.
  */
 export async function renderShareCardBlob({
   mode = 'CS4FUN',
@@ -78,6 +141,9 @@ export async function renderShareCardBlob({
   oppTotal = null,
   caseName = null,
   currency = null,
+  highlight = null,
+  careerTier = null,
+  careerOrg = null,
 }) {
   const W = CARD_W
   const H = CARD_H
@@ -89,228 +155,254 @@ export async function renderShareCardBlob({
 
   const moneyCur = currency || getDisplayCurrency()
   const fmt = (n) => formatMoney(n, moneyCur)
-
   const brandLogo = await loadBrandLogo()
+  const accent = won ? '#e8c547' : '#e85d5d'
+  const text = '#e8ecf4'
+  const muted = '#8b93a7'
 
-  // Solid fills first — never rely on web fonts / external images for readability
-  const bg = ctx.createLinearGradient(0, 0, W, H)
-  bg.addColorStop(0, '#0a0c10')
-  bg.addColorStop(0.45, '#12161f')
-  bg.addColorStop(1, won ? '#1a1608' : '#1a0c0c')
-  ctx.fillStyle = bg
-  ctx.fillRect(0, 0, W, H)
+  paintAtmosphere(ctx, W, H, won)
 
-  ctx.strokeStyle = 'rgba(255,255,255,0.04)'
-  ctx.lineWidth = 1
-  for (let x = 0; x < W; x += 48) {
-    ctx.beginPath()
-    ctx.moveTo(x, 0)
-    ctx.lineTo(x, H)
-    ctx.stroke()
-  }
-  for (let y = 0; y < H; y += 48) {
-    ctx.beginPath()
-    ctx.moveTo(0, y)
-    ctx.lineTo(W, y)
-    ctx.stroke()
-  }
-
-  ctx.fillStyle = won ? '#e8c547' : '#e85d5d'
-  ctx.fillRect(0, 0, W, 12)
-
-  // Brand mark — logo + wordmark (every share PNG)
-  const logoSize = 56
-  let titleX = 72
+  // ── Header: one brand mark + mode chip (no logo spam) ──
+  const pad = 72
   if (brandLogo) {
-    drawContain(ctx, brandLogo, 72, 44, logoSize, logoSize)
-    titleX = 72 + logoSize + 16
+    drawContain(ctx, brandLogo, pad, 56, 48, 48)
   }
-  ctx.fillStyle = '#e8c547'
-  ctx.font = `bold 48px ${FONT}`
-  ctx.fillText('CS4FUN', titleX, 88)
+  ctx.fillStyle = accent
+  ctx.font = `700 36px ${fontStack('display')}`
+  ctx.fillText('CS4FUN', brandLogo ? pad + 64 : pad, 92)
 
-  // Corner watermark logo
-  if (brandLogo) {
-    ctx.save()
-    ctx.globalAlpha = 0.9
-    drawContain(ctx, brandLogo, W - 72 - 64, 40, 64, 64)
-    ctx.restore()
-  }
+  // Mode chip (right)
+  const modeText = modeLabel(mode, locale)
+  ctx.font = `600 22px ${fontStack('body')}`
+  const chipW = Math.min(360, ctx.measureText(modeText).width + 36)
+  const chipX = W - pad - chipW
+  ctx.fillStyle = 'rgba(232,197,71,0.08)'
+  roundRect(ctx, chipX, 62, chipW, 40, 20)
+  ctx.fill()
+  ctx.strokeStyle = 'rgba(232,197,71,0.35)'
+  ctx.lineWidth = 1.5
+  roundRect(ctx, chipX, 62, chipW, 40, 20)
+  ctx.stroke()
+  ctx.fillStyle = accent
+  ctx.fillText(modeText, chipX + 18, 90)
 
-  ctx.fillStyle = '#8b93a7'
-  ctx.font = `28px ${FONT}`
-  ctx.fillText(String(mode).toUpperCase(), titleX, 130)
-
-  ctx.fillStyle = won ? '#e8c547' : '#e85d5d'
-  ctx.font = `bold 72px ${FONT}`
+  // ── Hero result ──
   const resultWord =
     title ||
     (won
       ? locale === 'pt-BR'
         ? 'VITÓRIA'
-        : 'WIN'
+        : 'VICTORY'
       : locale === 'pt-BR'
         ? 'DERROTA'
-        : 'LOSS')
-  wrapText(ctx, resultWord, 72, 240, W - 144, 80)
+        : 'DEFEAT')
 
-  ctx.fillStyle = '#e8ecf4'
-  ctx.font = `bold 40px ${FONT}`
-  const bits = []
-  if (wins != null || losses != null) bits.push(`${wins ?? 0}W-${losses ?? 0}L`)
-  if (score != null) bits.push(`SCORE ${score}`)
-  if (streak != null) bits.push(`STREAK ${streak}`)
-  if (mapPriority) bits.push(String(mapPriority))
-  if (myTotal != null && oppTotal != null) {
-    bits.push(`${fmt(myTotal)} vs ${fmt(oppTotal)}`)
+  ctx.fillStyle = accent
+  ctx.font = `800 96px ${fontStack('display')}`
+  const hero = fitText(ctx, String(resultWord).toUpperCase(), W - pad * 2)
+  const heroW = ctx.measureText(hero).width
+  ctx.fillText(hero, (W - heroW) / 2, 260)
+
+  // Thin gold underline under hero
+  ctx.fillStyle = accent
+  ctx.globalAlpha = 0.55
+  ctx.fillRect((W - Math.min(heroW, 420)) / 2, 280, Math.min(heroW, 420), 3)
+  ctx.globalAlpha = 1
+
+  // Player identity
+  ctx.fillStyle = text
+  ctx.font = `700 40px ${fontStack('body')}`
+  const nick = `@${nickname || 'Player'}`
+  ctx.fillText(nick, (W - ctx.measureText(nick).width) / 2, 350)
+
+  if (careerOrg) {
+    ctx.fillStyle = muted
+    ctx.font = `500 26px ${fontStack('body')}`
+    const org = fitText(ctx, String(careerOrg), W - pad * 2)
+    ctx.fillText(org, (W - ctx.measureText(org).width) / 2, 390)
   }
-  if (caseName) bits.push(String(caseName))
-  ctx.fillText(fitText(ctx, bits.join('  ·  ') || '—', W - 144), 72, 360)
 
-  ctx.fillStyle = '#8b93a7'
-  ctx.font = `32px ${FONT}`
-  ctx.fillText(`@${nickname || 'Player'}`, 72, 415)
+  // Stats strip — few chips, not a dense meta row
+  const chips = []
+  if (wins != null || losses != null) chips.push({ label: `${wins ?? 0}–${losses ?? 0}`, sub: locale === 'pt-BR' ? 'PLACAR' : 'RECORD' })
+  if (score != null) chips.push({ label: String(score), sub: 'SCORE' })
+  if (streak != null) chips.push({ label: String(streak), sub: 'STREAK' })
+  if (mapPriority) chips.push({ label: String(mapPriority), sub: locale === 'pt-BR' ? 'MAPA' : 'MAP' })
+  if (myTotal != null && oppTotal != null) {
+    chips.push({ label: `${fmt(myTotal)}`, sub: locale === 'pt-BR' ? 'SEU TOTAL' : 'YOUR TOTAL' })
+  }
+  if (careerTier) chips.push({ label: String(careerTier), sub: 'TIER' })
+  if (caseName && chips.length < 4) chips.push({ label: fitText(ctx, String(caseName), 200), sub: 'CASE' })
 
-  const footerY = H - 56
-  const contentBottom = footerY - 36
+  const shown = chips.slice(0, 4)
+  if (shown.length) {
+    const gap = 16
+    const totalGap = gap * (shown.length - 1)
+    const chipWidth = (W - pad * 2 - totalGap) / shown.length
+    const y0 = careerOrg ? 420 : 390
+    shown.forEach((c, i) => {
+      const x = pad + i * (chipWidth + gap)
+      ctx.fillStyle = 'rgba(255,255,255,0.03)'
+      roundRect(ctx, x, y0, chipWidth, 100, 16)
+      ctx.fill()
+      ctx.strokeStyle = 'rgba(255,255,255,0.06)'
+      ctx.lineWidth = 1
+      roundRect(ctx, x, y0, chipWidth, 100, 16)
+      ctx.stroke()
+
+      ctx.fillStyle = accent
+      ctx.font = `700 34px ${fontStack('mono')}`
+      const label = fitText(ctx, c.label, chipWidth - 24)
+      ctx.fillText(label, x + (chipWidth - ctx.measureText(label).width) / 2, y0 + 52)
+
+      ctx.fillStyle = muted
+      ctx.font = `600 18px ${fontStack('body')}`
+      const sub = c.sub
+      ctx.fillText(sub, x + (chipWidth - ctx.measureText(sub).width) / 2, y0 + 80)
+    })
+  }
+
+  if (highlight) {
+    const hy = careerOrg ? 550 : 520
+    ctx.fillStyle = 'rgba(232,197,71,0.1)'
+    roundRect(ctx, pad, hy, W - pad * 2, 56, 12)
+    ctx.fill()
+    ctx.fillStyle = accent
+    ctx.font = `700 26px ${fontStack('body')}`
+    const hl = fitText(ctx, String(highlight), W - pad * 2 - 40)
+    ctx.fillText(hl, (W - ctx.measureText(hl).width) / 2, hy + 36)
+  }
+
+  const footerY = H - 110
+  const contentTop = highlight ? (careerOrg ? 630 : 600) : careerOrg ? 560 : 530
 
   if (mode === 'box' && Array.isArray(boxDrops) && boxDrops.length) {
-    await drawBoxVault(ctx, boxDrops, 460, contentBottom, W, locale, fmt)
+    await drawBoxVault(ctx, boxDrops, contentTop, footerY - 24, W, locale, fmt, accent)
   } else if (lineup) {
-    await drawLineup(ctx, lineup, 480, contentBottom, W)
+    await drawLineup(ctx, lineup, contentTop, footerY - 24, W, accent, muted, text)
   }
 
-  // Footer bar with mini logo
-  ctx.fillStyle = 'rgba(0,0,0,0.35)'
-  ctx.fillRect(0, H - 88, W, 88)
+  // ── Footer CTA — wordmark + invite URL, single logo max ──
+  ctx.fillStyle = 'rgba(0,0,0,0.45)'
+  ctx.fillRect(28, H - 110, W - 56, 82)
+
+  ctx.fillStyle = accent
+  ctx.font = `700 28px ${fontStack('display')}`
+  ctx.fillText('CS4FUN', pad, H - 58)
+
+  ctx.fillStyle = muted
+  ctx.font = `600 24px ${fontStack('body')}`
+  const cta = locale === 'pt-BR' ? 'Jogue grátis · cs4fun.online' : 'Play free · cs4fun.online'
+  ctx.fillText(cta, pad + 160, H - 58)
+
   if (brandLogo) {
-    drawContain(ctx, brandLogo, 72, H - 72, 36, 36)
+    ctx.globalAlpha = 0.85
+    drawContain(ctx, brandLogo, W - pad - 44, H - 92, 40, 40)
+    ctx.globalAlpha = 1
   }
-  ctx.fillStyle = '#8b93a7'
-  ctx.font = `24px ${FONT}`
-  const url =
-    typeof window !== 'undefined' ? window.location.origin || 'cs4fun.online' : 'cs4fun.online'
-  const urlText = String(url).replace(/^file:.*/, 'cs4fun.online')
-  ctx.fillText(urlText, brandLogo ? 120 : 72, H - 46)
-  ctx.fillStyle = '#e8c547'
-  ctx.font = `bold 22px ${FONT}`
-  ctx.fillText('CS4FUN', W - 72 - ctx.measureText('CS4FUN').width, H - 46)
 
   return canvasToPngBlob(canvas)
 }
 
-async function drawBoxVault(ctx, boxDrops, topY, bottomY, W, locale, fmt) {
-  const list = boxDrops.slice(0, 10)
-  const format = fmt || ((n) => formatMoney(n, getDisplayCurrency()))
-  ctx.fillStyle = '#e8c547'
-  ctx.font = `bold 28px ${FONT}`
-  ctx.fillText(locale === 'pt-BR' ? 'SEU VAULT' : 'YOUR VAULT', 72, topY)
+async function drawBoxVault(ctx, boxDrops, topY, bottomY, W, locale, fmt, accent) {
+  const list = boxDrops.slice(0, 6)
+  const pad = 72
+  ctx.fillStyle = accent
+  ctx.font = `700 24px ${fontStack('display')}`
+  const heading = locale === 'pt-BR' ? 'DROPS' : 'DROPS'
+  ctx.fillText(heading, pad, topY)
 
-  const gridTop = topY + 28
-  const availH = Math.max(200, bottomY - gridTop)
-  const padX = 72
-  const gap = 14
-  const availW = W - padX * 2
+  const gridTop = topY + 24
+  const availH = Math.max(220, bottomY - gridTop)
+  const gap = 16
+  const availW = W - pad * 2
   const n = list.length
-  const cols = n <= 2 ? n : n <= 4 ? 2 : n <= 6 ? 3 : n <= 8 ? 4 : 5
+  const cols = n <= 3 ? n : 3
   const rows = Math.ceil(n / cols)
   const cellW = (availW - gap * (cols - 1)) / cols
-  const cellH = Math.min(cellW * 1.25, (availH - gap * (rows - 1)) / rows)
-
+  const cellH = Math.min(cellW * 1.15, (availH - gap * (rows - 1)) / rows)
   const images = await Promise.all(list.map((d) => loadImage(d.image, { cors: true })))
 
   for (let i = 0; i < n; i++) {
     const drop = list[i]
     const col = i % cols
     const row = Math.floor(i / cols)
-    const x = padX + col * (cellW + gap)
+    const x = pad + col * (cellW + gap)
     const y = gridTop + row * (cellH + gap)
-    const color = RARITY_META[drop.rarity]?.color || '#e8c547'
+    const color = RARITY_META[drop.rarity]?.color || accent
 
-    ctx.fillStyle = '#141820'
-    roundRect(ctx, x, y, cellW, cellH, 14)
+    ctx.fillStyle = '#10141c'
+    roundRect(ctx, x, y, cellW, cellH, 18)
     ctx.fill()
-    ctx.strokeStyle = color
-    ctx.lineWidth = 2.5
-    roundRect(ctx, x, y, cellW, cellH, 14)
+    ctx.strokeStyle = `${color}99`
+    ctx.lineWidth = 2
+    roundRect(ctx, x, y, cellW, cellH, 18)
     ctx.stroke()
 
-    // Rarity top strip
     ctx.fillStyle = color
-    ctx.fillRect(x + 10, y + 10, cellW - 20, 4)
+    ctx.fillRect(x, y, cellW, 5)
 
-    const imgPad = 12
-    const textBlock = Math.max(52, Math.min(72, cellH * 0.28))
-    const imgAreaH = cellH - textBlock - 28
+    const imgPad = 16
+    const textH = 56
     if (images[i]) {
-      drawContain(ctx, images[i], x + imgPad, y + 22, cellW - imgPad * 2, imgAreaH)
-    } else {
-      // CORS fallback — rarity-colored placeholder so the card still fits
-      ctx.fillStyle = `${color}22`
-      roundRect(ctx, x + imgPad, y + 28, cellW - imgPad * 2, imgAreaH - 8, 10)
-      ctx.fill()
-      ctx.fillStyle = color
-      ctx.font = `bold ${Math.max(18, cellW / 8)}px ${FONT}`
-      const mark = '◆'
-      ctx.fillText(mark, x + (cellW - ctx.measureText(mark).width) / 2, y + 22 + imgAreaH / 2)
+      drawContain(ctx, images[i], x + imgPad, y + 18, cellW - imgPad * 2, cellH - textH - 28)
     }
 
-    const textY = y + 22 + imgAreaH + 8
     ctx.fillStyle = '#e8ecf4'
-    const nameSize = Math.max(16, Math.min(24, cellW / 10))
-    ctx.font = `bold ${nameSize}px ${FONT}`
-    ctx.fillText(fitText(ctx, drop.name || '—', cellW - 24), x + 12, textY + nameSize)
+    ctx.font = `700 ${Math.max(18, Math.min(24, cellW / 11))}px ${fontStack('body')}`
+    ctx.fillText(fitText(ctx, drop.name || '—', cellW - 28), x + 14, y + cellH - 34)
 
-    ctx.font = `bold ${Math.max(14, nameSize - 2)}px ${FONT}`
     ctx.fillStyle = color
-    const rarity = String(drop.rarity || '').toUpperCase()
-    ctx.fillText(fitText(ctx, rarity, cellW * 0.55), x + 12, textY + nameSize + 22)
-
-    ctx.fillStyle = '#e8c547'
-    ctx.font = `bold ${Math.max(16, nameSize)}px ${FONT}`
-    const price = format(drop.value)
-    const pw = ctx.measureText(price).width
-    ctx.fillText(price, x + cellW - 12 - pw, textY + nameSize + 22)
+    ctx.font = `700 ${Math.max(16, Math.min(22, cellW / 12))}px ${fontStack('mono')}`
+    const price = fmt(drop.value)
+    ctx.fillText(price, x + 14, y + cellH - 12)
   }
 }
 
-async function drawLineup(ctx, lineup, topY, bottomY, W) {
-  ctx.fillStyle = '#e8c547'
-  ctx.font = `bold 28px ${FONT}`
-  ctx.fillText('LINEUP', 72, topY)
+async function drawLineup(ctx, lineup, topY, bottomY, W, accent, muted, text) {
+  const pad = 72
+  ctx.fillStyle = accent
+  ctx.font = `700 24px ${fontStack('display')}`
+  ctx.fillText('LINEUP', pad, topY)
 
   const roles = ROLES
-  const availH = Math.max(280, bottomY - topY - 40)
-  const rowH = Math.min(96, (availH - 8 * (roles.length - 1)) / roles.length)
-  let y = topY + 36
+  const gap = 12
+  const availH = Math.max(260, bottomY - topY - 28)
+  const rowH = Math.min(88, (availH - gap * (roles.length - 1)) / roles.length)
+  let y = topY + 28
 
   for (const role of roles) {
     const p = lineup[role.id]
-    ctx.fillStyle = '#2a3140'
-    roundRect(ctx, 72, y, W - 144, rowH, 12)
+    ctx.fillStyle = 'rgba(255,255,255,0.035)'
+    roundRect(ctx, pad, y, W - pad * 2, rowH, 14)
     ctx.fill()
 
-    ctx.fillStyle = '#e8c547'
-    ctx.font = `bold 24px ${FONT}`
-    ctx.fillText(role.short, 96, y + rowH * 0.62)
+    // Role badge
+    ctx.fillStyle = 'rgba(232,197,71,0.12)'
+    roundRect(ctx, pad + 14, y + 14, 88, rowH - 28, 10)
+    ctx.fill()
+    ctx.fillStyle = accent
+    ctx.font = `700 22px ${fontStack('display')}`
+    const short = role.short
+    ctx.fillText(short, pad + 14 + (88 - ctx.measureText(short).width) / 2, y + rowH * 0.62)
 
-    ctx.fillStyle = '#e8ecf4'
-    ctx.font = `bold 32px ${FONT}`
-    ctx.fillText(fitText(ctx, p?.name || '—', 280), 200, y + rowH * 0.62)
+    ctx.fillStyle = text
+    ctx.font = `700 34px ${fontStack('body')}`
+    ctx.fillText(fitText(ctx, p?.name || '—', 420), pad + 120, y + rowH * 0.58)
 
-    if (p?.fromTeam) {
-      const logo = await loadTeamLogo(p.fromTeam)
-      let textX = 520
-      if (logo) {
-        const size = Math.min(40, rowH - 20)
-        drawContain(ctx, logo, 520, y + (rowH - size) / 2, size, size)
-        textX = 520 + size + 12
-      }
-      ctx.fillStyle = '#8b93a7'
-      ctx.font = `22px ${FONT}`
-      ctx.fillText(fitText(ctx, p.fromTeam, W - 72 - textX), textX, y + rowH * 0.62)
+    if (p?.rating != null) {
+      ctx.fillStyle = accent
+      ctx.font = `700 28px ${fontStack('mono')}`
+      const rating = Number(p.rating).toFixed(2)
+      ctx.fillText(rating, W - pad - 28 - ctx.measureText(rating).width, y + rowH * 0.58)
+    } else if (p?.fromTeam) {
+      ctx.fillStyle = muted
+      ctx.font = `500 24px ${fontStack('body')}`
+      const team = fitText(ctx, p.fromTeam, 220)
+      ctx.fillText(team, W - pad - 28 - ctx.measureText(team).width, y + rowH * 0.58)
     }
-    y += rowH + 8
+
+    y += rowH + gap
   }
 }
 
@@ -350,31 +442,4 @@ export function triggerBlobDownload(blob, filename = 'cs4fun-result.png') {
     a.remove()
   }, 1500)
   return true
-}
-
-function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
-  const words = String(text).split(' ')
-  let line = ''
-  let cy = y
-  for (const word of words) {
-    const test = line ? `${line} ${word}` : word
-    if (ctx.measureText(test).width > maxWidth && line) {
-      ctx.fillText(line, x, cy)
-      line = word
-      cy += lineHeight
-    } else {
-      line = test
-    }
-  }
-  if (line) ctx.fillText(line, x, cy)
-}
-
-function roundRect(ctx, x, y, w, h, r) {
-  ctx.beginPath()
-  ctx.moveTo(x + r, y)
-  ctx.arcTo(x + w, y, x + w, y + h, r)
-  ctx.arcTo(x + w, y + h, x, y + h, r)
-  ctx.arcTo(x, y + h, x, y, r)
-  ctx.arcTo(x, y, x + w, y, r)
-  ctx.closePath()
 }

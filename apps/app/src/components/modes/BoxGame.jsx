@@ -19,8 +19,9 @@ import BoxOpenReel from '../box/BoxOpenReel'
 import BoxResults from '../box/BoxResults'
 import BoxSetup from '../box/BoxSetup'
 
-export default function BoxGame({ profile, room, onHome, onStatus, onNeedFriends }) {
+export default function BoxGame({ profile, room, onHome, onStatus, onNeedFriends, onNeedAuth }) {
   const { t, money } = useI18n()
+  const [localRoom, setLocalRoom] = useState(room)
   const [step, setStep] = useState(room ? 'lobby' : 'setup')
   const [cfg, setCfg] = useState(() => {
     const caseIds =
@@ -46,6 +47,8 @@ export default function BoxGame({ profile, room, onHome, onStatus, onNeedFriends
   const [statsSnapshot, setStatsSnapshot] = useState(null)
   const submitted = useRef(false)
   const lastBoxToken = useRef(null)
+  /** Prevents Strict Mode / re-entry from appending the same round twice */
+  const committedRound = useRef(null)
 
   const caseIds = cfg.caseIds?.length ? cfg.caseIds : cfg.caseId ? [cfg.caseId] : []
   const rounds = caseIds.length || cfg.rounds || 1
@@ -85,6 +88,49 @@ export default function BoxGame({ profile, room, onHome, onStatus, onNeedFriends
   }, [localRoom?.seed])
 
   useEffect(() => {
+    if (!localRoom || localRoom.status !== 'rematch') return
+    const ids =
+      localRoom.caseIds ||
+      localRoom.payload?.caseIds ||
+      (localRoom.caseId || localRoom.payload?.caseId
+        ? [localRoom.caseId || localRoom.payload.caseId]
+        : null)
+    const nextCaseIds = ids || caseIds
+    submitted.current = false
+    lastBoxToken.current = null
+    committedRound.current = null
+    setSubmitInfo(null)
+    setStatsSnapshot(null)
+    setMyDrops([])
+    setOppDrops([])
+    setRoundIndex(0)
+    setRevealing(null)
+    setReelDone({ me: false, opp: false })
+    if (nextCaseIds?.length) {
+      setCfg({ caseId: nextCaseIds[0], caseIds: nextCaseIds, rounds: nextCaseIds.length, vsBot: false })
+      setStep('battle')
+    } else {
+      setStep(localRoom.hostId === profile.id ? 'lobby' : 'lobby')
+    }
+    if (localRoom.hostId === profile.id) {
+      updateRoom(localRoom.code, (r) => ({
+        ...r,
+        status: nextCaseIds?.length ? 'drafting' : 'drafting',
+        box: null,
+        players: r.players.map((p) => ({
+          ...p,
+          ready: false,
+          boxReelDone: false,
+          boxReelRound: null,
+          boxTotal: null,
+          boxDrops: null,
+          boxBest: null,
+        })),
+      }))
+    }
+  }, [localRoom?.status]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
     onStatus?.({
       phase: step,
       gameMode: 'box',
@@ -119,6 +165,7 @@ export default function BoxGame({ profile, room, onHome, onStatus, onNeedFriends
 
   const startRound = (idx, { publish = true } = {}) => {
     unlockAudio()
+    committedRound.current = null
     const opens = openBattleRound({
       caseId: caseIds[idx] || cfg.caseId,
       caseIds,
@@ -160,6 +207,7 @@ export default function BoxGame({ profile, room, onHome, onStatus, onNeedFriends
     if (!remote?.revealing || remote.roundIndex == null) return
     if (remote.advanceToken === lastBoxToken.current) return
     lastBoxToken.current = remote.advanceToken
+    committedRound.current = null
     setRoundIndex(remote.roundIndex)
     setRevealing(remote.revealing)
     setReelDone({ me: false, opp: false })
@@ -167,26 +215,31 @@ export default function BoxGame({ profile, room, onHome, onStatus, onNeedFriends
   }, [isFriendBox, isBoxHost, step, localRoom?.box?.advanceToken]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const onReelFinished = (who) => {
-    setReelDone((prev) => ({ ...prev, [who]: true }))
+    setReelDone((prev) => (prev[who] ? prev : { ...prev, [who]: true }))
   }
 
   useEffect(() => {
     if (!revealing) return
     if (!reelDone.me || !reelDone.opp) return
-    const mine = revealing.find((r) => r.playerId === me.id)?.drop
-    const theirs = revealing.find((r) => r.playerId === opp?.id)?.drop
-    if (mine) setMyDrops((d) => [...d, mine])
-    if (theirs) setOppDrops((d) => [...d, theirs])
+    const roundKey = `${roundIndex}:${revealing.map((r) => r.drop?.id).join('|')}`
+    if (committedRound.current !== roundKey) {
+      committedRound.current = roundKey
 
-    if (isFriendBox && localRoom?.code) {
-      updateRoom(localRoom.code, (r) => ({
-        ...r,
-        players: r.players.map((p) =>
-          p.id === profile.id
-            ? { ...p, boxReelDone: true, boxReelRound: roundIndex }
-            : p,
-        ),
-      }))
+      const mine = revealing.find((r) => r.playerId === me.id)?.drop
+      const theirs = revealing.find((r) => r.playerId === opp?.id)?.drop
+      if (mine) setMyDrops((d) => (d.some((x) => x.id === mine.id) ? d : [...d, mine]))
+      if (theirs) setOppDrops((d) => (d.some((x) => x.id === theirs.id) ? d : [...d, theirs]))
+
+      if (isFriendBox && localRoom?.code) {
+        updateRoom(localRoom.code, (r) => ({
+          ...r,
+          players: r.players.map((p) =>
+            p.id === profile.id
+              ? { ...p, boxReelDone: true, boxReelRound: roundIndex }
+              : p,
+          ),
+        }))
+      }
     }
 
     const timer = setTimeout(() => {
@@ -261,6 +314,8 @@ export default function BoxGame({ profile, room, onHome, onStatus, onNeedFriends
           roundCovert: myDrops.filter((d) => d.rarity === 'covert').length,
           roundOpens: myDrops.length,
           vsBot: cfg.vsBot,
+          friendMatch: isFriendBox,
+          friend: isFriendBox,
         },
       })
       setSubmitInfo(info)
@@ -301,6 +356,7 @@ export default function BoxGame({ profile, room, onHome, onStatus, onNeedFriends
           setRoundIndex(0)
           setRevealing(null)
           submitted.current = false
+          committedRound.current = null
           setStep('battle')
         }}
       />
@@ -329,6 +385,7 @@ export default function BoxGame({ profile, room, onHome, onStatus, onNeedFriends
           setMyDrops([])
           setOppDrops([])
           submitted.current = false
+          committedRound.current = null
         }}
       />
     )
@@ -432,14 +489,27 @@ export default function BoxGame({ profile, room, onHome, onStatus, onNeedFriends
       submitInfo={submitInfo}
       statsSnapshot={statsSnapshot}
       onHome={onHome}
+      onNeedAuth={onNeedAuth}
       onRetry={() => {
         submitted.current = false
+        committedRound.current = null
         setMyDrops([])
         setOppDrops([])
         setRoundIndex(0)
         setRevealing(null)
         setStep('setup')
       }}
+      onRematch={
+        isFriendBox && localRoom?.code
+          ? () => {
+              updateRoom(localRoom.code, (r) => ({
+                ...r,
+                status: 'rematch',
+                seed: `${r.mode}-${r.code}-${Date.now()}`,
+              }))
+            }
+          : null
+      }
     />
   )
 }

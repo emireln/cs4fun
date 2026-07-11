@@ -10,10 +10,12 @@ import {
   simulateMapVeto,
 } from '../engine/simulation'
 import { generateSharedRolls, mulberry32, hashString } from './seed'
+import { applyCursedCapPower } from './cursedCap'
 
-export function teamPowerScore(lineup, mentalityId = 'tactical', mapPriority = 'Mirage') {
+export function teamPowerScore(lineup, mentalityId = 'tactical', mapPriority = 'Mirage', opts = {}) {
   const mentality = MENTALITIES.find((m) => m.id === mentalityId) || MENTALITIES[1]
-  return computeTeamPower(lineup, mentality, mapPriority).avg
+  const avg = computeTeamPower(lineup, mentality, mapPriority).avg
+  return applyCursedCapPower(avg, lineup, Boolean(opts.cursedCap), opts.cap)
 }
 
 export function buildUserTeam(lineup, { mapPriority, mentalityId, name = 'Dream Five', shortName = 'YOU' }) {

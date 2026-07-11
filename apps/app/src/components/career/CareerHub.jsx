@@ -234,6 +234,38 @@ export default function CareerHub({
         <Stat icon={TrendingUp} label={t('career.teamPower')} value={power.toFixed(2)} />
       </div>
 
+      <div className="mb-4 panel rounded-xl p-3 sm:p-4">
+        <h2 className="mb-3 font-display text-[10px] font-bold uppercase tracking-[0.2em] text-cs-gold">
+          {t('career.rivalsTitle')}
+        </h2>
+        {state.rivals?.length ? (
+          <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {state.rivals.map((rival) => (
+              <li
+                key={rival.id || rival.name}
+                className="rounded border border-cs-border/70 bg-cs-bg/40 px-3 py-2"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="truncate font-display text-sm font-bold">{rival.name}</span>
+                  <span className="font-mono text-[10px] text-cs-gold">
+                    {t('career.rivalHeat', { n: rival.heat || 0 })}
+                  </span>
+                </div>
+                <p className="mt-1 text-[10px] uppercase tracking-wider text-cs-muted">
+                  {rival.lastResult === 'win' || rival.lastResult === true
+                    ? t('career.rivalLastWin')
+                    : rival.lastResult === 'loss' || rival.lastResult === false
+                      ? t('career.rivalLastLoss')
+                      : t('career.rivalNone')}
+                </p>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-xs text-cs-muted">{t('career.rivalNone')}</p>
+        )}
+      </div>
+
       {finance.debt > 0 && (
         <p className="mb-4 rounded-lg border border-cs-border bg-cs-bg/40 px-3 py-2 text-xs text-cs-muted">
           {t('career.loanDebt', { amount: money(finance.debt) })}

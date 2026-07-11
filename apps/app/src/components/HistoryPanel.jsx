@@ -1,17 +1,45 @@
 import { useEffect, useState } from 'react'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Eye } from 'lucide-react'
 import { useI18n } from '../i18n'
 import { useAuth } from '../lib/auth'
 import { fetchGameHistory } from '../lib/history'
+import { readLastMatchLog } from '../lib/lastMatchLog'
+import MatchLive from './MatchLive'
 
 export default function HistoryPanel({ onBack, onNeedAuth }) {
   const { t } = useI18n()
   const { profile, isAuthed } = useAuth()
   const [rows, setRows] = useState([])
+  const [watching, setWatching] = useState(null)
 
   useEffect(() => {
     fetchGameHistory(profile.id).then(setRows)
   }, [profile.id])
+
+  if (watching?.logs?.length) {
+    return (
+      <div className="mx-auto max-w-3xl px-4 py-6">
+        <button
+          type="button"
+          className="btn-ghost mb-4 inline-flex items-center gap-2 rounded px-3 py-2 text-sm"
+          onClick={() => setWatching(null)}
+        >
+          <ArrowLeft className="h-4 w-4" /> {t('nav.back')}
+        </button>
+        <MatchLive
+          logs={watching.logs}
+          title={t('history.watchLast')}
+          homeName={watching.homeName || 'YOU'}
+          awayName={watching.awayName || 'OPP'}
+          mapOrder={watching.mapOrder || []}
+          mapResults={watching.mapResults || []}
+          playing={false}
+        />
+      </div>
+    )
+  }
+
+  const last = readLastMatchLog()
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
@@ -23,6 +51,16 @@ export default function HistoryPanel({ onBack, onNeedAuth }) {
       {!isAuthed && (
         <button type="button" className="mb-4 text-xs text-cs-gold underline" onClick={onNeedAuth}>
           {t('auth.needAuth')}
+        </button>
+      )}
+
+      {last?.logs?.length > 0 && (
+        <button
+          type="button"
+          className="btn-ghost mb-4 inline-flex items-center gap-2 rounded border border-cs-gold/30 px-3 py-2 text-xs uppercase tracking-wider text-cs-gold"
+          onClick={() => setWatching(last)}
+        >
+          <Eye className="h-3.5 w-3.5" /> {t('history.watchLast')}
         </button>
       )}
 
@@ -39,7 +77,11 @@ export default function HistoryPanel({ onBack, onNeedAuth }) {
                 <span className={`w-6 font-bold ${row.won ? 'text-cs-win' : 'text-cs-loss'}`}>
                   {row.won ? t('history.win') : t('history.loss')}
                 </span>
-                <span className="flex-1 font-semibold capitalize">{row.mode}</span>
+                <span className="flex-1 font-semibold capitalize">
+                  {t(`modes.${row.mode}.title`) === `modes.${row.mode}.title`
+                    ? row.mode
+                    : t(`modes.${row.mode}.title`)}
+                </span>
                 <span className="font-mono text-cs-gold">{row.score}</span>
                 <span className="hidden text-xs text-cs-muted sm:inline">
                   {new Date(row.created_at).toLocaleDateString()}

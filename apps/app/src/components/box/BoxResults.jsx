@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion'
-import { Crown, Download, Home, Package, RotateCcw, Share2, Trophy } from 'lucide-react'
+import { Crown, Download, Home, Package, RotateCcw, Share2, Swords, Trophy } from 'lucide-react'
 import { useState } from 'react'
 import { useI18n } from '../../i18n'
+import { useAuth } from '../../lib/auth'
 import { RARITY_META, scoreBoxBattle } from '../../lib/boxBattle'
 import { downloadShareCard, shareResult } from '../../lib/history'
 import BoxDropCard from './BoxDropCard'
@@ -23,8 +24,11 @@ export default function BoxResults({
   statsSnapshot,
   onHome,
   onRetry,
+  onRematch,
+  onNeedAuth,
 }) {
   const { t, locale, currency, money } = useI18n()
+  const { isAuthed } = useAuth()
   const [shared, setShared] = useState(false)
   const [downloading, setDownloading] = useState(false)
   const score = scoreBoxBattle({
@@ -35,6 +39,10 @@ export default function BoxResults({
   })
   const maxBar = Math.max(myTotal, oppTotal, 1)
   const title = tie ? t('box.tie') : won ? t('box.victory') : t('box.defeat')
+  const showGuestNudge =
+    !isAuthed &&
+    typeof onNeedAuth === 'function' &&
+    (won || myBest?.rarity === 'gold' || myBest?.rarity === 'covert')
 
   const cardPayload = {
     mode: 'box',
@@ -49,7 +57,7 @@ export default function BoxResults({
     boxDrops: myDrops,
     myTotal,
     oppTotal,
-    caseName: caseName || (caseIds?.length ? `${caseIds.length} opens` : null),
+    caseName: caseName || (caseIds?.length ? t('box.opensCount', { n: caseIds.length }) : null),
   }
 
   const handleShare = async () => {
@@ -121,11 +129,9 @@ export default function BoxResults({
             </div>
           </div>
 
-          {submitInfo && (
-            <p className="relative mt-3 text-[11px] text-cs-muted">
-              {submitInfo.global ? t('results.submitted') : t('results.localOnly')}
-            </p>
-          )}
+          {submitInfo?.ok && submitInfo.global ? (
+            <p className="relative mt-3 text-[11px] text-cs-muted">{t('results.submitted')}</p>
+          ) : null}
         </div>
 
         <div className="grid gap-4 border-t border-cs-border/60 px-4 py-5 sm:grid-cols-2 sm:px-6">
@@ -175,6 +181,20 @@ export default function BoxResults({
           </div>
         )}
 
+        {showGuestNudge && (
+          <div className="mx-4 mb-4 rounded-xl border border-cs-gold/35 bg-cs-gold/10 px-4 py-3 text-left sm:mx-6">
+            <p className="text-sm font-semibold text-cs-gold">{t('results.guestNudgeTitle')}</p>
+            <p className="mt-1 text-xs text-cs-muted">{t('results.guestNudgeBlurb')}</p>
+            <button
+              type="button"
+              className="btn-gold mt-3 rounded px-4 py-2 text-[10px] uppercase tracking-wider"
+              onClick={onNeedAuth}
+            >
+              {t('results.guestNudgeCta')}
+            </button>
+          </div>
+        )}
+
         <div className="flex flex-wrap justify-center gap-2 border-t border-cs-border/60 px-4 py-5">
           <button
             type="button"
@@ -193,14 +213,26 @@ export default function BoxResults({
             <Download className="h-4 w-4" />
             {t('box.savePng')}
           </button>
-          <button
-            type="button"
-            className="btn-ghost inline-flex items-center gap-2 rounded px-4 py-2.5 text-xs uppercase tracking-wider"
-            onClick={onRetry}
-          >
-            <RotateCcw className="h-4 w-4" />
-            {t('box.rematchVault')}
-          </button>
+          {onRematch ? (
+            <button
+              type="button"
+              className="btn-gold inline-flex items-center gap-2 rounded px-4 py-2.5 text-xs uppercase tracking-wider"
+              onClick={onRematch}
+            >
+              <Swords className="h-4 w-4" />
+              {t('results.rematch')}
+            </button>
+          ) : null}
+          {onRetry ? (
+            <button
+              type="button"
+              className="btn-ghost inline-flex items-center gap-2 rounded px-4 py-2.5 text-xs uppercase tracking-wider"
+              onClick={onRetry}
+            >
+              <RotateCcw className="h-4 w-4" />
+              {t('box.rematchVault')}
+            </button>
+          ) : null}
           <button
             type="button"
             className="btn-ghost inline-flex items-center gap-2 rounded px-4 py-2.5 text-xs uppercase tracking-wider"
@@ -239,7 +271,7 @@ function BestPull({ title, drop }) {
               {drop.name}
             </div>
             <div className="mt-1 text-[11px] text-cs-muted">
-              {t(`box.rarity.${drop.rarity}`)} · {drop.wear}
+              {t(`box.rarity.${drop.rarity}`)} · {t(`box.wear.${drop.wear}`)}
             </div>
             <div className="font-mono text-cs-gold">{money(drop.value)}</div>
           </div>

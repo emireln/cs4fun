@@ -24,6 +24,7 @@ export default function ModeSetup({
   const [mentality, setMentality] = useState('tactical')
   const [mapPriority, setMapPriority] = useState('Mirage')
   const [vsCpu, setVsCpu] = useState(true)
+  const [cursedCap, setCursedCap] = useState(false)
   const playWith = showPlayWithOption || showCpuOption
   const modeLocked = Boolean(lockedMode)
 
@@ -101,11 +102,30 @@ export default function ModeSetup({
         </Panel>
       </div>
 
+      <div className="mt-5 flex justify-center">
+        <button
+          type="button"
+          onClick={() => setCursedCap((v) => !v)}
+          className={`rounded border px-4 py-2.5 text-xs font-bold uppercase tracking-wider transition ${
+            cursedCap
+              ? 'border-cs-gold bg-cs-gold/15 text-cs-gold'
+              : 'border-cs-border text-cs-muted hover:border-cs-gold/40'
+          }`}
+        >
+          {t('setup.cursedCap')}: {cursedCap ? t('setup.cursedCapOn') : t('setup.cursedCapOff')}
+        </button>
+      </div>
+      {cursedCap && (
+        <p className="mx-auto mt-2 max-w-md text-center text-[11px] text-cs-muted">{t('setup.cursedCapHint')}</p>
+      )}
+
       <div className="mt-8 text-center">
         <button
           type="button"
           className="btn-gold rounded px-10 py-3.5 text-sm uppercase tracking-[0.2em]"
-          onClick={() => onStart({ mode: lockedMode || mode, mentality, mapPriority, vsCpu })}
+          onClick={() =>
+            onStart({ mode: lockedMode || mode, mentality, mapPriority, vsCpu, cursedCap })
+          }
         >
           <span className="inline-flex items-center gap-2">
             <Swords className="h-5 w-5" /> {ctaLabel || t('setup.enterDraft')}

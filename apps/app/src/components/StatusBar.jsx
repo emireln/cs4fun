@@ -1,13 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
-import { motion } from 'framer-motion'
-import { Trophy, Swords, LogIn } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Trophy, Swords, LogIn, Target } from 'lucide-react'
 import { STAGES } from '../data/constants'
 import { useI18n } from '../i18n'
 import { useAuth } from '../lib/auth'
 import { BADGE_DEFS, fetchUserBadges, ULTRA_BADGE_ID } from '../lib/history'
+import { getCosmetics } from '../lib/cosmetics'
+import { weeklyCompletedCount, getWeeklyChallenges } from '../lib/challenges'
 import BrandWordmark from './BrandWordmark'
 import LogoMark from './LogoMark'
 import ProfileAvatar from './ProfileAvatar'
+import WeeklyChallenges from './WeeklyChallenges'
 
 export default function StatusBar({
   wins,
@@ -24,12 +27,16 @@ export default function StatusBar({
   onOpenProfile,
   onNeedAuth,
 }) {
-  const { t, currency, setCurrency } = useI18n()
+  const { t } = useI18n()
   const { profile, isAuthed } = useAuth()
   const [hidden, setHidden] = useState(false)
   const [ultra, setUltra] = useState(false)
+  const [challengesOpen, setChallengesOpen] = useState(false)
+  const panelRef = useRef(null)
   const lastY = useRef(0)
   const showcaseIcon = BADGE_DEFS.find((b) => b.id === profile.showcaseBadge)?.icon
+  const cosmetics = getCosmetics(profile?.id || 'guest')
+  const challengeDone = weeklyCompletedCount(getWeeklyChallenges(profile?.id || 'guest'))
 
   useEffect(() => {
     if (!isAuthed) {
@@ -45,6 +52,24 @@ export default function StatusBar({
       alive = false
     }
   }, [profile.id, profile.showcaseBadge, isAuthed])
+
+  useEffect(() => {
+    if (!challengesOpen) return undefined
+    const onDoc = (e) => {
+      if (panelRef.current && !panelRef.current.contains(e.target)) {
+        setChallengesOpen(false)
+      }
+    }
+    const onKey = (e) => {
+      if (e.key === 'Escape') setChallengesOpen(false)
+    }
+    document.addEventListener('mousedown', onDoc)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDoc)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [challengesOpen])
 
   const stageLabel =
     stage === 'quarterfinals'
@@ -74,6 +99,7 @@ export default function StatusBar({
         setHidden(false)
       } else if (delta > 8) {
         setHidden(true)
+        setChallengesOpen(false)
       } else if (delta < -8) {
         setHidden(false)
       }
@@ -89,7 +115,7 @@ export default function StatusBar({
         hidden ? '-translate-y-full' : 'translate-y-0'
       }`}
     >
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-3 py-2 sm:gap-3 sm:px-4 sm:py-2.5">
+      <div className="relative mx-auto flex max-w-7xl items-center justify-between gap-2 px-3 py-2 sm:gap-3 sm:px-4 sm:py-2.5">
         <button type="button" onClick={onHome} className="group/logo flex min-w-0 items-center gap-2 sm:gap-2.5">
           <LogoMark className="h-9 w-auto max-h-9 shrink-0 sm:h-10 sm:max-h-10" />
           <div className="min-w-0 text-left">
@@ -103,16 +129,6 @@ export default function StatusBar({
         </button>
 
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
-          <button
-            type="button"
-            onClick={() => setCurrency(currency === 'USD' ? 'BRL' : 'USD')}
-            title={t('nav.currency')}
-            aria-label={t('nav.currency')}
-            className="inline-flex h-9 items-center justify-center rounded-lg border border-cs-border bg-cs-panel px-2 font-mono text-[10px] font-bold tracking-wider text-cs-gold transition hover:border-cs-gold/50 hover:bg-cs-gold/10"
-          >
-            {currency === 'BRL' ? t('currency.brl') : t('currency.usd')}
-          </button>
-
           {!quiet && (
             <div className="mr-0.5 hidden flex-wrap items-center gap-1.5 text-xs sm:flex">
               {(wins != null || losses != null) && (
@@ -143,6 +159,42 @@ export default function StatusBar({
               {extra}
             </div>
           )}
+
+          <div className="relative" ref={panelRef}>
+            <button
+              type="button"
+              onClick={() => setChallengesOpen((o) => !o)}
+              title={t('nav.challenges')}
+              aria-label={t('nav.challenges')}
+              aria-expanded={challengesOpen}
+              className={`relative flex h-9 w-9 items-center justify-center rounded-lg border transition ${
+                challengesOpen
+                  ? 'border-cs-gold/50 bg-cs-gold/10 text-cs-gold'
+                  : 'border-cs-border bg-cs-panel text-cs-muted hover:border-cs-gold/50 hover:bg-cs-gold/10 hover:text-cs-gold'
+              }`}
+            >
+              <Target className="h-[18px] w-[18px]" />
+              {challengeDone < 3 && (
+                <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-cs-gold px-1 font-mono text-[9px] font-bold text-black">
+                  {challengeDone}/3
+                </span>
+              )}
+            </button>
+
+            <AnimatePresence>
+              {challengesOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -4, scale: 0.98 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute top-full right-0 z-50 mt-2 max-h-[min(70vh,28rem)] w-[min(100vw-1.5rem,22rem)] origin-top-right overflow-y-auto overscroll-contain rounded-xl border border-cs-border bg-[#0c0f14] p-3 shadow-2xl shadow-black/50 sm:w-[24rem]"
+                >
+                  <WeeklyChallenges compact />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
 
           {isAuthed && (
             <button
@@ -181,6 +233,8 @@ export default function StatusBar({
               showcaseBadge={isAuthed ? profile.showcaseBadge : null}
               badgeIcon={showcaseIcon}
               ultra={ultra}
+              frameId={cosmetics.equippedFrame}
+              ringId={cosmetics.equippedRing}
               size="sm"
             />
           </button>

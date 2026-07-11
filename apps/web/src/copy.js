@@ -41,7 +41,7 @@ const copy = {
       major: { title: 'O Major', blurb: 'MD3 de 8 times de verdade. O sério.' },
       duel: { title: 'Briga de Faca', blurb: 'Guerra de bans BO1 vs BOT ou amigo' },
       party: { title: 'Power Party', blurb: 'Mesmos scouts — maior vibe (poder) vence' },
-      box: { title: 'Box Battle', blurb: 'Monte até 10 cases reais do CS. Melhores drops vencem.' },
+      box: { title: 'Box Battle', blurb: 'Monte até 10 caixas reais do CS. Melhores drops vencem.' },
       daily: { title: 'Diário Cego', blurb: 'Seed global, ratings ocultos, chave BO1' },
       career: { title: 'Carreira', blurb: 'Sim de org com login: contratos, camps, dinastia no Major.' },
     },

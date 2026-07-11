@@ -5,8 +5,9 @@ import { useI18n } from '../i18n'
 import { useAuth } from '../lib/auth'
 import { fetchLeaderboard, fetchMyRank, utcDayKey, TOP_LIMIT } from '../lib/leaderboard'
 import { isSupabaseConfigured } from '../lib/supabase'
+import { utcSeasonKey } from '../lib/challenges'
 
-const BOARDS = ['daily', 'duel', 'box', 'career', 'major']
+const BOARDS = ['daily', 'duel', 'box', 'career', 'major', 'gauntlet', 'survivor']
 
 export default function LeaderboardPanel({ profile, onBack, onNeedAuth }) {
   const { t } = useI18n()
@@ -15,12 +16,13 @@ export default function LeaderboardPanel({ profile, onBack, onNeedAuth }) {
   const [rows, setRows] = useState([])
   const [myRank, setMyRank] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [scope, setScope] = useState('allTime')
 
   const load = async () => {
     setLoading(true)
     const dayKey = board === 'daily' ? utcDayKey() : undefined
     const data = await fetchLeaderboard(board, { dayKey, limit: TOP_LIMIT })
-    setRows(data)
+    setRows(scope === 'season' ? filterSeasonRows(data) : data)
 
     if (isAuthed && profile?.id) {
       const rank = await fetchMyRank(board, profile.id, { dayKey })
@@ -33,7 +35,9 @@ export default function LeaderboardPanel({ profile, onBack, onNeedAuth }) {
 
   useEffect(() => {
     load()
-  }, [board, isAuthed, profile?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [board, scope, isAuthed, profile?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const season = utcSeasonKey()
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
@@ -51,19 +55,40 @@ export default function LeaderboardPanel({ profile, onBack, onNeedAuth }) {
           <h1 className="mb-2 font-display text-3xl font-bold gold-text lg:text-4xl">{t('leaderboard.title')}</h1>
           <p className="text-sm text-cs-muted lg:text-base">{t('leaderboard.topN', { n: TOP_LIMIT })}</p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {BOARDS.map((b) => (
-            <button
-              key={b}
-              type="button"
-              onClick={() => setBoard(b)}
-              className={`rounded border px-3 py-1.5 text-sm font-semibold sm:px-4 sm:py-2 ${
-                board === b ? 'border-cs-gold bg-cs-gold/15 text-cs-gold' : 'border-cs-border text-cs-muted'
-              }`}
-            >
-              {t(`leaderboard.${b}`)}
-            </button>
-          ))}
+        <div className="space-y-2">
+          <div className="flex flex-wrap gap-2 lg:justify-end">
+            {['allTime', 'season'].map((id) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setScope(id)}
+                className={`rounded border px-3 py-1.5 text-xs font-bold uppercase tracking-wider ${
+                  scope === id ? 'border-cs-gold bg-cs-gold/15 text-cs-gold' : 'border-cs-border text-cs-muted'
+                }`}
+              >
+                {id === 'season' ? t('leaderboard.season') : t('leaderboard.allTime')}
+              </button>
+            ))}
+          </div>
+          {scope === 'season' && (
+            <p className="text-right font-mono text-[10px] text-cs-gold">
+              {t('leaderboard.seasonLabel', { season })}
+            </p>
+          )}
+          <div className="flex flex-wrap gap-2">
+            {BOARDS.map((b) => (
+              <button
+                key={b}
+                type="button"
+                onClick={() => setBoard(b)}
+                className={`rounded border px-3 py-1.5 text-sm font-semibold sm:px-4 sm:py-2 ${
+                  board === b ? 'border-cs-gold bg-cs-gold/15 text-cs-gold' : 'border-cs-border text-cs-muted'
+                }`}
+              >
+                {t(`leaderboard.${b}`)}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -153,4 +178,16 @@ export default function LeaderboardPanel({ profile, onBack, onNeedAuth }) {
       </div>
     </div>
   )
+}
+
+function filterSeasonRows(rows) {
+  const season = utcSeasonKey()
+  const since = Date.now() - 42 * 24 * 60 * 60 * 1000
+  return rows.filter((row) => {
+    if (row.meta?.season_key === season || row.meta?.seasonKey === season) return true
+    const day = row.day_key || row.meta?.dayKey || row.meta?.day_key
+    if (day) return new Date(`${day}T00:00:00Z`).getTime() >= since
+    const created = row.created_at ? new Date(row.created_at).getTime() : 0
+    return created >= since
+  })
 }

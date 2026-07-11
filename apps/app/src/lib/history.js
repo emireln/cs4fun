@@ -1,5 +1,8 @@
 import { isSupabaseConfigured, supabase } from './supabase'
 import { utcDayKey } from './leaderboard'
+import { allWeeklyComplete, emitEngagementEvent, getWeeklyChallenges } from './challenges'
+import { setCosmeticFlag, syncCosmeticUnlocks } from './cosmetics'
+import { getDailyStreak } from './dailyStreak'
 import { buildResultShareText, buildProfileShareText, buildProfileShareUrl, sharePlainText } from './shareText'
 
 const LOCAL_HISTORY = 'cs4fun_history_v1'
@@ -36,6 +39,10 @@ export const BADGE_DEFS = [
   { id: 'box_gold_3', category: 'box_gold_hits', threshold: 3, icon: 'gem' },
   { id: 'box_covert', category: 'box_covert_hits', threshold: 1, icon: 'flame' },
   { id: 'box_covert_10', category: 'box_covert_hits', threshold: 10, icon: 'skull' },
+  { id: 'weekly_complete', category: 'weekly_clears', threshold: 1, icon: 'target' },
+  { id: 'streak_7', category: 'daily_streak', threshold: 7, icon: 'flame' },
+  { id: 'streak_14', category: 'daily_streak', threshold: 14, icon: 'flame' },
+  { id: 'social_5', category: 'friend_week_matches', threshold: 5, icon: 'users' },
   { id: 'box_jackpot', category: 'box_best_value', threshold: 500, icon: 'star' },
   { id: 'box_opener', category: 'box_opens', threshold: 50, icon: 'dices' },
   { id: 'career_first_major', category: 'career_majors_won', threshold: 1, icon: 'trophy' },
@@ -73,6 +80,9 @@ function emptyStats() {
     perfect_majors: 0,
     almanac_wins: 0,
     max_streak: 0,
+    weekly_clears: 0,
+    daily_streak: 0,
+    friend_week_matches: 0,
   }
 }
 
@@ -212,6 +222,7 @@ export async function saveGameResult({
       })
 
       if (!error && data) {
+        trackEngagement(userId || sessionData.session.user.id, { mode, won, streak, meta })
         return {
           ok: true,
           global: true,
@@ -262,7 +273,46 @@ export async function saveGameResult({
   writeLocalStats(userId, stats)
   const newBadges = awardLocalBadges(userId, stats)
 
+  // Engagement: challenges + cosmetics (guests + also fire for auth path below)
+  trackEngagement(userId, { mode, won, streak, meta })
+
   return { ok: true, global: false, entry, newBadges }
+}
+
+function trackEngagement(userId, { mode, won, streak, meta }) {
+  if (!userId) return
+  emitEngagementEvent(userId, { type: 'game_played', mode })
+  if (won && mode === 'daily') emitEngagementEvent(userId, { type: 'daily_win' })
+  if (won && mode === 'duel') emitEngagementEvent(userId, { type: 'duel_win' })
+  if (won && mode === 'box') emitEngagementEvent(userId, { type: 'box_win' })
+  if (mode === 'box') {
+    const opens = Number(meta?.roundOpens) || (Array.isArray(meta?.drops) ? meta.drops.length : 0)
+    if (opens) emitEngagementEvent(userId, { type: 'cases_opened', amount: opens })
+    if ((Number(meta?.roundCovert) || 0) > 0 || meta?.bestDrop?.rarity === 'covert' || meta?.bestDrop?.rarity === 'gold') {
+      emitEngagementEvent(userId, { type: 'box_covert' })
+    }
+  }
+  if (mode === 'gauntlet' && streak) {
+    emitEngagementEvent(userId, { type: 'gauntlet_streak', amount: streak })
+    if (streak >= 5) setCosmeticFlag(userId, 'gauntlet5')
+  }
+  if (mode === 'career' && meta?.event === 'major_final') {
+    emitEngagementEvent(userId, { type: 'career_major_final' })
+  }
+  if (meta?.friendMatch || meta?.friend) emitEngagementEvent(userId, { type: 'friend_match' })
+
+  const stats = readLocalStats(userId)
+  const streakInfo = getDailyStreak(userId)
+  stats.daily_streak = Math.max(stats.daily_streak || 0, streakInfo.currentStreak || 0)
+  if (allWeeklyComplete(getWeeklyChallenges(userId))) {
+    stats.weekly_clears = Math.max(stats.weekly_clears || 0, 1)
+  }
+  if (meta?.friendMatch || meta?.friend) {
+    stats.friend_week_matches = (stats.friend_week_matches || 0) + 1
+  }
+  writeLocalStats(userId, stats)
+  awardLocalBadges(userId, stats)
+  syncCosmeticUnlocks(userId)
 }
 
 export async function fetchGameHistory(userId, { limit = 30 } = {}) {
@@ -356,6 +406,9 @@ export async function shareResult(payload) {
       myTotal: payload.myTotal,
       oppTotal: payload.oppTotal,
       caseName: payload.caseName,
+      highlight: payload.highlight,
+      careerTier: payload.careerTier,
+      careerOrg: payload.careerOrg,
     })
     if (blob) {
       file = new File([blob], 'cs4fun-result.png', { type: 'image/png' })

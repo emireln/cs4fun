@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Trophy, Skull, RotateCcw, Home, Share2, Download, Swords, Flame, Coffee } from 'lucide-react'
 import { useI18n } from '../i18n'
+import { useAuth } from '../lib/auth'
 import { shareResult, downloadShareCard } from '../lib/history'
 import { playPerfectWin, unlockAudio } from '../lib/sound'
 import ResultCard from './ResultCard'
@@ -29,14 +30,22 @@ export default function GameOver({
   sharePayload = null,
   dailyInfo = null,
   opponentName = null,
+  onNeedAuth = null,
+  highlight = null,
 }) {
   const { t, locale, currency } = useI18n()
+  const { isAuthed } = useAuth()
   const [shared, setShared] = useState(false)
   const [downloading, setDownloading] = useState(false)
 
   const mode = sharePayload?.mode || 'CS4FUN'
   const nickname = sharePayload?.nickname
   const perfectMajor = mode === 'major' && won && (losses ?? 0) === 0
+  const showGuestNudge =
+    !isAuthed &&
+    typeof onNeedAuth === 'function' &&
+    Boolean(won) &&
+    (mode === 'daily' || mode === 'box' || perfectMajor || (mode === 'gauntlet' && (streak || 0) >= 3))
 
   useEffect(() => {
     if (!perfectMajor) return undefined
@@ -63,6 +72,7 @@ export default function GameOver({
     myTotal: sharePayload?.myTotal,
     oppTotal: sharePayload?.oppTotal,
     caseName: sharePayload?.caseName,
+    highlight: highlight || sharePayload?.highlight,
   }
 
   const handleShare = async () => {
@@ -144,11 +154,9 @@ export default function GameOver({
             </div>
           )}
 
-          {submitInfo && (
-            <p className="mt-2 text-[11px] text-cs-muted">
-              {submitInfo.global ? t('results.submitted') : t('results.localOnly')}
-            </p>
-          )}
+          {submitInfo?.ok && submitInfo.global ? (
+            <p className="mt-2 text-[11px] text-cs-muted">{t('results.submitted')}</p>
+          ) : null}
           {submitInfo?.newBadges?.length > 0 && (
             <div className="mt-3 flex flex-wrap justify-center gap-2">
               {submitInfo.newBadges.map((id) => (
@@ -160,6 +168,22 @@ export default function GameOver({
                 </span>
               ))}
             </div>
+          )}
+          {showGuestNudge && (
+            <div className="mx-auto mt-4 max-w-sm rounded border border-cs-gold/35 bg-cs-gold/10 px-4 py-3 text-center">
+              <p className="text-sm font-semibold text-cs-gold">{t('results.guestNudgeTitle')}</p>
+              <p className="mt-1 text-xs text-cs-muted">{t('results.guestNudgeBlurb')}</p>
+              <button
+                type="button"
+                className="btn-gold mt-3 rounded px-4 py-2 text-[10px] uppercase tracking-wider"
+                onClick={onNeedAuth}
+              >
+                {t('nav.signIn')}
+              </button>
+            </div>
+          )}
+          {highlight && (
+            <p className="mt-3 text-xs font-semibold text-cs-gold">{highlight}</p>
           )}
           {extra ? (
             <div className="mt-5 flex w-full flex-col items-center gap-2">{extra}</div>
@@ -181,6 +205,7 @@ export default function GameOver({
             nickname={nickname}
             mapPriority={mapPriority}
             lineup={lineup}
+            highlight={highlight}
           />
         </div>
 
