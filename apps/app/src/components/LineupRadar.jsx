@@ -3,12 +3,13 @@ import { ROLES } from '../data/constants'
 import PlayerCard from './PlayerCard'
 import RoleIcon from './RoleIcon'
 
-const SLOT_POSITIONS = {
-  IGL: 'col-start-2 row-start-1',
-  AWPer: 'col-start-1 row-start-2',
-  Entry: 'col-start-3 row-start-2',
-  Lurker: 'col-start-1 row-start-3',
-  Support: 'col-start-3 row-start-3',
+/** Absolute diamond slots — equal boxes so mobile doesn’t warp when one card is filled */
+const SLOT_STYLE = {
+  IGL: { top: '0%', left: '50%', transform: 'translateX(-50%)' },
+  AWPer: { top: '34%', left: '0%' },
+  Entry: { top: '34%', right: '0%' },
+  Lurker: { bottom: '0%', left: '0%' },
+  Support: { bottom: '0%', right: '0%' },
 }
 
 export default function LineupRadar({
@@ -46,9 +47,9 @@ export default function LineupRadar({
       </div>
 
       {/* Square stage — cards must not be clipped by the circular radar mask */}
-      <div className="relative mx-auto aspect-square w-full max-w-md overflow-visible">
+      <div className="relative mx-auto aspect-square w-full max-w-[22rem] overflow-visible sm:max-w-md">
         <div
-          className="radar-grid pointer-events-none absolute inset-[6%] overflow-hidden rounded-full border border-cs-gold/25 sm:inset-[4%]"
+          className="radar-grid pointer-events-none absolute inset-[10%] overflow-hidden rounded-full border border-cs-gold/25 sm:inset-[8%]"
           aria-hidden
         >
           <div className="radar-sweep" />
@@ -70,7 +71,7 @@ export default function LineupRadar({
           />
         </div>
 
-        <div className="relative z-10 grid h-full grid-cols-3 grid-rows-3 gap-2 p-1 sm:gap-3 sm:p-2">
+        <div className="relative z-10 h-full w-full">
           {ROLES.map((role, i) => {
             const player = lineup[role.id]
             const isSelected = selectedSlot === role.id
@@ -79,17 +80,18 @@ export default function LineupRadar({
             return (
               <motion.div
                 key={role.id}
-                className={`${SLOT_POSITIONS[role.id]} flex min-h-0 items-center justify-center`}
-                layout
+                className="absolute flex w-[42%] max-w-[9.5rem] items-stretch sm:w-[38%] sm:max-w-[10.5rem]"
+                style={SLOT_STYLE[role.id]}
                 initial={{ opacity: 0, scale: 0.88 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.05 * i, type: 'spring', stiffness: 320, damping: 24 }}
               >
-                <div className="w-full max-w-[132px] sm:max-w-[140px]">
+                <div className="flex w-full flex-col">
                   <AnimatePresence mode="wait">
                     {player ? (
                       <motion.div
                         key={player.id}
+                        className="h-full"
                         initial={{ opacity: 0, scale: 0.82, y: 10 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.9, y: -6 }}
@@ -133,7 +135,7 @@ export default function LineupRadar({
                           if (canAssign && onSelectSlot) onSelectSlot(role.id)
                           else if (onSelectSlot) onSelectSlot(role.id)
                         }}
-                        className={`flex w-full flex-col items-center justify-center rounded border border-dashed min-h-[72px] p-1.5 transition sm:min-h-[84px] sm:p-2 ${
+                        className={`flex min-h-[5.75rem] w-full flex-col items-center justify-center rounded border border-dashed p-1.5 transition sm:min-h-[6.25rem] sm:p-2 ${
                           canAssign || isSelected
                             ? 'border-cs-gold bg-cs-gold/10 text-cs-gold'
                             : 'border-cs-border/70 bg-cs-bg/50 text-cs-muted hover:border-cs-gold/40'

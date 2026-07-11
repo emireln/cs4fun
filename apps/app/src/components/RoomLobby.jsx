@@ -34,7 +34,9 @@ export default function RoomLobby({ profile, initialMode = 'party', onBack, onSt
       mode,
     })
     if (res.error) {
-      setError(t(`room.${res.error}`) || res.error)
+      const key = `room.${res.error}`
+      const mapped = t(key)
+      setError(mapped !== key ? mapped : res.error)
       return
     }
     setRoom(res.room)
@@ -48,7 +50,9 @@ export default function RoomLobby({ profile, initialMode = 'party', onBack, onSt
       profile: { ...profile, nickname: displayName(profile) },
     })
     if (res.error) {
-      setError(t(`room.${res.error}`))
+      const key = `room.${res.error}`
+      const mapped = t(key)
+      setError(mapped !== key ? mapped : res.error)
       return
     }
     setRoom(res.room)

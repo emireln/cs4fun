@@ -563,7 +563,7 @@ set search_path = public
 as $$
 declare
   uid uuid := auth.uid();
-  code text;
+  v_code text;
   i int;
   alphabet text := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 begin
@@ -572,24 +572,24 @@ begin
   if p_mode not in ('party', 'duel') then raise exception 'invalid_mode'; end if;
 
   for i in 1..12 loop
-    code := '';
+    v_code := '';
     for j in 1..6 loop
-      code := code || substr(alphabet, 1 + floor(random() * length(alphabet))::int, 1);
+      v_code := v_code || substr(alphabet, 1 + floor(random() * length(alphabet))::int, 1);
     end loop;
-    exit when not exists (select 1 from public.rooms r where r.code = code);
+    exit when not exists (select 1 from public.rooms r where r.code = v_code);
   end loop;
 
   insert into public.rooms (code, mode, host_id, status, seed, payload)
   values (
-    code,
+    v_code,
     p_mode,
     uid,
     'lobby',
-    p_mode || '-' || code || '-' || extract(epoch from now())::bigint,
+    p_mode || '-' || v_code || '-' || extract(epoch from now())::bigint,
     coalesce(p_payload, '{}'::jsonb)
   );
 
-  return (select to_jsonb(r) from public.rooms r where r.code = code);
+  return (select to_jsonb(r) from public.rooms r where r.code = v_code);
 end;
 $$;
 
