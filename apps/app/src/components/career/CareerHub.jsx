@@ -27,6 +27,7 @@ import {
   lineupComplete,
   rosterPower,
   nextTierProgress,
+  movePlayerSlot,
 } from '../../lib/career'
 
 export default function CareerHub({
@@ -36,6 +37,7 @@ export default function CareerHub({
   onOpenCamp,
   onStartMajor,
   onUpdateOrg,
+  onChange,
   onHome,
   saving,
 }) {
@@ -48,6 +50,20 @@ export default function CareerHub({
   const week = Math.min(Math.max(1, state.week), CAREER_WEEKS)
   const history = [...(state.results || [])].reverse()
   const [editing, setEditing] = useState(false)
+  const [selectedSlot, setSelectedSlot] = useState(null)
+
+  const handleSelectSlot = (slotId) => {
+    if (!selectedSlot) {
+      if (state.lineup?.[slotId]) setSelectedSlot(slotId)
+      return
+    }
+    if (selectedSlot === slotId) {
+      setSelectedSlot(null)
+      return
+    }
+    onChange?.(movePlayerSlot(state, selectedSlot, slotId))
+    setSelectedSlot(null)
+  }
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-6 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] sm:py-8">
@@ -207,6 +223,18 @@ export default function CareerHub({
           lineup={state.lineup}
           title={t('career.roster')}
           openLabel={t('career.openSlot')}
+          dropLabel={t('career.dropHere')}
+          selectedSlot={selectedSlot}
+          onSelectSlot={handleSelectSlot}
+          assignMode={Boolean(selectedSlot)}
+          pendingPlayer={selectedSlot ? state.lineup?.[selectedSlot] : null}
+          assignHint={
+            selectedSlot
+              ? t('career.swapHint', {
+                  name: state.lineup?.[selectedSlot]?.name || '',
+                })
+              : t('career.pickToMove')
+          }
         />
 
         <div className="space-y-3">

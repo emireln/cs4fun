@@ -481,6 +481,7 @@ export default function CareerGame({ profile, onHome, onStatus, onNeedAuth }) {
       state={state}
       saving={saving}
       onHome={onHome}
+      onChange={(next) => persist(next)}
       onOpenMarket={() => setView('market')}
       onOpenCamp={() => setView('camp')}
       onPlayWeek={startWeekMatch}

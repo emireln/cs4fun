@@ -169,14 +169,17 @@ export default function LineupRadar({
       </div>
 
       <AnimatePresence>
-        {assignMode && pendingPlayer && (
+        {assignHint && (
           <motion.p
+            key={assignMode ? 'assign' : 'idle'}
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
-            className="relative mt-4 text-center text-sm text-cs-gold"
+            className={`relative mt-4 text-center text-sm ${
+              assignMode ? 'text-cs-gold' : 'text-cs-muted'
+            }`}
           >
-            {assignHint || pendingPlayer.name}
+            {assignHint}
           </motion.p>
         )}
       </AnimatePresence>

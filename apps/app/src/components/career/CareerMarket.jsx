@@ -2,7 +2,7 @@ import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowLeft, ChevronDown, Search, UserMinus, UserPlus } from 'lucide-react'
 import { useI18n } from '../../i18n'
 import { ROLES } from '../../data/constants'
-import { marketPool, releasePlayer, signPlayer, contractCost, weeklySalary } from '../../lib/career'
+import { marketPool, releasePlayer, signPlayer, movePlayerSlot, contractCost, weeklySalary } from '../../lib/career'
 import TeamLogo from '../TeamLogo'
 
 const SORT_OPTIONS = [
@@ -20,7 +20,18 @@ export default function CareerMarket({ state, onChange, onBack }) {
   const [sort, setSort] = useState('rating')
   const [msg, setMsg] = useState('')
   const deferredQuery = useDeferredValue(query)
-  const openSlot = ROLES.find((r) => !state.lineup?.[r.id])?.id || null
+  const openSlots = useMemo(
+    () => ROLES.filter((r) => !state.lineup?.[r.id]).map((r) => r.id),
+    [state.lineup],
+  )
+  const [signSlot, setSignSlot] = useState(null)
+
+  useEffect(() => {
+    setSignSlot((prev) => {
+      if (prev && openSlots.includes(prev)) return prev
+      return openSlots[0] || null
+    })
+  }, [openSlots])
 
   const pool = useMemo(
     () =>
@@ -37,8 +48,14 @@ export default function CareerMarket({ state, onChange, onBack }) {
     setMsg(t('career.released'))
   }
 
+  const handleMove = (fromSlot, toSlot) => {
+    if (fromSlot === toSlot) return
+    onChange(movePlayerSlot(state, fromSlot, toSlot))
+    setMsg(t('career.roleMoved'))
+  }
+
   const handleSign = (player) => {
-    const slot = openSlot || ROLES.find((r) => !state.lineup?.[r.id])?.id
+    const slot = signSlot || openSlots[0]
     if (!slot) {
       setMsg(t('career.noOpenSlot'))
       return
@@ -49,7 +66,7 @@ export default function CareerMarket({ state, onChange, onBack }) {
       return
     }
     onChange(res.state)
-    setMsg(t('career.signed', { name: player.name }))
+    setMsg(t('career.signed', { name: player.name, slot: ROLES.find((r) => r.id === slot)?.short || slot }))
   }
 
   return (
@@ -65,21 +82,55 @@ export default function CareerMarket({ state, onChange, onBack }) {
       <h1 className="mb-1 font-display text-2xl font-bold">{t('career.marketTitle')}</h1>
       <p className="mb-4 text-sm text-cs-muted">
         {t('career.budget')}: <span className="font-mono text-cs-gold">{money(state.budget)}</span>
-        {openSlot ? ` · ${t('career.signingFor', { slot: openSlot })}` : ` · ${t('career.releaseToSign')}`}
+        {signSlot
+          ? ` · ${t('career.signingFor', { slot: ROLES.find((r) => r.id === signSlot)?.short || signSlot })}`
+          : ` · ${t('career.releaseToSign')}`}
       </p>
       {msg && <p className="mb-3 text-xs text-cs-gold">{msg}</p>}
+
+      {openSlots.length > 0 && (
+        <div className="mb-3">
+          <p className="mb-1.5 text-[10px] font-semibold tracking-wider text-cs-muted uppercase">
+            {t('career.pickSignRole')}
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {openSlots.map((id) => {
+              const role = ROLES.find((r) => r.id === id)
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setSignSlot(id)}
+                  className={`rounded border px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase ${
+                    signSlot === id
+                      ? 'border-cs-gold bg-cs-gold/15 text-cs-gold'
+                      : 'border-cs-border text-cs-muted hover:border-cs-gold/40'
+                  }`}
+                >
+                  {role?.short || id}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="mb-4 panel rounded-xl p-3">
         <h2 className="mb-2 font-display text-[10px] tracking-[0.2em] text-cs-gold uppercase">
           {t('career.yourRoster')}
         </h2>
+        <p className="mb-2 text-[10px] text-cs-muted">{t('career.roleMoveHint')}</p>
         <div className="grid gap-2 sm:grid-cols-2">
           {ROLES.map((role) => {
             const p = state.lineup?.[role.id]
             return (
               <div
                 key={role.id}
-                className="flex items-center justify-between gap-2 rounded border border-cs-border bg-cs-bg/40 px-3 py-2"
+                className={`flex items-center justify-between gap-2 rounded border px-3 py-2 ${
+                  signSlot === role.id && !p
+                    ? 'border-cs-gold/50 bg-cs-gold/10'
+                    : 'border-cs-border bg-cs-bg/40'
+                }`}
               >
                 <div className="flex min-w-0 items-center gap-2">
                   {p?.fromTeam && <TeamLogo name={p.fromTeam} size="sm" decorative />}
@@ -94,14 +145,21 @@ export default function CareerMarket({ state, onChange, onBack }) {
                   </div>
                 </div>
                 {p && (
-                  <button
-                    type="button"
-                    className="btn-ghost inline-flex items-center gap-1 rounded px-2 py-1 text-[10px] uppercase"
-                    onClick={() => handleRelease(role.id)}
-                  >
-                    <UserMinus className="h-3 w-3" />
-                    {t('career.release')}
-                  </button>
+                  <div className="flex shrink-0 flex-col items-end gap-1">
+                    <RoleMoveMenu
+                      currentSlot={role.id}
+                      onMove={(to) => handleMove(role.id, to)}
+                      t={t}
+                    />
+                    <button
+                      type="button"
+                      className="btn-ghost inline-flex items-center gap-1 rounded px-2 py-1 text-[10px] uppercase"
+                      onClick={() => handleRelease(role.id)}
+                    >
+                      <UserMinus className="h-3 w-3" />
+                      {t('career.release')}
+                    </button>
+                  </div>
                 )}
               </div>
             )
@@ -168,7 +226,7 @@ export default function CareerMarket({ state, onChange, onBack }) {
               </div>
               <button
                 type="button"
-                disabled={!openSlot || state.budget < p.cost}
+                disabled={!signSlot || state.budget < p.cost}
                 className="btn-gold inline-flex shrink-0 items-center gap-1 rounded px-2.5 py-1.5 text-[10px] uppercase disabled:opacity-40"
                 onClick={() => handleSign(p)}
               >
@@ -178,6 +236,75 @@ export default function CareerMarket({ state, onChange, onBack }) {
             </div>
           ))}
         </div>
+      )}
+    </div>
+  )
+}
+
+function RoleMoveMenu({ currentSlot, onMove, t }) {
+  const [open, setOpen] = useState(false)
+  const rootRef = useRef(null)
+
+  useEffect(() => {
+    if (!open) return undefined
+    const onDoc = (e) => {
+      if (!rootRef.current?.contains(e.target)) setOpen(false)
+    }
+    const onKey = (e) => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('mousedown', onDoc)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDoc)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+
+  return (
+    <div ref={rootRef} className="relative">
+      <button
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        className={`inline-flex items-center gap-1 rounded border px-2 py-1 text-[10px] font-bold tracking-wider uppercase transition ${
+          open
+            ? 'border-cs-gold/50 bg-cs-gold/15 text-cs-gold'
+            : 'border-cs-border text-cs-muted hover:border-cs-gold/40 hover:text-cs-gold'
+        }`}
+      >
+        {t('career.changeRole')}
+        <ChevronDown className={`h-3 w-3 transition ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <ul
+          role="listbox"
+          className="absolute top-[calc(100%+0.25rem)] right-0 z-30 min-w-[7.5rem] overflow-hidden rounded-lg border border-cs-border bg-[#12151c] py-1 shadow-[0_12px_32px_rgba(0,0,0,0.55)]"
+        >
+          {ROLES.map((role) => {
+            const active = role.id === currentSlot
+            return (
+              <li key={role.id} role="option" aria-selected={active}>
+                <button
+                  type="button"
+                  disabled={active}
+                  onClick={() => {
+                    onMove(role.id)
+                    setOpen(false)
+                  }}
+                  className={`flex w-full items-center px-3 py-1.5 text-left text-[10px] font-bold tracking-wider uppercase transition ${
+                    active
+                      ? 'bg-cs-gold/15 text-cs-gold'
+                      : 'text-cs-muted hover:bg-cs-gold/10 hover:text-cs-text disabled:opacity-40'
+                  }`}
+                >
+                  {role.short}
+                </button>
+              </li>
+            )
+          })}
+        </ul>
       )}
     </div>
   )

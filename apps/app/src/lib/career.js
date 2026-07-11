@@ -397,6 +397,24 @@ export function releasePlayer(state, slotId) {
   }
 }
 
+/** Move or swap a contracted player between role slots (IGL, AWP, Entry…). */
+export function movePlayerSlot(state, fromSlot, toSlot) {
+  if (!fromSlot || !toSlot || fromSlot === toSlot) return state
+  const valid = new Set(ROLES.map((r) => r.id))
+  if (!valid.has(fromSlot) || !valid.has(toSlot)) return state
+  const from = state.lineup?.[fromSlot]
+  if (!from) return state
+  const to = state.lineup?.[toSlot] || null
+  return {
+    ...state,
+    lineup: {
+      ...state.lineup,
+      [fromSlot]: to,
+      [toSlot]: from,
+    },
+  }
+}
+
 export function signPlayer(state, slotId, player) {
   if (!player || state.lineup?.[slotId]) return { ok: false, error: 'slot_taken' }
   const cost = contractCost(player)
