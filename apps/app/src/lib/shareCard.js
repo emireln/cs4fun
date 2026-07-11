@@ -17,6 +17,23 @@ function brandLogoSrc() {
   return `${base}logo.png`
 }
 
+/** Steam CDN has no CORS — canvas export needs a CORS-friendly URL. */
+function canvasSafeImageUrl(src) {
+  if (!src) return null
+  const s = String(src)
+  if (s.startsWith('data:') || s.startsWith('blob:')) return s
+  try {
+    const origin = typeof location !== 'undefined' ? location.origin : ''
+    const u = new URL(s, origin || 'https://app.cs4fun.online')
+    if (origin && u.origin === origin) return u.href
+    // Same-app relative asset
+    if (s.startsWith('/') || s.startsWith('./')) return s
+  } catch {
+    /* fall through */
+  }
+  return `https://wsrv.nl/?url=${encodeURIComponent(s)}&n=-1&output=png`
+}
+
 function loadImage(src, { cors = false } = {}) {
   return new Promise((resolve) => {
     if (!src || typeof Image === 'undefined') {
@@ -29,6 +46,17 @@ function loadImage(src, { cors = false } = {}) {
     img.onerror = () => resolve(null)
     img.src = src
   })
+}
+
+/** Load a remote skin so it can be painted onto an exportable canvas. */
+async function loadShareImage(src) {
+  if (!src) return null
+  const proxied = canvasSafeImageUrl(src)
+  const viaProxy = await loadImage(proxied, { cors: true })
+  if (viaProxy) return viaProxy
+  // Last resort: same-origin / data URLs only (foreign CDNs taint the canvas)
+  if (proxied === src) return loadImage(src, { cors: false })
+  return null
 }
 
 async function loadBrandLogo() {
@@ -321,7 +349,7 @@ async function drawBoxVault(ctx, boxDrops, topY, bottomY, W, locale, fmt, accent
   const rows = Math.ceil(n / cols)
   const cellW = (availW - gap * (cols - 1)) / cols
   const cellH = Math.min(cellW * 1.15, (availH - gap * (rows - 1)) / rows)
-  const images = await Promise.all(list.map((d) => loadImage(d.image, { cors: true })))
+  const images = await Promise.all(list.map((d) => loadShareImage(d.image)))
 
   for (let i = 0; i < n; i++) {
     const drop = list[i]
@@ -330,22 +358,39 @@ async function drawBoxVault(ctx, boxDrops, topY, bottomY, W, locale, fmt, accent
     const x = pad + col * (cellW + gap)
     const y = gridTop + row * (cellH + gap)
     const color = RARITY_META[drop.rarity]?.color || accent
+    const radius = 18
+
+    // Clip all fills to the rounded card so rarity bars / images never spill
+    ctx.save()
+    roundRect(ctx, x, y, cellW, cellH, radius)
+    ctx.clip()
 
     ctx.fillStyle = '#10141c'
-    roundRect(ctx, x, y, cellW, cellH, 18)
-    ctx.fill()
-    ctx.strokeStyle = `${color}99`
-    ctx.lineWidth = 2
-    roundRect(ctx, x, y, cellW, cellH, 18)
-    ctx.stroke()
+    ctx.fillRect(x, y, cellW, cellH)
 
+    // Top rarity accent (clipped — no sharp overhang)
     ctx.fillStyle = color
-    ctx.fillRect(x, y, cellW, 5)
+    ctx.fillRect(x, y, cellW, 6)
 
     const imgPad = 16
     const textH = 56
     if (images[i]) {
-      drawContain(ctx, images[i], x + imgPad, y + 18, cellW - imgPad * 2, cellH - textH - 28)
+      drawContain(ctx, images[i], x + imgPad, y + 20, cellW - imgPad * 2, cellH - textH - 30)
+    } else {
+      // Rarity placeholder when CDN/proxy fails
+      const pw = cellW - imgPad * 2
+      const ph = cellH - textH - 30
+      const px = x + imgPad
+      const py = y + 20
+      const g = ctx.createRadialGradient(px + pw / 2, py + ph / 2, 8, px + pw / 2, py + ph / 2, pw * 0.55)
+      g.addColorStop(0, `${color}55`)
+      g.addColorStop(1, `${color}12`)
+      ctx.fillStyle = g
+      ctx.fillRect(px, py, pw, ph)
+      ctx.fillStyle = color
+      ctx.font = `700 22px ${fontStack('display')}`
+      const tag = String(drop.rarity || 'drop').toUpperCase()
+      ctx.fillText(tag, px + (pw - ctx.measureText(tag).width) / 2, py + ph / 2 + 8)
     }
 
     ctx.fillStyle = '#e8ecf4'
@@ -354,8 +399,20 @@ async function drawBoxVault(ctx, boxDrops, topY, bottomY, W, locale, fmt, accent
 
     ctx.fillStyle = color
     ctx.font = `700 ${Math.max(16, Math.min(22, cellW / 12))}px ${fontStack('mono')}`
-    const price = fmt(drop.value)
-    ctx.fillText(price, x + 14, y + cellH - 12)
+    ctx.fillText(fmt(drop.value), x + 14, y + cellH - 12)
+
+    ctx.restore()
+
+    // Stroke inset so corners don’t leave square miter artifacts outside the card
+    ctx.save()
+    ctx.strokeStyle = color
+    ctx.globalAlpha = 0.75
+    ctx.lineWidth = 2
+    ctx.lineJoin = 'round'
+    ctx.lineCap = 'round'
+    roundRect(ctx, x + 1, y + 1, cellW - 2, cellH - 2, Math.max(1, radius - 1))
+    ctx.stroke()
+    ctx.restore()
   }
 }
 
