@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { AnimatePresence, motion, useMotionValue, useAnimationFrame } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import {
   buildCaseReelStrip,
   isHighTierDrop,
@@ -27,11 +27,18 @@ export default function BoxOpenReel({ drop, label, delay = 0, onDone }) {
   const { t, money } = useI18n()
   const [phase, setPhase] = useState('idle')
   const [targetX, setTargetX] = useState(0)
+  const [broken, setBroken] = useState(() => new Set())
   const sounded = useRef(false)
   const viewportRef = useRef(null)
+  const stripRef = useRef(null)
   const spinStarted = useRef(0)
   const lastTickIdx = useRef(-1)
-  const x = useMotionValue(0)
+  const phaseRef = useRef(phase)
+  const targetXRef = useRef(targetX)
+  const posRef = useRef(40)
+
+  phaseRef.current = phase
+  targetXRef.current = targetX
 
   const meta = RARITY_META[drop?.rarity] || RARITY_META.milspec
   const isHeat = isHighTierDrop(drop)
@@ -49,25 +56,38 @@ export default function BoxOpenReel({ drop, label, delay = 0, onDone }) {
     })
   }, [drop])
 
+  const setStripX = (px) => {
+    posRef.current = px
+    const el = stripRef.current
+    if (el) el.style.transform = `translate3d(${px}px, 0, 0)`
+  }
+
   // Measure where the winning tile must sit under the center needle
   useLayoutEffect(() => {
     if (!drop || !strip.length) return
-    const viewport = viewportRef.current
-    if (!viewport) return
-    const vw = viewport.clientWidth
-    const winCenter =
-      STRIP_PAD + winIndex * (TILE_PX + GAP_PX) + TILE_PX / 2
-    // Slight CS-style overshoot jitter so land isn't pixel-perfect every time
-    const jitter = ((hashTiny(drop.id) % 21) - 10) * 0.35
-    setTargetX(-(winCenter - vw / 2 + jitter))
-    x.set(40)
-  }, [drop?.id, strip, winIndex, x])
+    const measure = () => {
+      const viewport = viewportRef.current
+      if (!viewport) return
+      const vw = viewport.clientWidth || 320
+      const winCenter =
+        STRIP_PAD + winIndex * (TILE_PX + GAP_PX) + TILE_PX / 2
+      const jitter = ((hashTiny(drop.id) % 21) - 10) * 0.35
+      setTargetX(-(winCenter - vw / 2 + jitter))
+      setStripX(40)
+    }
+    measure()
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null
+    if (viewportRef.current && ro) ro.observe(viewportRef.current)
+    return () => ro?.disconnect()
+  }, [drop?.id, strip, winIndex])
 
   useEffect(() => {
     if (!drop) return undefined
     setPhase('idle')
+    setBroken(new Set())
     sounded.current = false
     lastTickIdx.current = -1
+    setStripX(40)
     unlockAudio()
 
     const startTimer = setTimeout(() => {
@@ -77,6 +97,7 @@ export default function BoxOpenReel({ drop, label, delay = 0, onDone }) {
 
     const landTimer = setTimeout(() => {
       setPhase('land')
+      setStripX(targetXRef.current)
       if (isHeat && !sounded.current) {
         sounded.current = true
         playBoxRareDrop(drop.rarity)
@@ -92,28 +113,35 @@ export default function BoxOpenReel({ drop, label, delay = 0, onDone }) {
     }
   }, [drop?.id, delay]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Drive translate + tick sounds with the same ease curve
-  useAnimationFrame((now) => {
-    if (phase !== 'spin') {
-      if (phase === 'land') x.set(targetX)
-      return
-    }
-    const start = spinStarted.current || now
-    const progress = Math.min(1, (now - start) / SPIN_MS)
-    const eased = easeOutQuint(progress)
-    const from = 40
-    const pos = from + (targetX - from) * eased
-    x.set(pos)
+  // Drive translate + tick sounds with the same ease curve (DOM transform — reliable in Electron)
+  useEffect(() => {
+    let raf = 0
+    const tick = (now) => {
+      const p = phaseRef.current
+      if (p === 'spin') {
+        const start = spinStarted.current || now
+        const progress = Math.min(1, (now - start) / SPIN_MS)
+        const eased = easeOutQuint(progress)
+        const from = 40
+        const to = targetXRef.current
+        const pos = from + (to - from) * eased
+        setStripX(pos)
 
-    // Tick when a new tile crosses the needle
-    const vw = viewportRef.current?.clientWidth || 400
-    const needle = vw / 2
-    const idx = Math.floor((-pos + needle - STRIP_PAD) / (TILE_PX + GAP_PX))
-    if (idx !== lastTickIdx.current && idx >= 0 && idx < strip.length) {
-      lastTickIdx.current = idx
-      playBoxReelTick()
+        const vw = viewportRef.current?.clientWidth || 400
+        const needle = vw / 2
+        const idx = Math.floor((-pos + needle - STRIP_PAD) / (TILE_PX + GAP_PX))
+        if (idx !== lastTickIdx.current && idx >= 0 && idx < strip.length) {
+          lastTickIdx.current = idx
+          playBoxReelTick()
+        }
+      } else if (p === 'land') {
+        setStripX(targetXRef.current)
+      }
+      raf = requestAnimationFrame(tick)
     }
-  })
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [strip.length])
 
   if (!drop) return null
 
@@ -137,9 +165,9 @@ export default function BoxOpenReel({ drop, label, delay = 0, onDone }) {
         </AnimatePresence>
       </div>
 
-      <motion.div
+      <div
         ref={viewportRef}
-        className={`relative overflow-hidden rounded-xl border bg-cs-bg/95 ${
+        className={`relative min-h-[92px] overflow-hidden rounded-xl border bg-[#0c1018] ${
           phase === 'land' && isHeat ? (isGold ? 'box-rare-shake-gold' : 'box-rare-shake') : ''
         }`}
         style={{
@@ -149,8 +177,6 @@ export default function BoxOpenReel({ drop, label, delay = 0, onDone }) {
               ? `0 0 48px ${meta.color}55, 0 0 12px ${meta.color}88, inset 0 0 40px ${meta.color}22`
               : 'inset 0 0 24px rgba(0,0,0,0.45)',
         }}
-        animate={phase === 'land' && isHeat ? { scale: [1, 1.015, 1] } : undefined}
-        transition={phase === 'land' && isHeat ? { duration: 0.55, ease: 'easeOut' } : undefined}
       >
         <AnimatePresence>
           {phase === 'land' && isHeat && (
@@ -176,10 +202,8 @@ export default function BoxOpenReel({ drop, label, delay = 0, onDone }) {
         )}
 
         {/* Edge fades — CS case open look */}
-        <div className="pointer-events-none absolute inset-y-0 left-0 z-20 w-10 bg-gradient-to-r from-cs-bg via-cs-bg/80 to-transparent sm:w-14" />
-        <div className="pointer-events-none absolute inset-y-0 right-0 z-20 w-10 bg-gradient-to-l from-cs-bg via-cs-bg/80 to-transparent sm:w-14" />
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-4 bg-gradient-to-b from-cs-bg/80 to-transparent" />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-4 bg-gradient-to-t from-cs-bg/80 to-transparent" />
+        <div className="pointer-events-none absolute inset-y-0 left-0 z-20 w-8 bg-gradient-to-r from-[#0c1018] via-[#0c1018]/80 to-transparent sm:w-12" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 z-20 w-8 bg-gradient-to-l from-[#0c1018] via-[#0c1018]/80 to-transparent sm:w-12" />
 
         {/* Center needle */}
         <div
@@ -203,29 +227,30 @@ export default function BoxOpenReel({ drop, label, delay = 0, onDone }) {
           }}
         />
 
-        <motion.div
-          className="relative z-[1] flex py-3"
+        <div
+          ref={stripRef}
+          className="relative z-[1] flex py-3 will-change-transform"
           style={{
-            x,
             paddingLeft: STRIP_PAD,
             paddingRight: STRIP_PAD,
             gap: GAP_PX,
-            willChange: 'transform',
+            transform: 'translate3d(40px, 0, 0)',
           }}
         >
           {strip.map((item) => {
             const itemMeta = RARITY_META[item.rarity] || RARITY_META.milspec
             const highlight = item.isWin && phase === 'land'
+            const imgBroken = broken.has(item.key)
             return (
               <div
                 key={item.key}
                 className={`relative flex shrink-0 flex-col items-center justify-center rounded-md border ${
-                  highlight ? 'scale-105 bg-cs-gold/15' : 'bg-cs-panel/70'
+                  highlight ? 'scale-105 bg-cs-gold/15' : 'bg-[#161b24]'
                 }`}
                 style={{
                   width: TILE_PX,
                   height: TILE_PX + 8,
-                  borderColor: highlight ? meta.color : `${itemMeta.color}66`,
+                  borderColor: highlight ? meta.color : `${itemMeta.color}aa`,
                   boxShadow: highlight
                     ? `0 0 28px ${meta.color}77`
                     : `inset 0 -3px 0 ${itemMeta.color}`,
@@ -245,17 +270,35 @@ export default function BoxOpenReel({ drop, label, delay = 0, onDone }) {
                     />
                   </>
                 )}
-                <img
-                  src={item.image}
-                  alt=""
-                  className={`relative z-[1] h-[52px] w-[64px] object-contain sm:h-[58px] sm:w-[70px] ${
-                    highlight && isGold ? 'drop-shadow-[0_0_12px_rgba(228,174,57,0.85)]' : ''
-                  }`}
-                  referrerPolicy="no-referrer"
-                  draggable={false}
-                  loading="eager"
-                />
-                {/* Rarity bar under each tile (CS case strip cue) */}
+                {item.image && !imgBroken ? (
+                  <img
+                    src={item.image}
+                    alt=""
+                    className={`box-reel-skin relative z-[1] object-contain ${
+                      highlight && isGold ? 'drop-shadow-[0_0_12px_rgba(228,174,57,0.85)]' : ''
+                    }`}
+                    style={{ width: 64, height: 52, maxWidth: 64 }}
+                    referrerPolicy="no-referrer"
+                    draggable={false}
+                    loading="eager"
+                    decoding="async"
+                    onError={() => {
+                      setBroken((prev) => {
+                        if (prev.has(item.key)) return prev
+                        const next = new Set(prev)
+                        next.add(item.key)
+                        return next
+                      })
+                    }}
+                  />
+                ) : (
+                  <span
+                    className="relative z-[1] flex h-[52px] w-[64px] items-center justify-center rounded px-1 text-center text-[9px] font-bold leading-tight text-cs-text/90"
+                    style={{ background: `${itemMeta.color}33`, color: itemMeta.color }}
+                  >
+                    {(item.name || '?').split('|').pop()?.trim().slice(0, 14) || '•'}
+                  </span>
+                )}
                 <span
                   className="absolute inset-x-1 bottom-1 z-[1] h-0.5 rounded-full"
                   style={{ background: itemMeta.color, opacity: highlight ? 1 : 0.85 }}
@@ -263,8 +306,8 @@ export default function BoxOpenReel({ drop, label, delay = 0, onDone }) {
               </div>
             )
           })}
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
 
       <AnimatePresence>
         {phase === 'land' && (

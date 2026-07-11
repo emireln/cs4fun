@@ -51,7 +51,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-img:not(.logo-mark),
+img:not(.logo-mark):not(.box-reel-skin),
 svg,
 video,
 canvas {
