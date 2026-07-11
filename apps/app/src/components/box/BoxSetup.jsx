@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Dices, Package, Sparkles, Swords, Trash2, Users, X } from 'lucide-react'
 import { useI18n } from '../../i18n'
-import { autoPickCases, formatUsd, getCase, listCases, readBoxStats, RARITY_META } from '../../lib/boxBattle'
+import { autoPickCases, getCase, listCases, readBoxStats, RARITY_META } from '../../lib/boxBattle'
 
 const MAX_OPENS = 10
 
@@ -13,7 +13,7 @@ export default function BoxSetup({
   initialCaseId = null,
   locked = false,
 }) {
-  const { t } = useI18n()
+  const { t, money } = useI18n()
   const cases = useMemo(() => listCases(), [])
   const stats = useMemo(() => readBoxStats(profile?.id), [profile?.id])
   const [queue, setQueue] = useState(() =>
@@ -84,7 +84,7 @@ export default function BoxSetup({
                 <span style={{ color: RARITY_META[stats.bestDrop.rarity]?.color }}>
                   {RARITY_META[stats.bestDrop.rarity]?.label}
                 </span>
-                <span className="font-mono text-cs-gold">{formatUsd(stats.bestDrop.value)}</span>
+                <span className="font-mono text-cs-gold">{money(stats.bestDrop.value)}</span>
               </div>
             </div>
           </div>
@@ -273,7 +273,7 @@ export default function BoxSetup({
 }
 
 function BoxCareerStats({ stats }) {
-  const { t } = useI18n()
+  const { t, money } = useI18n()
   if (!stats?.battles) return null
   const fav = stats.favoriteCaseId
     ? listCases().find((c) => c.id === stats.favoriteCaseId)
@@ -286,10 +286,10 @@ function BoxCareerStats({ stats }) {
           { label: t('box.statOpened'), value: stats.casesOpened },
           { label: t('box.statGold'), value: stats.goldHits },
           { label: t('box.statCovert'), value: stats.covertHits },
-          { label: t('box.statPulled'), value: formatUsd(stats.totalValue) },
+          { label: t('box.statPulled'), value: money(stats.totalValue) },
           {
             label: t('box.statMargin'),
-            value: stats.biggestWinMargin ? formatUsd(stats.biggestWinMargin) : '—',
+            value: stats.biggestWinMargin ? money(stats.biggestWinMargin) : '—',
           },
         ].map((s, i) => (
           <motion.div

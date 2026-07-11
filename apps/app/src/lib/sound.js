@@ -336,12 +336,13 @@ export function playBoxRareDrop(rarity = 'classified') {
 }
 
 /** Soft tick while the reel spins (optional, throttled). */
+let lastReelTick = 0
 export function playBoxReelTick() {
   if (!enabled) return
   const now = Date.now()
-  if (now - lastPlay < 55) return
-  lastPlay = now
-  tone(220 + Math.random() * 80, 0.03, 'square', 0.035, 0)
+  if (now - lastReelTick < 38) return
+  lastReelTick = now
+  tone(200 + Math.random() * 100, 0.028, 'square', 0.03, 0)
 }
 
 export function playMatchEvent(type, text = '') {

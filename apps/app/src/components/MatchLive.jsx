@@ -17,7 +17,11 @@ const TYPE_STYLE = {
   series: { icon: Swords, color: 'text-cs-gold', bg: 'bg-cs-gold/10 border-cs-gold/30', labelKey: 'live.feedSeries' },
   tactical: { icon: Crosshair, color: 'text-cs-info', bg: 'bg-cs-info/10 border-cs-info/30', labelKey: 'live.feedCall' },
   halftime: { icon: Shield, color: 'text-cs-warn', bg: 'bg-cs-warn/10 border-cs-warn/30', labelKey: 'live.feedHt' },
+  matchpoint: { icon: Flame, color: 'text-cs-gold', bg: 'bg-cs-gold/20 border-cs-gold/45', labelKey: 'live.feedMp' },
   system: { icon: Crosshair, color: 'text-cs-muted', bg: 'bg-white/5 border-cs-border', labelKey: 'live.feedInfo' },
+  buy: { icon: Shield, color: 'text-cs-muted', bg: 'bg-white/[0.03] border-cs-border/70', labelKey: 'live.feedBuy' },
+  beat: { icon: Radio, color: 'text-cs-info', bg: 'bg-cs-info/10 border-cs-info/25', labelKey: 'live.feedBeat' },
+  info: { icon: Radio, color: 'text-cs-muted', bg: 'bg-white/[0.03] border-cs-border/70', labelKey: 'live.feedInfo' },
   round: { icon: Swords, color: 'text-cs-text', bg: 'bg-white/[0.03] border-cs-border/80', labelKey: 'live.feedRound' },
   mvp: { icon: Star, color: 'text-cs-gold', bg: 'bg-cs-gold/20 border-cs-gold/50', labelKey: 'live.feedMvp' },
 }
@@ -27,32 +31,31 @@ function parseScore(logs) {
   let them = 0
   let map = null
   for (let i = logs.length - 1; i >= 0; i--) {
-    const t = logs[i].text || ''
-    const m = t.match(/(\d+)\s*[-–:]\s*(\d+)/)
-    if (
-      m &&
-      (logs[i].type === 'round' ||
-        logs[i].type === 'eco' ||
-        logs[i].type === 'clutch' ||
-        logs[i].type === 'ace' ||
-        logs[i].type === 'multikill' ||
-        logs[i].type === 'halftime')
-    ) {
-      you = Number(m[1])
-      them = Number(m[2])
+    const log = logs[i]
+    if (log?.userRounds != null && log?.enemyRounds != null) {
+      you = Number(log.userRounds) || 0
+      them = Number(log.enemyRounds) || 0
+      if (log.map) map = log.map
       break
     }
   }
-  for (let i = logs.length - 1; i >= 0; i--) {
-    const t = logs[i].text || ''
-    const mm =
-      t.match(/MAP:\s*([A-Za-z0-9]+)/i) ||
-      t.match(/Live on ([A-Za-z0-9]+)/i) ||
-      t.match(/MAP WIN — ([A-Za-z0-9]+)/i) ||
-      t.match(/MAP LOSS — ([A-Za-z0-9]+)/i)
-    if (mm) {
-      map = mm[1]
-      break
+  if (!map) {
+    for (let i = logs.length - 1; i >= 0; i--) {
+      if (logs[i].map) {
+        map = logs[i].map
+        break
+      }
+      const t = logs[i].text || ''
+      const mm =
+        t.match(/MAP(?:A)?:\s*([A-Za-z0-9]+)/i) ||
+        t.match(/Live on ([A-Za-z0-9]+)/i) ||
+        t.match(/Ao vivo em ([A-Za-z0-9]+)/i) ||
+        t.match(/MAP WIN — ([A-Za-z0-9]+)/i) ||
+        t.match(/MAP LOSS — ([A-Za-z0-9]+)/i)
+      if (mm) {
+        map = mm[1]
+        break
+      }
     }
   }
   return { you, them, map }
@@ -86,7 +89,7 @@ export default function MatchLive({
   const { you, them, map: parsedMap } = useMemo(() => parseScore(logs), [logs])
   const activeMap = mapName || parsedMap
   const asset = getMapAsset(activeMap)
-  const highlightTypes = new Set(['ace', 'clutch', 'eco', 'mapwin', 'maploss', 'multikill', 'mvp'])
+  const highlightTypes = new Set(['ace', 'clutch', 'eco', 'mapwin', 'maploss', 'multikill', 'mvp', 'matchpoint'])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Swords, Users, Trophy, Calendar, Package, ArrowLeft, Star, Lock } from 'lucide-react'
+import { Swords, Users, Trophy, Calendar, Package, ArrowLeft, Star, Lock, Flame } from 'lucide-react'
 import { useI18n } from '../i18n'
 import { useAuth } from '../lib/auth'
 import { getDailyStreak } from '../lib/dailyStreak'
@@ -53,19 +53,6 @@ export default function HomeHub({ onSelectMode, onOpenFriends, onNeedAuth }) {
                 <p className="mt-2 text-sm tracking-[0.2em] text-cs-muted uppercase">
                   {t('meta.tagline')}
                 </p>
-
-                {streak.currentStreak > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => handleSelect('daily')}
-                    className="mt-4 inline-flex items-center gap-2 rounded border border-cs-gold/40 bg-cs-gold/10 px-4 py-2 text-sm text-cs-gold transition hover:bg-cs-gold/20"
-                  >
-                    <Calendar className="h-4 w-4" />
-                    {streak.playedToday
-                      ? t('daily.streakDay', { n: streak.currentStreak })
-                      : t('daily.returnCta', { n: streak.currentStreak })}
-                  </button>
-                )}
 
                 <div className="mt-7 flex flex-wrap items-center justify-center gap-2">
                   <button
@@ -161,7 +148,8 @@ function ModeGrid({ streak, onSelectMode, t, isAuthed }) {
               </div>
             )}
             {isDaily && streak.currentStreak > 0 && (
-              <div className="mt-2 text-[10px] font-semibold uppercase tracking-wider text-cs-gold">
+              <div className="mt-2 inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-cs-gold">
+                <Flame className="h-3 w-3 fill-cs-gold text-cs-gold" aria-hidden />
                 {t('daily.streakShort', { n: streak.currentStreak })}
               </div>
             )}

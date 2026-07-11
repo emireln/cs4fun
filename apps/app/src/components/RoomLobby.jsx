@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { ArrowLeft, Copy, Users, Swords, Package } from 'lucide-react'
 import { useI18n } from '../i18n'
+import { useAuth } from '../lib/auth'
 import { createRoom, joinRoom, subscribeRoom, updateRoom } from '../lib/rooms'
-import { displayName } from '../lib/profile'
+import { displayName, ensureGuestNickname, randomGuestTag } from '../lib/profile'
 
 export default function RoomLobby({ profile, initialMode = 'party', onBack, onStart, embedded = false }) {
   const { t } = useI18n()
+  const { updateProfile, isAuthed } = useAuth()
   const [mode, setMode] = useState(
     initialMode === 'duel' ? 'duel' : initialMode === 'box' ? 'box' : 'party',
   )
@@ -20,19 +22,31 @@ export default function RoomLobby({ profile, initialMode = 'party', onBack, onSt
     return subscribeRoom(room.code, (next) => setRoom({ ...next }))
   }, [room?.code])
 
-  const ensureName = () => {
-    if (!profile.nickname?.trim()) {
-      setError(t('room.enterName'))
-      return false
+  /** Guests without a tag get a random one so they can paste a code and play. */
+  const resolvePlayer = async () => {
+    if (profile?.nickname?.trim()) {
+      return { ...profile, nickname: displayName(profile) }
     }
-    return true
+    if (isAuthed) {
+      setError(t('room.enterName'))
+      return null
+    }
+    const nick = randomGuestTag()
+    const saved = ensureGuestNickname({ ...profile, nickname: nick })
+    try {
+      await updateProfile({ nickname: saved.nickname })
+    } catch {
+      /* local tag is enough for lobby play */
+    }
+    return { ...saved, nickname: displayName(saved) }
   }
 
   const handleCreate = async () => {
-    if (!ensureName()) return
+    const player = await resolvePlayer()
+    if (!player) return
     setError('')
     const res = await createRoom({
-      profile: { ...profile, nickname: displayName(profile) },
+      profile: player,
       mode,
     })
     if (res.error) {
@@ -45,11 +59,12 @@ export default function RoomLobby({ profile, initialMode = 'party', onBack, onSt
   }
 
   const handleJoin = async () => {
-    if (!ensureName()) return
+    const player = await resolvePlayer()
+    if (!player) return
     setError('')
     const res = await joinRoom({
       code: joinCode,
-      profile: { ...profile, nickname: displayName(profile) },
+      profile: player,
     })
     if (res.error) {
       const key = `room.${res.error}`
@@ -63,21 +78,29 @@ export default function RoomLobby({ profile, initialMode = 'party', onBack, onSt
 
   const toggleReady = async () => {
     if (!room) return
-    await updateRoom(room.code, (r) => ({
-      ...r,
-      players: r.players.map((p) =>
-        p.id === profile.id ? { ...p, ready: !p.ready } : p,
-      ),
-    }))
+    await updateRoom(
+      room.code,
+      (r) => ({
+        ...r,
+        players: r.players.map((p) =>
+          p.id === profile.id ? { ...p, ready: !p.ready } : p,
+        ),
+      }),
+      { guestId: !isAuthed ? profile.id : null },
+    )
   }
 
   const startGame = async () => {
     if (!room || room.hostId !== profile.id) return
-    const next = await updateRoom(room.code, (r) => ({
-      ...r,
-      status: 'drafting',
-      seed: r.seed || `${r.mode}-${r.code}-${Date.now()}`,
-    }))
+    const next = await updateRoom(
+      room.code,
+      (r) => ({
+        ...r,
+        status: 'drafting',
+        seed: r.seed || `${r.mode}-${r.code}-${Date.now()}`,
+      }),
+      { guestId: !isAuthed ? profile.id : null },
+    )
     onStart(next)
   }
 
@@ -188,26 +211,34 @@ export default function RoomLobby({ profile, initialMode = 'party', onBack, onSt
           <ArrowLeft className="h-4 w-4" /> {t('room.leave')}
         </button>
       )}
-      {embedded && (
-        <button type="button" className="btn-ghost mb-4 inline-flex items-center gap-2 rounded px-3 py-2 text-sm" onClick={onBack}>
-          <ArrowLeft className="h-4 w-4" /> {t('room.leave')}
-        </button>
-      )}
 
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         className="panel mx-auto max-w-3xl rounded-xl p-5 sm:p-8"
       >
-        <p className="text-xs uppercase tracking-[0.25em] text-cs-muted">{t('room.share')}</p>
-        <div className="mt-2 flex flex-wrap items-center gap-3">
-          <div className="min-w-0 font-display text-3xl font-bold tracking-[0.18em] text-cs-gold sm:text-5xl sm:tracking-[0.2em]">
-            {room.code}
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-xs uppercase tracking-[0.25em] text-cs-muted">{t('room.share')}</p>
+            <div className="mt-2 flex flex-wrap items-center gap-3">
+              <div className="min-w-0 font-display text-3xl font-bold tracking-[0.18em] text-cs-gold sm:text-5xl sm:tracking-[0.2em]">
+                {room.code}
+              </div>
+              <button type="button" className="btn-ghost shrink-0 rounded px-3 py-2 text-sm" onClick={copyCode}>
+                <Copy className="mr-1 inline h-3.5 w-3.5" />
+                {copied ? t('room.copied') : t('room.copy')}
+              </button>
+            </div>
           </div>
-          <button type="button" className="btn-ghost shrink-0 rounded px-3 py-2 text-sm" onClick={copyCode}>
-            <Copy className="mr-1 inline h-3.5 w-3.5" />
-            {copied ? t('room.copied') : t('room.copy')}
-          </button>
+          {embedded && (
+            <button
+              type="button"
+              className="btn-ghost inline-flex shrink-0 items-center gap-1.5 rounded px-3 py-2 text-xs uppercase tracking-wider"
+              onClick={() => setRoom(null)}
+            >
+              <ArrowLeft className="h-3.5 w-3.5" /> {t('room.leave')}
+            </button>
+          )}
         </div>
         <h3 className="mb-2 mt-8 font-display text-[10px] tracking-[0.2em] text-cs-gold uppercase">
           {t('room.players')} ({room.players.length}/{room.maxPlayers})

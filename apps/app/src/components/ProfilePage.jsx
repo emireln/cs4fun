@@ -11,6 +11,7 @@ import {
   Lock,
   Globe,
   Share2,
+  Link2,
   Award,
   Languages,
   X,
@@ -25,6 +26,7 @@ import {
   fetchUserStats,
   fetchGameHistory,
   shareProfile,
+  copyProfileLink,
 } from '../lib/history'
 import ProfileAvatar, { BADGE_ICONS } from './ProfileAvatar'
 import FriendsPanel from './FriendsPanel'
@@ -64,6 +66,7 @@ export default function ProfilePage({ onBack, onNeedAuth, onStartMatch, onInvite
   const [setupPresetMap, setSetupPresetMap] = useState(presetInit.setupPresetMap)
   const [saved, setSaved] = useState(false)
   const [shared, setShared] = useState(false)
+  const [linkCopied, setLinkCopied] = useState(false)
   const [uploadError, setUploadError] = useState(null)
   const [formError, setFormError] = useState(null)
   const [uploadBusy, setUploadBusy] = useState(false)
@@ -176,8 +179,13 @@ export default function ProfilePage({ onBack, onNeedAuth, onStartMatch, onInvite
             setupPresetMap,
           }
         : {
+            nickname: nickname.trim().slice(0, 16) || undefined,
             avatarId,
             avatarUrl: avatarUrl || null,
+            setupPresetEnabled,
+            setupPresetMode,
+            setupPresetMentality,
+            setupPresetMap,
           },
     )
     if (res?.error) {
@@ -223,7 +231,22 @@ export default function ProfilePage({ onBack, onNeedAuth, onStartMatch, onInvite
     })
     if (res.ok) {
       setShared(true)
-      setTimeout(() => setShared(false), 1800)
+      setLinkCopied(true)
+      setTimeout(() => {
+        setShared(false)
+        setLinkCopied(false)
+      }, 1800)
+    }
+  }
+
+  const handleCopyProfileLink = async () => {
+    const res = await copyProfileLink({
+      userId: profile.id,
+      nickname: nickname.trim() || displayName,
+    })
+    if (res.ok) {
+      setLinkCopied(true)
+      setTimeout(() => setLinkCopied(false), 1800)
     }
   }
 
@@ -337,7 +360,7 @@ export default function ProfilePage({ onBack, onNeedAuth, onStartMatch, onInvite
           />
           <div className="min-w-0 flex-1">
             <h1 className="truncate font-display text-2xl font-bold text-cs-gold lg:text-3xl">
-              {isAuthed ? displayName : t('profile.guest')}
+              {displayName}
             </h1>
             <p className="text-sm text-cs-muted lg:text-base">
               {isAuthed ? profile.email : t('profile.guestBlurb')}
@@ -429,14 +452,24 @@ export default function ProfilePage({ onBack, onNeedAuth, onStartMatch, onInvite
             )}
             <div className="mt-3 flex flex-wrap gap-2">
               {isAuthed && (
-                <button
-                  type="button"
-                  className="btn-ghost inline-flex items-center gap-2 rounded px-3 py-2 text-xs uppercase tracking-wider"
-                  onClick={handleShareProfile}
-                >
-                  <Share2 className="h-3.5 w-3.5 text-cs-gold" aria-hidden />
-                  {shared ? t('profile.shared') : t('profile.share')}
-                </button>
+                <>
+                  <button
+                    type="button"
+                    className="btn-gold inline-flex items-center gap-2 rounded px-3 py-2 text-xs uppercase tracking-wider"
+                    onClick={handleCopyProfileLink}
+                  >
+                    <Link2 className="h-3.5 w-3.5" aria-hidden />
+                    {linkCopied ? t('profile.linkCopied') : t('profile.copyLink')}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-ghost inline-flex items-center gap-2 rounded px-3 py-2 text-xs uppercase tracking-wider"
+                    onClick={handleShareProfile}
+                  >
+                    <Share2 className="h-3.5 w-3.5 text-cs-gold" aria-hidden />
+                    {shared ? t('profile.shared') : t('profile.share')}
+                  </button>
+                </>
               )}
               {!isAuthed && (
                 <button
@@ -454,7 +487,7 @@ export default function ProfilePage({ onBack, onNeedAuth, onStartMatch, onInvite
 
       {!isAuthed && (
         <div className="mb-4 rounded border border-cs-gold/35 bg-cs-gold/10 px-4 py-3 text-sm text-cs-gold">
-          {t('profile.guestUnlock')}
+          {t('profile.guestLocal')}
         </div>
       )}
 
@@ -480,23 +513,26 @@ export default function ProfilePage({ onBack, onNeedAuth, onStartMatch, onInvite
         <div className="grid gap-4 lg:grid-cols-2 lg:gap-6 lg:items-start">
           <div className="panel space-y-5 rounded-xl p-5 lg:p-6">
             {!isAuthed && (
-              <p className="text-sm text-cs-muted">{t('profile.guestUnlock')}</p>
+              <p className="text-sm text-cs-muted">{t('profile.guestLocalHint')}</p>
             )}
+            <div>
+              <label className="mb-1.5 block text-[10px] font-bold tracking-wider text-cs-muted uppercase">
+                {t('profile.nickname')}
+              </label>
+              <input
+                value={nickname}
+                onChange={(e) => setNickname(e.target.value)}
+                maxLength={16}
+                placeholder={t('profile.nicknamePlaceholder')}
+                className="w-full rounded border border-cs-border bg-cs-bg/60 px-3 py-2 text-sm outline-none focus:border-cs-gold/50"
+              />
+              {!isAuthed && (
+                <p className="mt-1.5 text-[11px] text-cs-muted">{t('profile.guestTagHint')}</p>
+              )}
+            </div>
+
             {isAuthed && (
               <>
-                <div>
-                  <label className="mb-1.5 block text-[10px] font-bold tracking-wider text-cs-muted uppercase">
-                    {t('profile.nickname')}
-                  </label>
-                  <input
-                    value={nickname}
-                    onChange={(e) => setNickname(e.target.value)}
-                    maxLength={16}
-                    placeholder={t('profile.nicknamePlaceholder')}
-                    className="w-full rounded border border-cs-border bg-cs-bg/60 px-3 py-2 text-sm outline-none focus:border-cs-gold/50"
-                  />
-                </div>
-
                 <div>
                   <label className="mb-1.5 block text-[10px] font-bold tracking-wider text-cs-muted uppercase">
                     {t('profile.steam')}
@@ -743,27 +779,26 @@ export default function ProfilePage({ onBack, onNeedAuth, onStartMatch, onInvite
               </div>
             </div>
 
-            {isAuthed && (
-              <div className="rounded-lg border border-cs-border bg-cs-bg/40 px-4 py-3">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <div className="text-sm font-semibold text-cs-text">{t('profile.setupPreset')}</div>
-                    <p className="mt-0.5 text-xs text-cs-muted">{t('profile.setupPresetHint')}</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setSetupPresetEnabled((v) => !v)}
-                    className={`inline-flex shrink-0 items-center gap-2 rounded border px-4 py-2 text-xs font-bold tracking-wider uppercase ${
-                      setupPresetEnabled
-                        ? 'border-cs-gold/50 bg-cs-gold/15 text-cs-gold'
-                        : 'border-cs-border text-cs-muted'
-                    }`}
-                  >
-                    {setupPresetEnabled ? t('profile.setupPresetOn') : t('profile.setupPresetOff')}
-                  </button>
+            <div className="rounded-lg border border-cs-border bg-cs-bg/40 px-4 py-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-semibold text-cs-text">{t('profile.setupPreset')}</div>
+                  <p className="mt-0.5 text-xs text-cs-muted">{t('profile.setupPresetHint')}</p>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setSetupPresetEnabled((v) => !v)}
+                  className={`inline-flex shrink-0 items-center gap-2 rounded border px-4 py-2 text-xs font-bold tracking-wider uppercase ${
+                    setupPresetEnabled
+                      ? 'border-cs-gold/50 bg-cs-gold/15 text-cs-gold'
+                      : 'border-cs-border text-cs-muted'
+                  }`}
+                >
+                  {setupPresetEnabled ? t('profile.setupPresetOn') : t('profile.setupPresetOff')}
+                </button>
+              </div>
 
-                {setupPresetEnabled && (
+              {setupPresetEnabled && (
                   <div className="mt-4 space-y-4 border-t border-cs-border/60 pt-4">
                     <div>
                       <p className="mb-2 text-[10px] font-bold tracking-[0.18em] text-cs-gold uppercase">
@@ -846,8 +881,7 @@ export default function ProfilePage({ onBack, onNeedAuth, onStartMatch, onInvite
                     </div>
                   </div>
                 )}
-              </div>
-            )}
+            </div>
 
             <div className="flex flex-wrap gap-2">
               <button

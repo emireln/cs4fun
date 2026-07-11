@@ -2,7 +2,7 @@ import { motion } from 'framer-motion'
 import { Crown, Download, Home, Package, RotateCcw, Share2, Trophy } from 'lucide-react'
 import { useState } from 'react'
 import { useI18n } from '../../i18n'
-import { formatUsd, RARITY_META, scoreBoxBattle } from '../../lib/boxBattle'
+import { RARITY_META, scoreBoxBattle } from '../../lib/boxBattle'
 import { downloadShareCard, shareResult } from '../../lib/history'
 import BoxDropCard from './BoxDropCard'
 
@@ -24,7 +24,7 @@ export default function BoxResults({
   onHome,
   onRetry,
 }) {
-  const { t, locale } = useI18n()
+  const { t, locale, currency, money } = useI18n()
   const [shared, setShared] = useState(false)
   const [downloading, setDownloading] = useState(false)
   const score = scoreBoxBattle({
@@ -45,6 +45,7 @@ export default function BoxResults({
     losses: !won && !tie ? 1 : 0,
     nickname: profile?.nickname || 'Player',
     locale,
+    currency,
     boxDrops: myDrops,
     myTotal,
     oppTotal,
@@ -93,9 +94,9 @@ export default function BoxResults({
           <p className="relative mx-auto mt-2 max-w-md text-sm text-cs-muted">{t('box.vaultSubtitle')}</p>
 
           <div className="relative mt-6 font-display text-3xl font-bold sm:text-4xl">
-            <span className="text-cs-gold">{formatUsd(myTotal)}</span>
+            <span className="text-cs-gold">{money(myTotal)}</span>
             <span className="mx-3 text-lg text-cs-muted">vs</span>
-            <span className="text-cs-loss">{formatUsd(oppTotal)}</span>
+            <span className="text-cs-loss">{money(oppTotal)}</span>
           </div>
           {caseName && (
             <p className="relative mt-2 text-xs text-cs-muted">
@@ -168,7 +169,7 @@ export default function BoxResults({
               />
               <div className="min-w-0">
                 <div className="truncate font-display font-bold">{statsSnapshot.bestDrop.name}</div>
-                <div className="font-mono text-cs-gold">{formatUsd(statsSnapshot.bestDrop.value)}</div>
+                <div className="font-mono text-cs-gold">{money(statsSnapshot.bestDrop.value)}</div>
               </div>
             </div>
           </div>
@@ -225,7 +226,7 @@ export default function BoxResults({
 }
 
 function BestPull({ title, drop }) {
-  const { t } = useI18n()
+  const { t, money } = useI18n()
   const meta = drop ? RARITY_META[drop.rarity] : null
   return (
     <div className="rounded-xl border border-cs-border/80 bg-cs-bg/50 p-4">
@@ -240,7 +241,7 @@ function BestPull({ title, drop }) {
             <div className="mt-1 text-[11px] text-cs-muted">
               {t(`box.rarity.${drop.rarity}`)} · {drop.wear}
             </div>
-            <div className="font-mono text-cs-gold">{formatUsd(drop.value)}</div>
+            <div className="font-mono text-cs-gold">{money(drop.value)}</div>
           </div>
         </div>
       ) : (

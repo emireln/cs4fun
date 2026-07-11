@@ -11,7 +11,7 @@ export default function CareerSeasonCard({
   onHome,
   onNextSeason,
 }) {
-  const { t, locale } = useI18n()
+  const { t, locale, currency } = useI18n()
   const [shared, setShared] = useState(false)
   const [busy, setBusy] = useState(false)
   const tier = tierForScore(state.seasonScore || 0)
@@ -28,6 +28,7 @@ export default function CareerSeasonCard({
     mapPriority: state.mapPriority,
     lineup: state.lineup,
     locale,
+    currency,
     careerTier: t(tier.labelKey),
     careerOrg: state.orgName,
     careerMajors: state.majorsWonCareer || 0,

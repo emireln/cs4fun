@@ -24,7 +24,7 @@ export default function StatusBar({
   onOpenProfile,
   onNeedAuth,
 }) {
-  const { t } = useI18n()
+  const { t, currency, setCurrency } = useI18n()
   const { profile, isAuthed } = useAuth()
   const [hidden, setHidden] = useState(false)
   const [ultra, setUltra] = useState(false)
@@ -103,6 +103,16 @@ export default function StatusBar({
         </button>
 
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
+          <button
+            type="button"
+            onClick={() => setCurrency(currency === 'USD' ? 'BRL' : 'USD')}
+            title={t('nav.currency')}
+            aria-label={t('nav.currency')}
+            className="inline-flex h-9 items-center justify-center rounded-lg border border-cs-border bg-cs-panel px-2 font-mono text-[10px] font-bold tracking-wider text-cs-gold transition hover:border-cs-gold/50 hover:bg-cs-gold/10"
+          >
+            {currency === 'BRL' ? t('currency.brl') : t('currency.usd')}
+          </button>
+
           {!quiet && (
             <div className="mr-0.5 hidden flex-wrap items-center gap-1.5 text-xs sm:flex">
               {(wins != null || losses != null) && (

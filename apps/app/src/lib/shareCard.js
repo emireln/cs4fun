@@ -1,20 +1,33 @@
 import { ROLES } from '../data/constants'
-import { formatUsd, RARITY_META } from './boxBattle'
+import { formatMoney, getDisplayCurrency } from './currency'
+import { RARITY_META } from './boxBattle'
 import { teamLogoCandidates } from '../data/teamLogos'
 
 const FONT = 'Arial, Helvetica, sans-serif'
+const CARD_W = 1080
+const CARD_H = 1350
 
-function loadImage(src) {
+function brandLogoSrc() {
+  const base = typeof import.meta !== 'undefined' && import.meta.env?.BASE_URL ? import.meta.env.BASE_URL : '/'
+  return `${base}logo.png`
+}
+
+function loadImage(src, { cors = false } = {}) {
   return new Promise((resolve) => {
     if (!src || typeof Image === 'undefined') {
       resolve(null)
       return
     }
     const img = new Image()
+    if (cors) img.crossOrigin = 'anonymous'
     img.onload = () => resolve(img)
     img.onerror = () => resolve(null)
     img.src = src
   })
+}
+
+async function loadBrandLogo() {
+  return loadImage(brandLogoSrc())
 }
 
 async function loadTeamLogo(name) {
@@ -23,6 +36,25 @@ async function loadTeamLogo(name) {
     if (img) return img
   }
   return null
+}
+
+/** Draw image letterboxed inside a box (object-fit: contain). */
+function drawContain(ctx, img, x, y, w, h) {
+  if (!img || !img.width || !img.height) return
+  const scale = Math.min(w / img.width, h / img.height)
+  const dw = img.width * scale
+  const dh = img.height * scale
+  ctx.drawImage(img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh)
+}
+
+function fitText(ctx, text, maxWidth) {
+  const raw = String(text || '')
+  if (ctx.measureText(raw).width <= maxWidth) return raw
+  let s = raw
+  while (s.length > 1 && ctx.measureText(`${s}…`).width > maxWidth) {
+    s = s.slice(0, -1)
+  }
+  return `${s}…`
 }
 
 /**
@@ -45,14 +77,20 @@ export async function renderShareCardBlob({
   myTotal = null,
   oppTotal = null,
   caseName = null,
+  currency = null,
 }) {
-  const W = 1080
-  const H = 1350
+  const W = CARD_W
+  const H = CARD_H
   const canvas = document.createElement('canvas')
   canvas.width = W
   canvas.height = H
   const ctx = canvas.getContext('2d')
   if (!ctx) return null
+
+  const moneyCur = currency || getDisplayCurrency()
+  const fmt = (n) => formatMoney(n, moneyCur)
+
+  const brandLogo = await loadBrandLogo()
 
   // Solid fills first — never rely on web fonts / external images for readability
   const bg = ctx.createLinearGradient(0, 0, W, H)
@@ -80,13 +118,28 @@ export async function renderShareCardBlob({
   ctx.fillStyle = won ? '#e8c547' : '#e85d5d'
   ctx.fillRect(0, 0, W, 12)
 
+  // Brand mark — logo + wordmark (every share PNG)
+  const logoSize = 56
+  let titleX = 72
+  if (brandLogo) {
+    drawContain(ctx, brandLogo, 72, 44, logoSize, logoSize)
+    titleX = 72 + logoSize + 16
+  }
   ctx.fillStyle = '#e8c547'
   ctx.font = `bold 48px ${FONT}`
-  ctx.fillText('CS4FUN', 72, 100)
+  ctx.fillText('CS4FUN', titleX, 88)
+
+  // Corner watermark logo
+  if (brandLogo) {
+    ctx.save()
+    ctx.globalAlpha = 0.9
+    drawContain(ctx, brandLogo, W - 72 - 64, 40, 64, 64)
+    ctx.restore()
+  }
 
   ctx.fillStyle = '#8b93a7'
   ctx.font = `28px ${FONT}`
-  ctx.fillText(String(mode).toUpperCase(), 72, 150)
+  ctx.fillText(String(mode).toUpperCase(), titleX, 130)
 
   ctx.fillStyle = won ? '#e8c547' : '#e85d5d'
   ctx.font = `bold 72px ${FONT}`
@@ -99,7 +152,7 @@ export async function renderShareCardBlob({
       : locale === 'pt-BR'
         ? 'DERROTA'
         : 'LOSS')
-  wrapText(ctx, resultWord, 72, 280, W - 144, 80)
+  wrapText(ctx, resultWord, 72, 240, W - 144, 80)
 
   ctx.fillStyle = '#e8ecf4'
   ctx.font = `bold 40px ${FONT}`
@@ -109,89 +162,156 @@ export async function renderShareCardBlob({
   if (streak != null) bits.push(`STREAK ${streak}`)
   if (mapPriority) bits.push(String(mapPriority))
   if (myTotal != null && oppTotal != null) {
-    bits.push(`${formatUsd(myTotal)} vs ${formatUsd(oppTotal)}`)
+    bits.push(`${fmt(myTotal)} vs ${fmt(oppTotal)}`)
   }
   if (caseName) bits.push(String(caseName))
-  ctx.fillText(bits.join('  ·  ') || '—', 72, 420)
+  ctx.fillText(fitText(ctx, bits.join('  ·  ') || '—', W - 144), 72, 360)
 
   ctx.fillStyle = '#8b93a7'
   ctx.font = `32px ${FONT}`
-  ctx.fillText(`@${nickname || 'Player'}`, 72, 480)
+  ctx.fillText(`@${nickname || 'Player'}`, 72, 415)
+
+  const footerY = H - 56
+  const contentBottom = footerY - 36
 
   if (mode === 'box' && Array.isArray(boxDrops) && boxDrops.length) {
-    let y = 540
-    ctx.fillStyle = '#e8c547'
-    ctx.font = `bold 28px ${FONT}`
-    ctx.fillText(locale === 'pt-BR' ? 'SEUS DROPS' : 'YOUR PULLS', 72, y)
-    y += 36
-
-    for (const drop of boxDrops.slice(0, 8)) {
-      const color = RARITY_META[drop.rarity]?.color || '#e8c547'
-      ctx.fillStyle = '#1a2030'
-      roundRect(ctx, 72, y, W - 144, 78, 12)
-      ctx.fill()
-      ctx.strokeStyle = color
-      ctx.lineWidth = 2
-      ctx.stroke()
-
-      ctx.fillStyle = color
-      ctx.font = `bold 22px ${FONT}`
-      ctx.fillText((drop.rarity || '').toUpperCase(), 96, y + 48)
-
-      ctx.fillStyle = '#e8ecf4'
-      ctx.font = `bold 28px ${FONT}`
-      const name = String(drop.name || '—')
-      const clipped = name.length > 28 ? `${name.slice(0, 27)}…` : name
-      ctx.fillText(clipped, 280, y + 48)
-
-      ctx.fillStyle = '#e8c547'
-      ctx.font = `bold 26px ${FONT}`
-      ctx.fillText(formatUsd(drop.value), W - 220, y + 48)
-      y += 90
-    }
+    await drawBoxVault(ctx, boxDrops, 460, contentBottom, W, locale, fmt)
   } else if (lineup) {
-    let y = 560
-    ctx.fillStyle = '#e8c547'
-    ctx.font = `bold 28px ${FONT}`
-    ctx.fillText('LINEUP', 72, y)
-    y += 50
-
-    for (const role of ROLES) {
-      const p = lineup[role.id]
-      ctx.fillStyle = '#2a3140'
-      roundRect(ctx, 72, y, W - 144, 88, 12)
-      ctx.fill()
-
-      ctx.fillStyle = '#e8c547'
-      ctx.font = `bold 24px ${FONT}`
-      ctx.fillText(role.short, 96, y + 54)
-
-      ctx.fillStyle = '#e8ecf4'
-      ctx.font = `bold 32px ${FONT}`
-      ctx.fillText(p?.name || '—', 200, y + 54)
-
-      if (p?.fromTeam) {
-        const logo = await loadTeamLogo(p.fromTeam)
-        let textX = 520
-        if (logo) {
-          const size = 40
-          ctx.drawImage(logo, 520, y + 24, size, size)
-          textX = 520 + size + 12
-        }
-        ctx.fillStyle = '#8b93a7'
-        ctx.font = `22px ${FONT}`
-        ctx.fillText(p.fromTeam, textX, y + 54)
-      }
-      y += 104
-    }
+    await drawLineup(ctx, lineup, 480, contentBottom, W)
   }
 
+  // Footer bar with mini logo
+  ctx.fillStyle = 'rgba(0,0,0,0.35)'
+  ctx.fillRect(0, H - 88, W, 88)
+  if (brandLogo) {
+    drawContain(ctx, brandLogo, 72, H - 72, 36, 36)
+  }
   ctx.fillStyle = '#8b93a7'
   ctx.font = `24px ${FONT}`
-  const url = typeof window !== 'undefined' ? window.location.origin || 'cs4fun.online' : 'cs4fun.online'
-  ctx.fillText(String(url).replace(/^file:.*/, 'cs4fun.online'), 72, H - 60)
+  const url =
+    typeof window !== 'undefined' ? window.location.origin || 'cs4fun.online' : 'cs4fun.online'
+  const urlText = String(url).replace(/^file:.*/, 'cs4fun.online')
+  ctx.fillText(urlText, brandLogo ? 120 : 72, H - 46)
+  ctx.fillStyle = '#e8c547'
+  ctx.font = `bold 22px ${FONT}`
+  ctx.fillText('CS4FUN', W - 72 - ctx.measureText('CS4FUN').width, H - 46)
 
   return canvasToPngBlob(canvas)
+}
+
+async function drawBoxVault(ctx, boxDrops, topY, bottomY, W, locale, fmt) {
+  const list = boxDrops.slice(0, 10)
+  const format = fmt || ((n) => formatMoney(n, getDisplayCurrency()))
+  ctx.fillStyle = '#e8c547'
+  ctx.font = `bold 28px ${FONT}`
+  ctx.fillText(locale === 'pt-BR' ? 'SEU VAULT' : 'YOUR VAULT', 72, topY)
+
+  const gridTop = topY + 28
+  const availH = Math.max(200, bottomY - gridTop)
+  const padX = 72
+  const gap = 14
+  const availW = W - padX * 2
+  const n = list.length
+  const cols = n <= 2 ? n : n <= 4 ? 2 : n <= 6 ? 3 : n <= 8 ? 4 : 5
+  const rows = Math.ceil(n / cols)
+  const cellW = (availW - gap * (cols - 1)) / cols
+  const cellH = Math.min(cellW * 1.25, (availH - gap * (rows - 1)) / rows)
+
+  const images = await Promise.all(list.map((d) => loadImage(d.image, { cors: true })))
+
+  for (let i = 0; i < n; i++) {
+    const drop = list[i]
+    const col = i % cols
+    const row = Math.floor(i / cols)
+    const x = padX + col * (cellW + gap)
+    const y = gridTop + row * (cellH + gap)
+    const color = RARITY_META[drop.rarity]?.color || '#e8c547'
+
+    ctx.fillStyle = '#141820'
+    roundRect(ctx, x, y, cellW, cellH, 14)
+    ctx.fill()
+    ctx.strokeStyle = color
+    ctx.lineWidth = 2.5
+    roundRect(ctx, x, y, cellW, cellH, 14)
+    ctx.stroke()
+
+    // Rarity top strip
+    ctx.fillStyle = color
+    ctx.fillRect(x + 10, y + 10, cellW - 20, 4)
+
+    const imgPad = 12
+    const textBlock = Math.max(52, Math.min(72, cellH * 0.28))
+    const imgAreaH = cellH - textBlock - 28
+    if (images[i]) {
+      drawContain(ctx, images[i], x + imgPad, y + 22, cellW - imgPad * 2, imgAreaH)
+    } else {
+      // CORS fallback — rarity-colored placeholder so the card still fits
+      ctx.fillStyle = `${color}22`
+      roundRect(ctx, x + imgPad, y + 28, cellW - imgPad * 2, imgAreaH - 8, 10)
+      ctx.fill()
+      ctx.fillStyle = color
+      ctx.font = `bold ${Math.max(18, cellW / 8)}px ${FONT}`
+      const mark = '◆'
+      ctx.fillText(mark, x + (cellW - ctx.measureText(mark).width) / 2, y + 22 + imgAreaH / 2)
+    }
+
+    const textY = y + 22 + imgAreaH + 8
+    ctx.fillStyle = '#e8ecf4'
+    const nameSize = Math.max(16, Math.min(24, cellW / 10))
+    ctx.font = `bold ${nameSize}px ${FONT}`
+    ctx.fillText(fitText(ctx, drop.name || '—', cellW - 24), x + 12, textY + nameSize)
+
+    ctx.font = `bold ${Math.max(14, nameSize - 2)}px ${FONT}`
+    ctx.fillStyle = color
+    const rarity = String(drop.rarity || '').toUpperCase()
+    ctx.fillText(fitText(ctx, rarity, cellW * 0.55), x + 12, textY + nameSize + 22)
+
+    ctx.fillStyle = '#e8c547'
+    ctx.font = `bold ${Math.max(16, nameSize)}px ${FONT}`
+    const price = format(drop.value)
+    const pw = ctx.measureText(price).width
+    ctx.fillText(price, x + cellW - 12 - pw, textY + nameSize + 22)
+  }
+}
+
+async function drawLineup(ctx, lineup, topY, bottomY, W) {
+  ctx.fillStyle = '#e8c547'
+  ctx.font = `bold 28px ${FONT}`
+  ctx.fillText('LINEUP', 72, topY)
+
+  const roles = ROLES
+  const availH = Math.max(280, bottomY - topY - 40)
+  const rowH = Math.min(96, (availH - 8 * (roles.length - 1)) / roles.length)
+  let y = topY + 36
+
+  for (const role of roles) {
+    const p = lineup[role.id]
+    ctx.fillStyle = '#2a3140'
+    roundRect(ctx, 72, y, W - 144, rowH, 12)
+    ctx.fill()
+
+    ctx.fillStyle = '#e8c547'
+    ctx.font = `bold 24px ${FONT}`
+    ctx.fillText(role.short, 96, y + rowH * 0.62)
+
+    ctx.fillStyle = '#e8ecf4'
+    ctx.font = `bold 32px ${FONT}`
+    ctx.fillText(fitText(ctx, p?.name || '—', 280), 200, y + rowH * 0.62)
+
+    if (p?.fromTeam) {
+      const logo = await loadTeamLogo(p.fromTeam)
+      let textX = 520
+      if (logo) {
+        const size = Math.min(40, rowH - 20)
+        drawContain(ctx, logo, 520, y + (rowH - size) / 2, size, size)
+        textX = 520 + size + 12
+      }
+      ctx.fillStyle = '#8b93a7'
+      ctx.font = `22px ${FONT}`
+      ctx.fillText(fitText(ctx, p.fromTeam, W - 72 - textX), textX, y + rowH * 0.62)
+    }
+    y += rowH + 8
+  }
 }
 
 export async function canvasToPngBlob(canvas) {

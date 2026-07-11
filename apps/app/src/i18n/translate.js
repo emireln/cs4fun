@@ -31,11 +31,12 @@ export function translate(path, vars, locale = getStoredLocale()) {
 }
 
 /** Pick a random string from an i18n array path (e.g. liveLog.flavors.eco). */
-export function translatePick(path, vars, locale = getStoredLocale()) {
+export function translatePick(path, vars, locale = getStoredLocale(), rng = Math.random) {
   const dict = DICTS[locale] || en
   let arr = getByPath(dict, path)
   if (!Array.isArray(arr) || !arr.length) arr = getByPath(en, path)
   if (!Array.isArray(arr) || !arr.length) return ''
-  const text = arr[Math.floor(Math.random() * arr.length)]
+  const roll = typeof rng === 'function' ? rng() : Math.random()
+  const text = arr[Math.floor(roll * arr.length)]
   return applyVars(text, vars)
 }

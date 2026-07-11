@@ -1,9 +1,9 @@
 import { motion } from 'framer-motion'
-import { formatUsd, isHighTierDrop, RARITY_META } from '../../lib/boxBattle'
+import { isHighTierDrop, RARITY_META } from '../../lib/boxBattle'
 import { useI18n } from '../../i18n'
 
 export default function BoxDropCard({ drop, compact = false, highlight = false }) {
-  const { t } = useI18n()
+  const { t, money } = useI18n()
   if (!drop) return null
   const meta = RARITY_META[drop.rarity] || RARITY_META.milspec
   const rarityLabel = t(`box.rarity.${drop.rarity}`)
@@ -61,12 +61,16 @@ export default function BoxDropCard({ drop, compact = false, highlight = false }
         loading="lazy"
         referrerPolicy="no-referrer"
       />
-      <div className={`relative mt-1 truncate font-display font-bold ${compact ? 'text-[10px]' : 'text-xs'}`}>
+      <div
+        className={`relative mt-1 line-clamp-2 break-words font-display font-bold leading-tight ${
+          compact ? 'min-h-[1.5rem] text-[10px]' : 'min-h-[2rem] text-xs'
+        }`}
+      >
         {drop.name}
       </div>
       <div className="relative mt-0.5 flex items-center justify-between gap-1 text-[10px]">
         <span style={{ color: meta.color }}>{rarityLabel}</span>
-        <span className="font-mono text-cs-gold">{formatUsd(drop.value)}</span>
+        <span className="font-mono text-cs-gold">{money(drop.value)}</span>
       </div>
     </motion.div>
   )

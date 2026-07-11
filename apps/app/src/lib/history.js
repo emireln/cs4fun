@@ -351,6 +351,7 @@ export async function shareResult(payload) {
       mapPriority: payload.mapPriority,
       lineup: payload.lineup,
       locale: payload.locale,
+      currency: payload.currency,
       boxDrops: payload.boxDrops,
       myTotal: payload.myTotal,
       oppTotal: payload.oppTotal,
@@ -398,7 +399,25 @@ export async function shareResult(payload) {
 export async function shareProfile(payload) {
   const text = buildProfileShareText(payload)
   const url = buildProfileShareUrl(payload)
+  // Always stash the deep link so paste works even after a native share sheet
+  try {
+    await navigator.clipboard.writeText(url)
+  } catch {
+    /* optional */
+  }
   return sharePlainText({ title: 'CS4FUN', text, url })
+}
+
+/** One-tap copy of the public profile deep link only. */
+export async function copyProfileLink(payload) {
+  const url = buildProfileShareUrl(payload)
+  if (!url) return { ok: false, url: '' }
+  try {
+    await navigator.clipboard.writeText(url)
+    return { ok: true, url }
+  } catch {
+    return { ok: false, url }
+  }
 }
 
 /** Download the share card PNG */

@@ -4,7 +4,6 @@ import { useI18n } from '../../i18n'
 import {
   bestDropOf,
   botNickname,
-  formatUsd,
   getCase,
   openBattleRound,
   recordBoxBattle,
@@ -21,8 +20,7 @@ import BoxResults from '../box/BoxResults'
 import BoxSetup from '../box/BoxSetup'
 
 export default function BoxGame({ profile, room, onHome, onStatus, onNeedFriends }) {
-  const { t } = useI18n()
-  const [localRoom, setLocalRoom] = useState(room)
+  const { t, money } = useI18n()
   const [step, setStep] = useState(room ? 'lobby' : 'setup')
   const [cfg, setCfg] = useState(() => {
     const caseIds =
@@ -364,9 +362,9 @@ export default function BoxGame({ profile, room, onHome, onStatus, onNeedFriends
             </div>
           </div>
           <div className="flex items-center gap-4 font-mono text-sm">
-            <span className="text-cs-gold">{formatUsd(myTotal)}</span>
+            <span className="text-cs-gold">{money(myTotal)}</span>
             <span className="text-cs-muted">{t('common.vs')}</span>
-            <span className="text-cs-loss">{formatUsd(oppTotal)}</span>
+            <span className="text-cs-loss">{money(oppTotal)}</span>
           </div>
         </div>
 

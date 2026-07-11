@@ -1,20 +1,37 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
-import { formatUsd, isHighTierDrop, RARITY_META } from '../../lib/boxBattle'
-import { playBoxRareDrop, unlockAudio } from '../../lib/sound'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { AnimatePresence, motion, useMotionValue, useAnimationFrame } from 'framer-motion'
+import {
+  buildCaseReelStrip,
+  isHighTierDrop,
+  RARITY_META,
+} from '../../lib/boxBattle'
+import { playBoxRareDrop, playBoxReelTick, unlockAudio } from '../../lib/sound'
 import { useI18n } from '../../i18n'
 
-const TILE_COUNT = 32
-const WIN_INDEX = 26
-const SPIN_MS = 5200
-const LAND_HOLD_MS = 1400
-const LAND_HOLD_RARE_MS = 2000
+/** Dense CS2 / CSGOSKINS-style horizontal reel */
+const TILE_COUNT = 72
+const WIN_INDEX = 58
+const SPIN_MS = 6800
+const LAND_HOLD_MS = 1500
+const LAND_HOLD_RARE_MS = 2200
+/** Tile outer width (incl. gap) — keeps ~8–10 skins visible in a panel */
+const TILE_PX = 76
+const GAP_PX = 6
+const STRIP_PAD = 8
 
-/** Slow, tense CS-style case reel */
+function easeOutQuint(t) {
+  return 1 - (1 - t) ** 5
+}
+
 export default function BoxOpenReel({ drop, label, delay = 0, onDone }) {
-  const { t } = useI18n()
-  const [phase, setPhase] = useState('spin') // spin | land
+  const { t, money } = useI18n()
+  const [targetX, setTargetX] = useState(0)
   const sounded = useRef(false)
+  const viewportRef = useRef(null)
+  const spinStarted = useRef(0)
+  const lastTickIdx = useRef(-1)
+  const x = useMotionValue(0)
+
   const meta = RARITY_META[drop?.rarity] || RARITY_META.milspec
   const isHeat = isHighTierDrop(drop)
   const isGold = drop?.rarity === 'gold'
@@ -22,43 +39,89 @@ export default function BoxOpenReel({ drop, label, delay = 0, onDone }) {
   const holdMs = isHeat ? LAND_HOLD_RARE_MS : LAND_HOLD_MS
   const particleCount = isGold ? 18 : isCovert ? 12 : isHeat ? 8 : 0
 
-  const decoys = useMemo(() => {
-    if (!drop) return []
-    return Array.from({ length: TILE_COUNT }, (_, i) => ({
-      key: i,
-      blur: i !== WIN_INDEX,
-      highlight: i === WIN_INDEX,
-    }))
+  const { strip, winIndex } = useMemo(() => {
+    if (!drop) return { strip: [], winIndex: WIN_INDEX }
+    return buildCaseReelStrip(drop.caseId, drop, {
+      count: TILE_COUNT,
+      winIndex: WIN_INDEX,
+      seed: `${drop.id}:reel`,
+    })
   }, [drop])
+
+  // Measure where the winning tile must sit under the center needle
+  useLayoutEffect(() => {
+    if (!drop || !strip.length) return
+    const viewport = viewportRef.current
+    if (!viewport) return
+    const vw = viewport.clientWidth
+    const winCenter =
+      STRIP_PAD + winIndex * (TILE_PX + GAP_PX) + TILE_PX / 2
+    // Slight CS-style overshoot jitter so land isn't pixel-perfect every time
+    const jitter = ((hashTiny(drop.id) % 21) - 10) * 0.35
+    setTargetX(-(winCenter - vw / 2 + jitter))
+    x.set(40)
+  }, [drop?.id, strip, winIndex, x])
 
   useEffect(() => {
     if (!drop) return undefined
-    setPhase('spin')
+    setPhase('idle')
     sounded.current = false
+    lastTickIdx.current = -1
     unlockAudio()
-    const t1 = setTimeout(() => {
+
+    const startTimer = setTimeout(() => {
+      spinStarted.current = performance.now()
+      setPhase('spin')
+    }, delay)
+
+    const landTimer = setTimeout(() => {
       setPhase('land')
       if (isHeat && !sounded.current) {
         sounded.current = true
         playBoxRareDrop(drop.rarity)
       }
     }, SPIN_MS + delay)
-    const t2 = setTimeout(() => onDone?.(), SPIN_MS + holdMs + delay)
+
+    const doneTimer = setTimeout(() => onDone?.(), SPIN_MS + holdMs + delay)
+
     return () => {
-      clearTimeout(t1)
-      clearTimeout(t2)
+      clearTimeout(startTimer)
+      clearTimeout(landTimer)
+      clearTimeout(doneTimer)
     }
   }, [drop?.id, delay]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (!drop) return null
+  // Drive translate + tick sounds with the same ease curve
+  useAnimationFrame((now) => {
+    if (phase !== 'spin') {
+      if (phase === 'land') x.set(targetX)
+      return
+    }
+    const start = spinStarted.current || now
+    const t = Math.min(1, (now - start) / SPIN_MS)
+    const eased = easeOutQuint(t)
+    const from = 40
+    const pos = from + (targetX - from) * eased
+    x.set(pos)
 
-  // Land so the winning tile sits near the center needle after a long roll
-  const landX = `-${((WIN_INDEX + 0.5) / TILE_COUNT) * 100 - 8}%`
+    // Tick when a new tile crosses the needle
+    const vw = viewportRef.current?.clientWidth || 400
+    const needle = vw / 2
+    const idx = Math.floor((-pos + needle - STRIP_PAD) / (TILE_PX + GAP_PX))
+    if (idx !== lastTickIdx.current && idx >= 0 && idx < strip.length) {
+      lastTickIdx.current = idx
+      playBoxReelTick()
+    }
+  })
+
+  if (!drop) return null
 
   return (
     <div className="w-full">
       <div className="mb-2 flex items-center justify-between gap-2">
-        <span className="truncate text-xs font-semibold uppercase tracking-wider text-cs-muted">{label}</span>
+        <span className="truncate text-xs font-semibold tracking-wider text-cs-muted uppercase">
+          {label}
+        </span>
         <AnimatePresence>
           {phase === 'land' && (
             <motion.span
@@ -67,14 +130,15 @@ export default function BoxOpenReel({ drop, label, delay = 0, onDone }) {
               className="font-mono text-sm font-bold"
               style={{ color: meta.color }}
             >
-              {formatUsd(drop.value)}
+              {money(drop.value)}
             </motion.span>
           )}
         </AnimatePresence>
       </div>
 
       <motion.div
-        className={`relative overflow-hidden rounded-xl border bg-cs-bg/90 ${
+        ref={viewportRef}
+        className={`relative overflow-hidden rounded-xl border bg-cs-bg/95 ${
           phase === 'land' && isHeat ? (isGold ? 'box-rare-shake-gold' : 'box-rare-shake') : ''
         }`}
         style={{
@@ -82,16 +146,11 @@ export default function BoxOpenReel({ drop, label, delay = 0, onDone }) {
           boxShadow:
             phase === 'land' && isHeat
               ? `0 0 48px ${meta.color}55, 0 0 12px ${meta.color}88, inset 0 0 40px ${meta.color}22`
-              : undefined,
+              : 'inset 0 0 24px rgba(0,0,0,0.45)',
         }}
-        animate={
-          phase === 'land' && isHeat
-            ? { scale: [1, 1.02, 1] }
-            : undefined
-        }
+        animate={phase === 'land' && isHeat ? { scale: [1, 1.015, 1] } : undefined}
         transition={phase === 'land' && isHeat ? { duration: 0.55, ease: 'easeOut' } : undefined}
       >
-        {/* Flash wash on rare land */}
         <AnimatePresence>
           {phase === 'land' && isHeat && (
             <motion.div
@@ -105,7 +164,6 @@ export default function BoxOpenReel({ drop, label, delay = 0, onDone }) {
           )}
         </AnimatePresence>
 
-        {/* Rotating aura ring */}
         {phase === 'land' && isHeat && (
           <div
             className="pointer-events-none absolute inset-[-40%] z-0 box-rare-spin"
@@ -116,76 +174,94 @@ export default function BoxOpenReel({ drop, label, delay = 0, onDone }) {
           />
         )}
 
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-8 bg-gradient-to-b from-cs-bg to-transparent" />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-8 bg-gradient-to-t from-cs-bg to-transparent" />
+        {/* Edge fades — CS case open look */}
+        <div className="pointer-events-none absolute inset-y-0 left-0 z-20 w-10 bg-gradient-to-r from-cs-bg via-cs-bg/80 to-transparent sm:w-14" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 z-20 w-10 bg-gradient-to-l from-cs-bg via-cs-bg/80 to-transparent sm:w-14" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-4 bg-gradient-to-b from-cs-bg/80 to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-4 bg-gradient-to-t from-cs-bg/80 to-transparent" />
+
+        {/* Center needle */}
         <div
-          className="pointer-events-none absolute inset-y-0 left-1/2 z-20 w-0.5 -translate-x-1/2"
-          style={{ background: meta.color, boxShadow: `0 0 16px ${meta.color}` }}
+          className="pointer-events-none absolute inset-y-0 left-1/2 z-30 w-0.5 -translate-x-1/2"
+          style={{ background: meta.color, boxShadow: `0 0 14px ${meta.color}` }}
         />
         <div
-          className="pointer-events-none absolute left-1/2 top-1 z-20 h-2 w-3 -translate-x-1/2"
+          className="pointer-events-none absolute top-0 left-1/2 z-30 h-2.5 w-3.5 -translate-x-1/2"
           style={{
             background: meta.color,
             clipPath: 'polygon(50% 100%, 0 0, 100% 0)',
+            filter: `drop-shadow(0 0 6px ${meta.color})`,
+          }}
+        />
+        <div
+          className="pointer-events-none absolute bottom-0 left-1/2 z-30 h-2.5 w-3.5 -translate-x-1/2"
+          style={{
+            background: meta.color,
+            clipPath: 'polygon(50% 0, 0 100%, 100% 100%)',
+            filter: `drop-shadow(0 0 6px ${meta.color})`,
           }}
         />
 
         <motion.div
-          className="relative z-[1] flex gap-2 px-2 py-4"
-          initial={{ x: '5%' }}
-          animate={
-            phase === 'spin'
-              ? { x: landX }
-              : { x: landX, transition: { type: 'spring', stiffness: 70, damping: 22 } }
-          }
-          transition={
-            phase === 'spin'
-              ? { duration: SPIN_MS / 1000, ease: [0.08, 0.65, 0.12, 1] }
-              : undefined
-          }
+          className="relative z-[1] flex py-3"
+          style={{
+            x,
+            paddingLeft: STRIP_PAD,
+            paddingRight: STRIP_PAD,
+            gap: GAP_PX,
+            willChange: 'transform',
+          }}
         >
-          {decoys.map((d) => (
-            <div
-              key={d.key}
-              className={`relative flex h-28 w-28 shrink-0 flex-col items-center justify-center rounded-lg border sm:h-32 sm:w-32 ${
-                d.highlight && phase === 'land'
-                  ? 'scale-105 border-cs-gold bg-cs-gold/15'
-                  : 'border-cs-border/50 bg-cs-panel/50'
-              }`}
-              style={
-                d.highlight && phase === 'land'
-                  ? {
-                      boxShadow: `0 0 36px ${meta.color}77`,
-                      borderColor: meta.color,
-                    }
-                  : undefined
-              }
-            >
-              {d.highlight && phase === 'land' && isHeat && (
-                <>
-                  <span
-                    className="pointer-events-none absolute inset-[-6px] rounded-xl box-rare-ring"
-                    style={{ borderColor: meta.color, boxShadow: `0 0 18px ${meta.color}` }}
-                  />
-                  <span
-                    className="pointer-events-none absolute inset-0 rounded-lg opacity-40"
-                    style={{
-                      background: `radial-gradient(circle at 50% 40%, ${meta.color}88, transparent 65%)`,
-                    }}
-                  />
-                </>
-              )}
-              <img
-                src={drop.image}
-                alt=""
-                className={`relative z-[1] h-16 w-24 object-contain sm:h-20 sm:w-28 ${
-                  d.blur && phase === 'spin' ? 'opacity-40 blur-[1.5px] saturate-50' : ''
-                } ${d.highlight && phase === 'land' && isGold ? 'drop-shadow-[0_0_12px_rgba(228,174,57,0.85)]' : ''}`}
-                referrerPolicy="no-referrer"
-                draggable={false}
-              />
-            </div>
-          ))}
+          {strip.map((item) => {
+            const itemMeta = RARITY_META[item.rarity] || RARITY_META.milspec
+            const highlight = item.isWin && phase === 'land'
+            return (
+              <div
+                key={item.key}
+                className={`relative flex shrink-0 flex-col items-center justify-center rounded-md border ${
+                  highlight ? 'scale-105 bg-cs-gold/15' : 'bg-cs-panel/70'
+                }`}
+                style={{
+                  width: TILE_PX,
+                  height: TILE_PX + 8,
+                  borderColor: highlight ? meta.color : `${itemMeta.color}66`,
+                  boxShadow: highlight
+                    ? `0 0 28px ${meta.color}77`
+                    : `inset 0 -3px 0 ${itemMeta.color}`,
+                }}
+              >
+                {highlight && isHeat && (
+                  <>
+                    <span
+                      className="pointer-events-none absolute inset-[-5px] rounded-lg box-rare-ring"
+                      style={{ borderColor: meta.color, boxShadow: `0 0 14px ${meta.color}` }}
+                    />
+                    <span
+                      className="pointer-events-none absolute inset-0 rounded-md opacity-35"
+                      style={{
+                        background: `radial-gradient(circle at 50% 40%, ${meta.color}88, transparent 65%)`,
+                      }}
+                    />
+                  </>
+                )}
+                <img
+                  src={item.image}
+                  alt=""
+                  className={`relative z-[1] h-[52px] w-[64px] object-contain sm:h-[58px] sm:w-[70px] ${
+                    highlight && isGold ? 'drop-shadow-[0_0_12px_rgba(228,174,57,0.85)]' : ''
+                  }`}
+                  referrerPolicy="no-referrer"
+                  draggable={false}
+                  loading="eager"
+                />
+                {/* Rarity bar under each tile (CS case strip cue) */}
+                <span
+                  className="absolute inset-x-1 bottom-1 z-[1] h-0.5 rounded-full"
+                  style={{ background: itemMeta.color, opacity: highlight ? 1 : 0.85 }}
+                />
+              </div>
+            )
+          })}
         </motion.div>
       </motion.div>
 
@@ -200,7 +276,7 @@ export default function BoxOpenReel({ drop, label, delay = 0, onDone }) {
               [...Array(particleCount)].map((_, i) => (
                 <motion.span
                   key={i}
-                  className="pointer-events-none absolute left-1/2 top-2 h-1.5 w-1.5 rounded-full"
+                  className="pointer-events-none absolute top-2 left-1/2 h-1.5 w-1.5 rounded-full"
                   style={{
                     background: meta.color,
                     boxShadow: `0 0 6px ${meta.color}`,
@@ -239,4 +315,11 @@ export default function BoxOpenReel({ drop, label, delay = 0, onDone }) {
       </AnimatePresence>
     </div>
   )
+}
+
+function hashTiny(str) {
+  let h = 0
+  const s = String(str || '')
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0
+  return Math.abs(h)
 }

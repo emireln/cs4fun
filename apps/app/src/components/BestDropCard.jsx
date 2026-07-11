@@ -1,6 +1,6 @@
 import { Sparkles } from 'lucide-react'
 import { useI18n } from '../i18n'
-import { formatUsd, RARITY_META } from '../lib/boxBattle'
+import { RARITY_META } from '../lib/boxBattle'
 
 /** Compact best-drop showcase for profile / friends / public card */
 export default function BestDropCard({
@@ -10,7 +10,7 @@ export default function BestDropCard({
   className = '',
   compact = false,
 }) {
-  const { t } = useI18n()
+  const { t, money } = useI18n()
   if (!drop) {
     return (
       <div className={`rounded-xl border border-dashed border-cs-border bg-cs-bg/30 px-3 py-3 ${className}`}>
@@ -46,7 +46,7 @@ export default function BestDropCard({
           </div>
           <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-cs-muted">
             <span style={{ color: meta.color }}>{meta.label}</span>
-            <span className="font-mono text-cs-gold">{formatUsd(drop.value)}</span>
+            <span className="font-mono text-cs-gold">{money(drop.value)}</span>
             {drop.caseName && <span className="truncate">· {drop.caseName}</span>}
           </div>
         </div>

@@ -14,7 +14,7 @@ import {
 } from '../../lib/admin'
 
 export default function AdminUsers() {
-  const { t } = useI18n()
+  const { t, money } = useI18n()
   const [search, setSearch] = useState('')
   const [query, setQuery] = useState('')
   const [bannedOnly, setBannedOnly] = useState(false)
@@ -214,8 +214,8 @@ export default function AdminUsers() {
                       {detail.career.orgName || '—'} ({detail.career.shortName || '—'})
                     </p>
                     <p className="mt-0.5 font-mono text-cs-muted">
-                      S{detail.career.season || '?'} W{detail.career.week || '?'} · $
-                      {Number(detail.career.budget || 0).toLocaleString()} ·{' '}
+                      S{detail.career.season || '?'} W{detail.career.week || '?'} ·{' '}
+                      {money(detail.career.budget || 0)} ·{' '}
                       {t('admin.careerScore', { n: detail.career.season_score || 0 })} ·{' '}
                       {t('admin.careerMajors', { n: detail.career.majors_won || 0 })}
                     </p>

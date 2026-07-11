@@ -12,10 +12,51 @@ export function getAllRosters() {
   return rosters
 }
 
+/** Stable identity for "same legend" across years / rosters. */
+export function playerIdentityKey(player) {
+  return String(player?.name || '')
+    .trim()
+    .toLowerCase()
+}
+
+/** True if this player (by id or nick) is already on the lineup. */
+export function lineupOwnsPlayer(lineup, player) {
+  if (!player) return false
+  const key = playerIdentityKey(player)
+  const id = player.id
+  for (const p of Object.values(lineup || {})) {
+    if (!p) continue
+    if (id && p.id === id) return true
+    if (key && playerIdentityKey(p) === key) return true
+  }
+  return false
+}
+
+/** Drop already-rostered legends from a scouted historic five. */
+export function filterRosterForLineup(roster, lineup) {
+  if (!roster) return roster
+  return {
+    ...roster,
+    players: (roster.players || []).filter((p) => !lineupOwnsPlayer(lineup, p)),
+  }
+}
+
 export function rollRoster(excludeIds = []) {
   const pool = rosters.filter((r) => !excludeIds.includes(r.id))
   const source = pool.length ? pool : rosters
   return structuredClone(pick(source))
+}
+
+/** Roll a roster that still has at least one pickable (not already owned) player. */
+export function rollRosterForLineup(lineup, excludeIds = [], attempts = 12) {
+  const used = [...excludeIds]
+  for (let i = 0; i < attempts; i++) {
+    const roster = rollRoster(used)
+    const filtered = filterRosterForLineup(roster, lineup)
+    if (filtered.players?.length) return filtered
+    if (roster?.id) used.push(roster.id)
+  }
+  return filterRosterForLineup(rollRoster(excludeIds), lineup)
 }
 
 export function roleFitMultiplier(slotRole, playerRole) {
@@ -248,8 +289,8 @@ export function simulateMapVeto(userPriority, enemyBias, mentalityId, { bestOf =
   return buildVetoResult(bans, picks, mentalityId)
 }
 
-function formatFlavor(kind, vars = {}) {
-  return translatePick(`liveLog.flavors.${kind}`, vars)
+function formatFlavor(kind, vars = {}, rng = Math.random) {
+  return translatePick(`liveLog.flavors.${kind}`, vars, undefined, rng)
 }
 
 function tacticalLabel(call) {
@@ -282,6 +323,11 @@ function chooseStar(powers, lineup, bias = null, pickFn = pick) {
     return fallback ? { slot: fallback[0], player: fallback[1] } : { slot: null, player: null }
   }
   return { slot: chosen[0], player: lineup[chosen[0]] }
+}
+
+function anyPlayer(lineup, pickFn) {
+  const players = Object.values(lineup || {}).filter(Boolean)
+  return pickFn(players)
 }
 
 export function simulateMap(userTeam, enemyTeam, mapName, mentality, tacticalCall, rngFn = null) {
@@ -337,9 +383,9 @@ export function simulateMap(userTeam, enemyTeam, mapName, mentality, tacticalCal
 
   const playRound = (roundNum, userCT) => {
     const noise = (rng() - 0.5) * 0.35
-    const ctBonus = 0.02
-    let u = userStrength + (userCT ? ctBonus : 0) + noise
-    let e = enemyStrength + (!userCT ? ctBonus : 0) + (rng() - 0.5) * 0.35
+    const ctBoost = 0.02
+    let u = userStrength + (userCT ? ctBoost : 0) + noise
+    let e = enemyStrength + (!userCT ? ctBoost : 0) + (rng() - 0.5) * 0.35
 
     const ecoChance = rng()
     let eco = false
@@ -354,11 +400,74 @@ export function simulateMap(userTeam, enemyTeam, mapName, mentality, tacticalCal
     else enemyRounds++
 
     const winnerLineup = userWins ? userTeam.lineup : enemyTeam.lineup
+    const loserLineup = userWins ? enemyTeam.lineup : userTeam.lineup
     const winnerPowers = userWins ? userPow.powers : enemyPow.powers
     const winnerName = userWins ? userTeam.shortName : enemyTeam.shortName
-    const winnerTeamLabel = userWins ? userTeam.shortName : enemyTeam.shortName
-    const score = { r: roundNum, ur: userRounds, er: enemyRounds, winner: winnerName }
+    const loserName = userWins ? enemyTeam.shortName : userTeam.shortName
+    const winnerTeamLabel = winnerName
+    const score = { r: roundNum, ur: userRounds, er: enemyRounds, winner: winnerName, loser: loserName }
 
+    // ── Beat 1: round / economy ──
+    if (roundNum === 1 || roundNum === 13) {
+      push(
+        'buy',
+        translate('liveLog.roundPistol', {
+          r: roundNum,
+          side: userCT ? 'CT' : 'T',
+        }),
+      )
+    } else if (eco) {
+      push('buy', translate('liveLog.roundBuyEco', { r: roundNum, flavor: formatFlavor('buyEco', {}, rng) }))
+    } else if (rng() < 0.35) {
+      push('buy', translate('liveLog.roundBuyFull', { r: roundNum, flavor: formatFlavor('buyFull', {}, rng) }))
+    } else if (rng() < 0.55) {
+      push('buy', translate('liveLog.roundBuyForce', { r: roundNum, flavor: formatFlavor('buyForce', {}, rng) }))
+    } else {
+      push('info', translate('liveLog.roundStart', { r: roundNum, map: mapName }))
+    }
+
+    // ── Beat 2: mid-round action (1–2 lines) ──
+    const midBeats = 1 + (rng() < 0.55 ? 1 : 0)
+    for (let b = 0; b < midBeats; b++) {
+      const midRoll = rng()
+      const actorTeam = midRoll < 0.5 ? userTeam : enemyTeam
+      const actorLineup = actorTeam.lineup
+      const actorPowers = midRoll < 0.5 ? userPow.powers : enemyPow.powers
+      const star = chooseStar(actorPowers, actorLineup, pickOne(['Entry', 'AWPer', 'Lurker', 'Support', 'IGL']), pickOne)
+      const name = star.player?.name || anyPlayer(actorLineup, pickOne)?.name || actorTeam.shortName
+      const site = pickOne(['A', 'B', 'mid', 'connector', 'apps', 'banana', 'palace', 'ramp'])
+
+      if (midRoll < 0.14) {
+        push('beat', translate('liveLog.beatUtil', { r: roundNum, name, flavor: formatFlavor('util', { site }, rng) }))
+      } else if (midRoll < 0.28) {
+        push('beat', translate('liveLog.beatPeek', { r: roundNum, name, flavor: formatFlavor('peek', { site }, rng) }))
+      } else if (midRoll < 0.4) {
+        push('beat', translate('liveLog.beatTrade', { r: roundNum, name, flavor: formatFlavor('trade', {}, rng) }))
+      } else if (midRoll < 0.5) {
+        push('beat', translate('liveLog.beatInfo', { r: roundNum, name, flavor: formatFlavor('info', { site }, rng) }))
+      } else if (midRoll < 0.6) {
+        push('beat', translate('liveLog.beatRotate', { r: roundNum, name, flavor: formatFlavor('rotate', { site }, rng) }))
+      } else if (midRoll < 0.72) {
+        push('beat', translate('liveLog.beatSmoke', { r: roundNum, flavor: formatFlavor('smoke', { site }, rng) }))
+      } else if (midRoll < 0.82) {
+        push(
+          'beat',
+          translate('liveLog.beatBomb', {
+            r: roundNum,
+            flavor: formatFlavor(userCT ? 'bombCt' : 'bombT', { site }, rng),
+          }),
+        )
+      } else {
+        push('beat', translate('liveLog.beatFight', { r: roundNum, name, flavor: formatFlavor('fight', { site }, rng) }))
+      }
+    }
+
+    // Match point callout before the deciding round result lands
+    if ((userRounds === 12 && enemyRounds < 12 && userWins) || (enemyRounds === 12 && userRounds < 12 && !userWins)) {
+      push('matchpoint', translate('liveLog.matchPoint', { team: winnerName, ur: userRounds, er: enemyRounds }))
+    }
+
+    // ── Beat 3: round result ──
     const roll = rng()
     let eventText
     let eventType = 'round'
@@ -367,7 +476,7 @@ export function simulateMap(userTeam, enemyTeam, mapName, mentality, tacticalCal
       eventType = 'eco'
       eventText = translate('liveLog.roundEco', {
         ...score,
-        flavor: formatFlavor('eco'),
+        flavor: formatFlavor('eco', {}, rng),
       })
     } else if (roll < 0.04) {
       eventType = 'ace'
@@ -375,8 +484,8 @@ export function simulateMap(userTeam, enemyTeam, mapName, mentality, tacticalCal
       bumpImpact(star.player, winnerTeamLabel, star.slot, 5)
       eventText = translate('liveLog.roundAce', {
         ...score,
-        name: star.player.name,
-        flavor: formatFlavor('ace'),
+        name: star.player?.name || winnerName,
+        flavor: formatFlavor('ace', {}, rng),
       })
     } else if (roll < 0.12) {
       eventType = 'clutch'
@@ -385,8 +494,8 @@ export function simulateMap(userTeam, enemyTeam, mapName, mentality, tacticalCal
       const n = pickOne([2, 2, 3, 3, 4])
       eventText = translate('liveLog.roundClutch', {
         ...score,
-        name: star.player.name,
-        flavor: formatFlavor('clutch', { n }),
+        name: star.player?.name || winnerName,
+        flavor: formatFlavor('clutch', { n }, rng),
       })
     } else if (roll < 0.28) {
       eventType = 'multikill'
@@ -395,38 +504,67 @@ export function simulateMap(userTeam, enemyTeam, mapName, mentality, tacticalCal
       const n = pickOne([3, 3, 4])
       eventText = translate('liveLog.roundMulti', {
         ...score,
-        name: star.player.name,
-        flavor: formatFlavor('multiKill', { n }),
+        name: star.player?.name || winnerName,
+        flavor: formatFlavor('multiKill', { n }, rng),
       })
     } else if (roll < 0.42) {
       const star = chooseStar(winnerPowers, winnerLineup, 'AWPer', pickOne)
       bumpImpact(star.player, winnerTeamLabel, star.slot, 2)
       eventText = translate('liveLog.roundAwp', {
         ...score,
-        name: star.player.name,
-        flavor: formatFlavor('awp'),
+        name: star.player?.name || winnerName,
+        flavor: formatFlavor('awp', {}, rng),
       })
-    } else if (roll < 0.5) {
-      eventText = translate('liveLog.roundPlant', score)
-    } else if (roll < 0.56) {
-      eventText = translate('liveLog.roundDefuse', score)
-    } else if (roll < 0.68) {
+    } else if (roll < 0.52) {
+      eventText = translate('liveLog.roundPlant', {
+        ...score,
+        flavor: formatFlavor('plant', {}, rng),
+      })
+    } else if (roll < 0.6) {
+      eventText = translate('liveLog.roundDefuse', {
+        ...score,
+        flavor: formatFlavor('defuse', {}, rng),
+      })
+    } else if (roll < 0.72) {
       const star = chooseStar(winnerPowers, winnerLineup, userCT ? 'Support' : 'Entry', pickOne)
       bumpImpact(star.player, winnerTeamLabel, star.slot, 1)
       eventText = translate('liveLog.roundAction', {
         ...score,
-        name: star.player.name,
-        flavor: formatFlavor(userCT ? 'hold' : 'entry'),
+        name: star.player?.name || winnerName,
+        flavor: formatFlavor(userCT ? 'hold' : 'entry', {}, rng),
+      })
+    } else if (roll < 0.82) {
+      const victim = anyPlayer(loserLineup, pickOne)
+      eventText = translate('liveLog.roundTime', {
+        ...score,
+        flavor: formatFlavor('time', { name: victim?.name || loserName }, rng),
       })
     } else {
-      eventText = translate('liveLog.roundWin', score)
+      eventText = translate('liveLog.roundWin', {
+        ...score,
+        flavor: formatFlavor('winClose', {}, rng),
+      })
     }
 
     push(eventType, eventText, { userWins })
+
+    // Occasional post-round radio / streak note
+    if (rng() < 0.22) {
+      const star = chooseStar(winnerPowers, winnerLineup, null, pickOne)
+      push(
+        'info',
+        translate('liveLog.afterRound', {
+          r: roundNum,
+          name: star.player?.name || winnerName,
+          flavor: formatFlavor('after', {}, rng),
+        }),
+      )
+    }
   }
 
   let userCT = rng() > 0.5
   push('system', translate('liveLog.side', { side: userCT ? 'CT' : 'T' }))
+  push('info', translate('liveLog.warmup', { map: mapName, home: userTeam.shortName, away: enemyTeam.shortName }))
 
   for (let r = 1; r <= 12; r++) playRound(r, userCT)
 
@@ -441,6 +579,7 @@ export function simulateMap(userTeam, enemyTeam, mapName, mentality, tacticalCal
   )
   half = 2
   userCT = !userCT
+  push('info', translate('liveLog.secondHalf', { side: userCT ? 'CT' : 'T' }))
 
   for (let r = 13; r <= 24; r++) {
     if (userRounds >= 13 || enemyRounds >= 13) break

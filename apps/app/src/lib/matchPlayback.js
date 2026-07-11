@@ -40,9 +40,13 @@ export function createPlaybackController(initialSpeed = 1) {
     get aborted() {
       return state.aborted
     },
-    /** Wait `baseMs` at 1x, scaled by speed; respects pause. */
+    /**
+     * Wait `baseMs` at 1x. 2x/3x are gentler than a hard divide so
+     * faster speeds stay readable (not a blur).
+     */
     async delay(baseMs) {
-      const target = Math.max(16, baseMs / state.speed)
+      const factor = SPEED_FACTOR[state.speed] || state.speed
+      const target = Math.max(24, baseMs / factor)
       const start = performance.now()
       while (performance.now() - start < target) {
         if (state.aborted) return
@@ -56,21 +60,28 @@ export function createPlaybackController(initialSpeed = 1) {
   }
 }
 
+/** Effective speed multipliers — 2x ≈ 1.55×, 3x ≈ 2.15× wall-clock. */
+const SPEED_FACTOR = { 1: 1, 2: 1.55, 3: 2.15 }
+
 function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms))
 }
 
-/** Base delay between live log lines (1x). Slightly tense / readable. */
+/** Base delay between live log lines (1x). Slow enough to read the feed. */
 export function logDelayMs(index, log, rng = Math.random) {
   const r = typeof rng === 'function' ? rng : Math.random
-  if (index < 2) return 420
+  if (index < 2) return 900
   if (log?.type === 'series' || log?.type === 'mapwin' || log?.type === 'maploss' || log?.type === 'mvp') {
-    return 900
+    return 1600 + r() * 200
   }
-  if (log?.type === 'halftime' || log?.type === 'tactical') return 700
-  if (log?.type === 'ace' || log?.type === 'clutch') return 650
-  if (log?.type === 'eco' || log?.type === 'multikill') return 520
-  return 280 + r() * 120
+  if (log?.type === 'halftime' || log?.type === 'tactical' || log?.type === 'matchpoint') {
+    return 1200 + r() * 150
+  }
+  if (log?.type === 'ace' || log?.type === 'clutch') return 1100 + r() * 120
+  if (log?.type === 'eco' || log?.type === 'multikill') return 950 + r() * 100
+  if (log?.type === 'beat' || log?.type === 'buy' || log?.type === 'info') return 620 + r() * 180
+  if (log?.type === 'system') return 800 + r() * 120
+  return 780 + r() * 220
 }
 
 /**

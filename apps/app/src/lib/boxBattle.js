@@ -1,5 +1,6 @@
 import catalog from '../data/boxCases.json'
 import { mulberry32, hashString } from './seed'
+import { formatMoney, getDisplayCurrency } from './currency'
 
 /** Official-ish case odds (weapon cases). Gold = knives/gloves special item. */
 export const RARITY_WEIGHTS = {
@@ -42,10 +43,9 @@ export function getCase(caseId) {
   return listCases().find((c) => c.id === caseId) || listCases()[0]
 }
 
-export function formatUsd(value) {
-  const n = Number(value) || 0
-  if (n >= 1000) return `$${n.toLocaleString('en-US', { maximumFractionDigits: 0 })}`
-  return `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+/** Format a USD-stored amount using the user's display currency (USD/BRL). */
+export function formatUsd(value, currency = getDisplayCurrency()) {
+  return formatMoney(value, currency)
 }
 
 function pickWeighted(rng, entries) {
@@ -102,6 +102,76 @@ export function openCase(caseId, seed = `${Date.now()}`) {
     caseId: crate.id,
     caseName: crate.name,
   }
+}
+
+/**
+ * Build a CS2-style horizontal reel strip: many varied case skins,
+ * with the predetermined drop locked at `winIndex`.
+ */
+export function buildCaseReelStrip(caseId, winningDrop, {
+  count = 72,
+  winIndex = 58,
+  seed,
+} = {}) {
+  const crate = getCase(caseId || winningDrop?.caseId)
+  const items = crate?.items?.length ? crate.items : []
+  const rng = mulberry32(hashString(String(seed || winningDrop?.id || 'reel')))
+  const byRarity = {}
+  for (const item of items) {
+    if (!byRarity[item.rarity]) byRarity[item.rarity] = []
+    byRarity[item.rarity].push(item)
+  }
+  const rarityOrder = Object.keys(RARITY_WEIGHTS).filter((r) => byRarity[r]?.length)
+
+  const pickDecoy = () => {
+    if (!items.length) return winningDrop
+    // Bias toward commons so the strip looks like a real case open
+    const entries = rarityOrder.map((r) => ({
+      rarity: r,
+      w: RARITY_WEIGHTS[r] || 0.01,
+    }))
+    let roll = rng() * entries.reduce((s, e) => s + e.w, 0)
+    let rarity = entries[0].rarity
+    for (const e of entries) {
+      roll -= e.w
+      if (roll <= 0) {
+        rarity = e.rarity
+        break
+      }
+    }
+    const pool = byRarity[rarity] || items
+    return pool[Math.floor(rng() * pool.length)]
+  }
+
+  const n = Math.max(24, count)
+  const winAt = Math.min(n - 4, Math.max(12, winIndex))
+  const strip = []
+  for (let i = 0; i < n; i++) {
+    if (i === winAt) {
+      strip.push({
+        key: `win-${i}`,
+        isWin: true,
+        id: winningDrop.id,
+        name: winningDrop.name,
+        rarity: winningDrop.rarity,
+        image: winningDrop.image,
+        value: winningDrop.value,
+        wear: winningDrop.wear,
+      })
+      continue
+    }
+    const item = pickDecoy()
+    strip.push({
+      key: `d-${i}-${item.id}`,
+      isWin: false,
+      id: item.id,
+      name: item.name,
+      rarity: item.rarity,
+      image: item.image,
+      value: item.value,
+    })
+  }
+  return { strip, winIndex: winAt }
 }
 
 export function openBattleRound({ caseId, caseIds, players, battleSeed, roundIndex }) {

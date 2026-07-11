@@ -5,6 +5,8 @@ import {
   generateBracket,
   getAllRosters,
   lineupComplete,
+  lineupOwnsPlayer,
+  playerIdentityKey,
   roleFitMultiplier,
 } from '../engine/simulation'
 import { buildUserTeam, teamPowerScore } from './gameModes'
@@ -85,12 +87,16 @@ function signingSalary(player) {
 }
 
 function flatPlayers() {
-  const seen = new Set()
+  const seenIds = new Set()
+  const seenNames = new Set()
   const out = []
   for (const roster of getAllRosters()) {
     for (const p of roster.players || []) {
-      if (seen.has(p.id)) continue
-      seen.add(p.id)
+      if (seenIds.has(p.id)) continue
+      const nameKey = playerIdentityKey(p)
+      if (nameKey && seenNames.has(nameKey)) continue
+      seenIds.add(p.id)
+      if (nameKey) seenNames.add(nameKey)
       out.push({
         ...p,
         fromTeam: roster.shortName,
@@ -112,11 +118,12 @@ export function createStarterLineup(seed = 'career-start') {
   const pool = flatPlayers()
   const lineup = emptyLineup()
   let budget = STARTING_BUDGET
-  const used = new Set()
+  const usedIds = new Set()
+  const usedNames = new Set()
 
   for (const role of ROLES) {
     const candidates = pool
-      .filter((p) => !used.has(p.id))
+      .filter((p) => !usedIds.has(p.id) && !usedNames.has(playerIdentityKey(p)))
       .map((p) => ({
         p,
         score: roleFitMultiplier(role.id, p.role) * p.rating + rng() * 0.15,
@@ -127,7 +134,8 @@ export function createStarterLineup(seed = 'career-start') {
 
     const pick = candidates[Math.floor(rng() * Math.min(8, candidates.length))] || candidates[0]
     if (pick) {
-      used.add(pick.p.id)
+      usedIds.add(pick.p.id)
+      usedNames.add(playerIdentityKey(pick.p))
       budget -= pick.cost
       lineup[role.id] = { ...pick.p, salary: weeklySalary(pick.p), buyout: pick.cost }
     }
@@ -469,8 +477,7 @@ export function signPlayer(state, slotId, player) {
   const academy = Boolean(player.academy)
   const cost = signingCost(player)
   if (state.budget < cost) return { ok: false, error: 'broke' }
-  const owned = new Set(Object.values(state.lineup || {}).filter(Boolean).map((p) => p.id))
-  if (owned.has(player.id)) return { ok: false, error: 'owned' }
+  if (lineupOwnsPlayer(state.lineup, player)) return { ok: false, error: 'owned' }
   const baseRating = Number(player.rating) || 1
   const signed = {
     ...player,
@@ -500,8 +507,7 @@ export function marketPool(
   state,
   { role = null, query = '', sort = 'rating', limit = 0, tier = 'pro' } = {},
 ) {
-  const owned = new Set(Object.values(state.lineup || {}).filter(Boolean).map((p) => p.id))
-  let pool = flatPlayers().filter((p) => !owned.has(p.id))
+  let pool = flatPlayers().filter((p) => !lineupOwnsPlayer(state.lineup, p))
 
   if (tier === 'academy') {
     pool = pool

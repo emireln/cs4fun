@@ -25,7 +25,7 @@ import {
   subscribeInvites,
 } from '../lib/friends'
 import { displayName } from '../lib/profile'
-import { formatUsd, readBoxStats } from '../lib/boxBattle'
+import { readBoxStats } from '../lib/boxBattle'
 import { fetchPublicProfile } from '../lib/publicProfile'
 import { fetchUserStats } from '../lib/history'
 
@@ -51,7 +51,7 @@ export default function FriendsPanel({
   onPendingChange,
   onInviteSent,
 }) {
-  const { t } = useI18n()
+  const { t, money } = useI18n()
   const { isAuthed } = useAuth()
   const [friends, setFriends] = useState([])
   const [requests, setRequests] = useState([])
@@ -436,10 +436,10 @@ export default function FriendsPanel({
                             ? t('friends.boxDropTie')
                             : Number(myBestDrop.value) > Number(friendDrops[friend.id].value)
                               ? t('friends.boxDropYouLead', {
-                                  value: formatUsd(myBestDrop.value),
+                                  value: money(myBestDrop.value),
                                 })
                               : t('friends.boxDropTheyLead', {
-                                  value: formatUsd(friendDrops[friend.id].value),
+                                  value: money(friendDrops[friend.id].value),
                                 })}
                         </p>
                       )}

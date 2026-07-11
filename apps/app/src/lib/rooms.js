@@ -6,6 +6,28 @@ export { makeRoomCode } from './roomsLocal'
 
 const LOCAL_ROOMS = 'cs4fun_rooms_v1'
 const CHANNEL_PREFIX = 'cs4fun_room_'
+const ACTIVE_GUEST_ID_KEY = 'cs4fun_active_guest_id'
+
+function readActiveGuestId() {
+  try {
+    return localStorage.getItem(ACTIVE_GUEST_ID_KEY) || null
+  } catch {
+    return null
+  }
+}
+
+function writeActiveGuestId(id) {
+  try {
+    if (id) localStorage.setItem(ACTIVE_GUEST_ID_KEY, String(id))
+    else localStorage.removeItem(ACTIVE_GUEST_ID_KEY)
+  } catch {
+    /* ignore */
+  }
+}
+
+function isGuestLocalId(id) {
+  return /^p_[a-z0-9]{4,24}$/i.test(String(id || ''))
+}
 
 function readRooms() {
   try {
@@ -77,88 +99,121 @@ export async function createRoom({ profile, mode }) {
         p_mode: mode,
         p_payload: local,
       })
-      if (!error && data) {
-        const room =
-          typeof data.payload === 'object'
-            ? { ...data.payload, code: data.code, seed: data.seed, status: data.status, hostId: data.host_id }
-            : local
-        room.code = data.code
-        room.seed = data.seed
-        room.status = data.status
-        room.hostId = data.host_id
-        return { room, global: true }
-      }
+        if (!error && data) {
+          const room =
+            typeof data.payload === 'object'
+              ? { ...data.payload, code: data.code, seed: data.seed, status: data.status, hostId: data.host_id }
+              : local
+          room.code = data.code
+          room.seed = data.seed
+          room.status = data.status
+          room.hostId = data.host_id
+          writeActiveGuestId(null)
+          return { room, global: true }
+        }
       return { error: error?.message || 'create_failed' }
     }
   }
 
   rooms[local.code] = local
   writeRooms(rooms)
+  if (isGuestLocalId(profile.id)) writeActiveGuestId(profile.id)
   return { room: local, global: false }
 }
 
 export async function joinRoom({ code, profile }) {
   const normalized = code.trim().toUpperCase()
+  const nick = profile.nickname || 'Guest'
+  const guestId = String(profile.id || '')
 
   if (isSupabaseConfigured) {
     const { data, error } = await supabase.from('rooms').select('*').eq('code', normalized).maybeSingle()
     if (!error && data) {
       const { data: sessionData } = await supabase.auth.getSession()
-      if (!sessionData?.session?.user) {
-        return { error: 'auth_required' }
+      if (sessionData?.session?.user) {
+        const { data: joined, error: joinError } = await supabase.rpc('join_room', {
+          p_code: normalized,
+          p_nickname: nick,
+        })
+        if (!joinError && joined) {
+          writeActiveGuestId(null)
+          return {
+            room: {
+              ...(joined.payload || {}),
+              code: joined.code,
+              seed: joined.seed,
+              status: joined.status,
+              hostId: joined.host_id,
+              mode: joined.mode,
+            },
+            global: true,
+          }
+        }
+
+        // Fallback for older schemas without join_room RPC
+        if (joinError && /function .*join_room/i.test(joinError.message || '')) {
+          const room = {
+            ...(data.payload || {}),
+            code: data.code,
+            seed: data.seed,
+            status: data.status,
+            hostId: data.host_id,
+            mode: data.mode,
+          }
+          if (!room.players) room.players = []
+          if (room.players.length >= (room.maxPlayers || 6) && !room.players.find((p) => p.id === profile.id)) {
+            return { error: 'full' }
+          }
+          if (!room.players.find((p) => p.id === profile.id)) {
+            room.players.push({
+              id: profile.id,
+              nickname: nick,
+              ready: false,
+              lineup: null,
+              power: 0,
+              isHost: false,
+            })
+            await supabase.rpc('update_room_payload', {
+              p_code: normalized,
+              p_payload: room,
+              p_status: room.status,
+            })
+          }
+          return { room, global: true }
+        }
+
+        return { error: joinError?.message || 'join_failed' }
       }
 
-      const { data: joined, error: joinError } = await supabase.rpc('join_room', {
-        p_code: normalized,
-        p_nickname: profile.nickname || 'Guest',
-      })
-      if (!joinError && joined) {
-        return {
-          room: {
-            ...(joined.payload || {}),
-            code: joined.code,
-            seed: joined.seed,
-            status: joined.status,
-            hostId: joined.host_id,
-            mode: joined.mode,
-          },
-          global: true,
+      // Guest (no account): join online room by local guest id
+      if (isGuestLocalId(guestId)) {
+        const { data: joined, error: guestErr } = await supabase.rpc('join_room_guest', {
+          p_code: normalized,
+          p_guest_id: guestId,
+          p_nickname: nick,
+        })
+        if (!guestErr && joined) {
+          writeActiveGuestId(guestId)
+          return {
+            room: {
+              ...(joined.payload || {}),
+              code: joined.code,
+              seed: joined.seed,
+              status: joined.status,
+              hostId: joined.host_id,
+              mode: joined.mode,
+            },
+            global: true,
+          }
+        }
+        // Older DB without guest RPC — fall through to local
+        if (guestErr && !/function .*join_room_guest|could not find/i.test(guestErr.message || '')) {
+          const msg = String(guestErr.message || '')
+          if (/room_full/i.test(msg)) return { error: 'full' }
+          if (/room_not_found/i.test(msg)) return { error: 'invalid' }
+          if (/invalid_guest/i.test(msg)) return { error: 'invalid' }
         }
       }
-
-      // Fallback for older schemas without join_room RPC
-      if (joinError && /function .*join_room/i.test(joinError.message || '')) {
-        const room = {
-          ...(data.payload || {}),
-          code: data.code,
-          seed: data.seed,
-          status: data.status,
-          hostId: data.host_id,
-          mode: data.mode,
-        }
-        if (!room.players) room.players = []
-        if (room.players.length >= (room.maxPlayers || 6) && !room.players.find((p) => p.id === profile.id)) {
-          return { error: 'full' }
-        }
-        if (!room.players.find((p) => p.id === profile.id)) {
-          room.players.push({
-            id: profile.id,
-            nickname: profile.nickname || 'Guest',
-            ready: false,
-            lineup: null,
-            power: 0,
-            isHost: false,
-          })
-          await supabase.rpc('update_room_payload', {
-            p_code: normalized,
-            p_payload: room,
-            p_status: room.status,
-          })
-        }
-        return { room, global: true }
-      }
-
-      return { error: joinError?.message || 'join_failed' }
     }
   }
 
@@ -171,7 +226,7 @@ export async function joinRoom({ code, profile }) {
   if (!room.players.find((p) => p.id === profile.id)) {
     room.players.push({
       id: profile.id,
-      nickname: profile.nickname || 'Guest',
+      nickname: nick,
       ready: false,
       lineup: null,
       power: 0,
@@ -181,11 +236,13 @@ export async function joinRoom({ code, profile }) {
     writeRooms(rooms)
     broadcastLocal(normalized, room)
   }
+  if (isGuestLocalId(profile.id)) writeActiveGuestId(profile.id)
   return { room, global: false }
 }
 
-export async function updateRoom(code, updater) {
+export async function updateRoom(code, updater, { guestId = null } = {}) {
   const normalized = code.trim().toUpperCase()
+  const resolvedGuestId = guestId || readActiveGuestId()
 
   if (isSupabaseConfigured) {
     const { data: sessionData } = await supabase.auth.getSession()
@@ -195,6 +252,20 @@ export async function updateRoom(code, updater) {
         const room = typeof updater === 'function' ? updater(current) : updater
         const { data, error } = await supabase.rpc('update_room_payload', {
           p_code: normalized,
+          p_payload: room,
+          p_status: room.status,
+        })
+        if (!error && data) {
+          return { ...(data.payload || room), code: data.code, seed: data.seed, status: data.status, hostId: data.host_id }
+        }
+      }
+    } else if (isGuestLocalId(resolvedGuestId)) {
+      const current = await fetchRoom(normalized)
+      if (current?.players?.some((p) => String(p.id).toLowerCase() === String(resolvedGuestId).toLowerCase())) {
+        const room = typeof updater === 'function' ? updater(current) : updater
+        const { data, error } = await supabase.rpc('update_room_guest', {
+          p_code: normalized,
+          p_guest_id: String(resolvedGuestId),
           p_payload: room,
           p_status: room.status,
         })

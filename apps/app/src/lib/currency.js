@@ -27,6 +27,17 @@ export function resolveInitialCurrency() {
   return 'USD'
 }
 
+/** Live preference (storage) — for non-React helpers like share cards / formatUsd. */
+export function getDisplayCurrency() {
+  try {
+    const saved = localStorage.getItem(CURRENCY_STORAGE_KEY)
+    if (saved) return normalizeCurrency(saved)
+  } catch {
+    /* ignore */
+  }
+  return resolveInitialCurrency()
+}
+
 export function usdToDisplay(amountUsd, currency = 'USD') {
   const n = Number(amountUsd) || 0
   if (normalizeCurrency(currency) === 'BRL') return n * USD_TO_BRL
@@ -37,19 +48,26 @@ export function usdToDisplay(amountUsd, currency = 'USD') {
  * Format a USD-stored amount for UI.
  * @param {number} amountUsd
  * @param {'USD'|'BRL'} currency
- * @param {{ compact?: boolean }} [opts]
+ * @param {{ compact?: boolean, decimals?: number }} [opts]
  */
 export function formatMoney(amountUsd, currency = 'USD', opts = {}) {
   const cur = normalizeCurrency(currency)
-  const value = usdToDisplay(amountUsd, cur)
+  const n = Number(amountUsd) || 0
+  const value = usdToDisplay(n, cur)
   const locale = cur === 'BRL' ? 'pt-BR' : 'en-US'
+  const fractionDigits =
+    opts.decimals != null
+      ? opts.decimals
+      : Math.abs(n - Math.round(n)) > 0.001
+        ? 2
+        : 0
   if (opts.compact && Math.abs(value) >= 1000) {
     try {
       return new Intl.NumberFormat(locale, {
         style: 'currency',
         currency: cur,
         notation: 'compact',
-        maximumFractionDigits: 1,
+        maximumFractionDigits: Math.max(1, fractionDigits),
       }).format(value)
     } catch {
       /* fall through */
@@ -59,10 +77,18 @@ export function formatMoney(amountUsd, currency = 'USD', opts = {}) {
     return new Intl.NumberFormat(locale, {
       style: 'currency',
       currency: cur,
-      maximumFractionDigits: 0,
+      minimumFractionDigits: fractionDigits,
+      maximumFractionDigits: fractionDigits,
     }).format(value)
   } catch {
     const sym = cur === 'BRL' ? 'R$' : '$'
-    return `${sym}${Math.round(value).toLocaleString(locale)}`
+    const shown =
+      fractionDigits > 0
+        ? value.toLocaleString(locale, {
+            minimumFractionDigits: fractionDigits,
+            maximumFractionDigits: fractionDigits,
+          })
+        : Math.round(value).toLocaleString(locale)
+    return `${sym}${shown}`
   }
 }

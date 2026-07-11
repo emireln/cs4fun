@@ -1,6 +1,6 @@
 import { useEffect, useState, createContext, useContext, useCallback, useMemo, useRef } from 'react'
 import { isSupabaseConfigured, supabase } from './supabase'
-import { loadProfile, saveProfile, displayName } from './profile'
+import { loadProfile, saveProfile, displayName, randomGuestTag } from './profile'
 import { sanitizeAvatarUrl } from './avatarImage'
 import { sanitizeSteamUrl } from './steam'
 import { fetchMyAccess } from './admin'
@@ -253,8 +253,9 @@ export function AuthProvider({ children }) {
     const liveSession = await resolveLiveSession()
 
     if (!liveSession?.user) {
-      // Do not clear React session on a transient refresh failure — that flipped signed-in
-      // users to Guest while their nickname/avatar were still in localStorage.
+      // Guest profiles (local `p_…` ids) persist only in localStorage — that is success.
+      // Signed-in users with a missing session still get an auth error for cloud sync.
+      if (!isAuthUserId(prev.id)) return next
       return { error: 'not_authenticated', profile: next }
     }
 
@@ -341,7 +342,7 @@ export function AuthProvider({ children }) {
     if (isSupabaseConfigured) await supabase.auth.signOut()
     const guest = saveProfile({
       id: `p_${Math.random().toString(36).slice(2, 10)}`,
-      nickname: '',
+      nickname: randomGuestTag(),
       avatarId: 'cs4fun',
       avatarUrl: null,
       showcaseBadge: null,

@@ -30,7 +30,7 @@ export default function GameOver({
   dailyInfo = null,
   opponentName = null,
 }) {
-  const { t, locale } = useI18n()
+  const { t, locale, currency } = useI18n()
   const [shared, setShared] = useState(false)
   const [downloading, setDownloading] = useState(false)
 
@@ -58,6 +58,7 @@ export default function GameOver({
     lineup,
     place,
     locale,
+    currency,
     boxDrops: sharePayload?.boxDrops,
     myTotal: sharePayload?.myTotal,
     oppTotal: sharePayload?.oppTotal,

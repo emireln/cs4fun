@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { REROLLS_PER_RUN, ROLES } from '../data/constants'
-import { emptyLineup, lineupComplete, rollRoster } from '../engine/simulation'
+import {
+  emptyLineup,
+  filterRosterForLineup,
+  lineupComplete,
+  lineupOwnsPlayer,
+  rollRosterForLineup,
+} from '../engine/simulation'
 
 function pickRandom(arr) {
   if (!arr?.length) return null
@@ -31,6 +37,8 @@ export function useDraftSession({
   const [timer, setTimer] = useState(pickTimerSec)
   const timerRef = useRef(null)
   const autoLock = useRef(false)
+  const lineupRef = useRef(lineup)
+  lineupRef.current = lineup
 
   const complete = lineupComplete(lineup)
   const usingShared = Array.isArray(sharedRolls) && sharedRolls.length > 0
@@ -64,11 +72,12 @@ export function useDraftSession({
 
   useEffect(() => () => clearTimer(), [])
 
-  const commitAssign = useCallback((player, slotId, roster) => {
-    if (!player || !slotId) return
-    setLineup((prev) => {
-      if (prev[slotId]) return prev
-      return {
+  const commitAssign = useCallback(
+    (player, slotId, roster) => {
+      if (!player || !slotId) return false
+      const prev = lineupRef.current
+      if (prev[slotId] || lineupOwnsPlayer(prev, player)) return false
+      const next = {
         ...prev,
         [slotId]: {
           ...player,
@@ -76,13 +85,17 @@ export function useDraftSession({
           fromEvent: roster?.event,
         },
       }
-    })
-    setPendingPlayer(null)
-    setCurrentRoster(null)
-    clearTimer()
-    setTimer(pickTimerSec)
-    autoLock.current = false
-  }, [pickTimerSec])
+      lineupRef.current = next
+      setLineup(next)
+      setPendingPlayer(null)
+      setCurrentRoster(null)
+      clearTimer()
+      setTimer(pickTimerSec)
+      autoLock.current = false
+      return true
+    },
+    [pickTimerSec],
+  )
 
   // Auto-pick + auto-assign when timer hits 0
   useEffect(() => {
@@ -90,39 +103,40 @@ export function useDraftSession({
     if (!currentRoster && !pendingPlayer) return
 
     autoLock.current = true
-    const player = pendingPlayer || pickRandom(currentRoster?.players || [])
+    const available = (currentRoster?.players || []).filter((p) => !lineupOwnsPlayer(lineup, p))
+    const player =
+      (pendingPlayer && !lineupOwnsPlayer(lineup, pendingPlayer) ? pendingPlayer : null) ||
+      pickRandom(available)
     const slots = openSlots(lineup)
-    // Prefer natural role if open, else random open slot
     let slot = null
     if (player?.role && slots.includes(player.role)) slot = player.role
     else slot = pickRandom(slots)
 
     if (player && slot) {
       onAutoPick?.(player, slot)
-      commitAssign(player, slot, currentRoster)
+      if (!commitAssign(player, slot, currentRoster)) autoLock.current = false
     } else {
       autoLock.current = false
     }
   }, [timer, currentRoster, pendingPlayer, complete, pickTimerSec, lineup, onAutoPick, commitAssign])
 
-  // When user selects a player, restart a short assign timer if needed
   useEffect(() => {
     if (!pickTimerSec || !pendingPlayer || complete) return
     if (timer === 0) return
-    // keep existing timer running for assign phase
   }, [pendingPlayer, pickTimerSec, complete, timer])
 
   const scout = async () => {
     if (scouting || complete || currentRoster || pendingPlayer) return
     setScouting(true)
     await new Promise((r) => setTimeout(r, 220))
+    const liveLineup = lineupRef.current
 
     if (usingShared) {
       if (rollIndex >= sharedRolls.length) {
         setScouting(false)
         return
       }
-      const roster = structuredClone(sharedRolls[rollIndex])
+      const roster = filterRosterForLineup(structuredClone(sharedRolls[rollIndex]), liveLineup)
       setCurrentRoster(roster)
       setUsedRosterIds((prev) => [...prev, roster.id])
       setRollIndex((i) => i + 1)
@@ -131,7 +145,7 @@ export function useDraftSession({
       return
     }
 
-    const roster = rollRoster(usedRosterIds)
+    const roster = rollRosterForLineup(liveLineup, usedRosterIds)
     setCurrentRoster(roster)
     setUsedRosterIds((prev) => [...prev, roster.id])
     setScouting(false)
@@ -143,7 +157,7 @@ export function useDraftSession({
     if (rerolls <= 0 || !currentRoster || scouting || pendingPlayer) return
     setScouting(true)
     await new Promise((r) => setTimeout(r, 220))
-    const roster = rollRoster(usedRosterIds)
+    const roster = rollRosterForLineup(lineupRef.current, usedRosterIds)
     setCurrentRoster(roster)
     setUsedRosterIds((prev) => [...prev, roster.id])
     setRerolls((r) => r - 1)
@@ -153,11 +167,16 @@ export function useDraftSession({
 
   const selectPlayer = (player) => {
     if (complete) return
+    if (lineupOwnsPlayer(lineupRef.current, player)) return
     setPendingPlayer(player)
   }
 
   const assignSlot = (slotId) => {
     if (!pendingPlayer || lineup[slotId]) return
+    if (lineupOwnsPlayer(lineup, pendingPlayer)) {
+      setPendingPlayer(null)
+      return
+    }
     commitAssign(pendingPlayer, slotId, currentRoster)
   }
 
@@ -187,7 +206,9 @@ export function useDraftSession({
     pickTimerSec,
     hideRatings,
     usingShared,
-    sharedRemaining: usingShared ? Math.max(0, sharedRolls.length - rollIndex - (currentRoster ? 1 : 0)) : null,
+    sharedRemaining: usingShared
+      ? Math.max(0, sharedRolls.length - rollIndex - (currentRoster ? 1 : 0))
+      : null,
     scout,
     reroll,
     selectPlayer,

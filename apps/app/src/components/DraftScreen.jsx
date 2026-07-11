@@ -4,7 +4,7 @@ import { Play } from 'lucide-react'
 import ScoutPanel from './ScoutPanel'
 import LineupRadar from './LineupRadar'
 import { ROLES } from '../data/constants'
-import { lineupComplete, lineupFilledCount } from '../engine/simulation'
+import { lineupComplete, lineupFilledCount, lineupOwnsPlayer } from '../engine/simulation'
 
 export default function DraftScreen({
   lineup,
@@ -26,21 +26,29 @@ export default function DraftScreen({
 
   const handleSelectPlayer = (player) => {
     if (complete) return
+    if (lineupOwnsPlayer(lineup, player)) return
     setPendingPlayer(player)
   }
 
   const handleAssignSlot = (slotId) => {
     if (!pendingPlayer) return
     if (lineup[slotId]) return
+    if (lineupOwnsPlayer(lineup, pendingPlayer)) {
+      setPendingPlayer(null)
+      return
+    }
     const origin = currentRoster
-    setLineup((prev) => ({
-      ...prev,
-      [slotId]: {
-        ...pendingPlayer,
-        fromTeam: origin?.shortName,
-        fromEvent: origin?.event,
-      },
-    }))
+    setLineup((prev) => {
+      if (prev[slotId] || lineupOwnsPlayer(prev, pendingPlayer)) return prev
+      return {
+        ...prev,
+        [slotId]: {
+          ...pendingPlayer,
+          fromTeam: origin?.shortName,
+          fromEvent: origin?.event,
+        },
+      }
+    })
     setPendingPlayer(null)
   }
 
