@@ -15,15 +15,30 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const appRoot = path.join(__dirname, '..')
 const repoRoot = path.join(appRoot, '..', '..')
 const buildDir = path.join(appRoot, 'build')
-const sourceLogo = path.join(repoRoot, 'logo.png')
+
+/** Prefer repo-root master art; fall back to committed public brand mark (CI has no root logo.png). */
+function resolveSourceLogo() {
+  const candidates = [
+    path.join(repoRoot, 'logo.png'),
+    path.join(appRoot, 'public', 'logo.png'),
+    path.join(appRoot, 'public', 'favicon.png'),
+  ]
+  return candidates.find((p) => fs.existsSync(p)) || null
+}
+
+const sourceLogo = resolveSourceLogo()
 
 /** Solid carbon — no lines / gradients */
 const BG = '#0a0c10'
 
 fs.mkdirSync(buildDir, { recursive: true })
 
-if (!fs.existsSync(sourceLogo)) {
-  console.error('Missing source logo:', sourceLogo)
+if (!sourceLogo) {
+  console.error(
+    'Missing source logo. Expected one of:\n' +
+      `  - ${path.join(repoRoot, 'logo.png')}\n` +
+      `  - ${path.join(appRoot, 'public', 'logo.png')}`,
+  )
   process.exit(1)
 }
 

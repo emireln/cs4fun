@@ -26,7 +26,15 @@ function run(cmd, args) {
 fs.rmSync(outDir, { recursive: true, force: true })
 fs.mkdirSync(outDir, { recursive: true })
 
-await run('node', ['electron/generate-icons.mjs'])
+const requiredIcons = ['icon.ico', 'tray.ico', 'installerHeader.bmp', 'installerSidebar.bmp']
+const iconsReady = requiredIcons.every((name) => fs.existsSync(path.join(appRoot, 'build', name)))
+try {
+  await run('node', ['electron/generate-icons.mjs'])
+} catch (err) {
+  if (!iconsReady) throw err
+  console.warn('Icon generation failed; using existing apps/app/build icons.', err.message || err)
+}
+
 await run('npx', ['vite', 'build'])
 await run('npx', [
   'electron-builder',
