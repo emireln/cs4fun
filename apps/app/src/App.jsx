@@ -24,7 +24,7 @@ import MajorGame from './components/modes/MajorGame'
 import DuelGame from './components/modes/DuelGame'
 import PartyGame from './components/modes/PartyGame'
 import DailyGame from './components/modes/DailyGame'
-import GauntletGame from './components/modes/GauntletGame'
+import CareerGame from './components/modes/CareerGame'
 import BoxGame from './components/modes/BoxGame'
 import DesktopUpdateOverlay from './components/DesktopUpdateOverlay'
 import LogoMark from './components/LogoMark'
@@ -91,7 +91,7 @@ function AppShell() {
     setStatus(
       prev.status ?? {
         phase: prev.screen === 'hub' ? 'hub' : prev.screen,
-        gameMode: ['major', 'duel', 'party', 'daily', 'gauntlet', 'box'].includes(prev.screen)
+        gameMode: ['major', 'duel', 'party', 'daily', 'career', 'box'].includes(prev.screen)
           ? prev.screen
           : undefined,
       },
@@ -288,7 +288,7 @@ function AppShell() {
         phase={status.phase || (screen === 'hub' ? 'hub' : screen)}
         gameMode={
           status.gameMode ||
-          (['major', 'duel', 'party', 'daily', 'gauntlet', 'box'].includes(screen) ? screen : null)
+          (['major', 'duel', 'party', 'daily', 'career', 'box'].includes(screen) ? screen : null)
         }
         extra={status.extra}
         onHome={goHome}
@@ -314,6 +314,7 @@ function AppShell() {
             <HomeHub
               onSelectMode={openMode}
               onOpenFriends={() => openFriends('party')}
+              onNeedAuth={() => setAuthOpen(true)}
             />
           )}
 
@@ -369,8 +370,13 @@ function AppShell() {
           {screen === 'daily' && (
             <DailyGame profile={profile} onHome={goHome} onStatus={setStatus} />
           )}
-          {screen === 'gauntlet' && (
-            <GauntletGame profile={profile} onHome={goHome} onStatus={setStatus} />
+          {screen === 'career' && (
+            <CareerGame
+              profile={profile}
+              onHome={goHome}
+              onStatus={setStatus}
+              onNeedAuth={() => setAuthOpen(true)}
+            />
           )}
           {screen === 'box' && (
             <BoxGame

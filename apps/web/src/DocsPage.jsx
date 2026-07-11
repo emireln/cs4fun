@@ -7,7 +7,7 @@ import {
   Swords,
   Users,
   Trophy,
-  Flame,
+  Star,
   Calendar,
   Download,
   Package,
@@ -32,7 +32,7 @@ const MODE_ICONS = {
   party: Users,
   box: Package,
   daily: Calendar,
-  gauntlet: Flame,
+  career: Star,
 }
 
 export default function DocsPage({ lang, onNavigate, onToggleLang, langLabel }) {

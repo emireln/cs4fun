@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { ROLES } from '../data/constants'
 import RoleIcon from './RoleIcon'
+import TeamLogo from './TeamLogo'
 
 export default function PlayerCard({
   player,
@@ -99,11 +100,14 @@ export default function PlayerCard({
 
       {showOrigin && player.fromTeam && (
         <div
-          className={`mt-auto truncate text-[10px] text-cs-muted ${compact ? 'mt-1.5' : 'mt-2'}`}
+          className={`mt-auto flex min-w-0 items-center gap-1.5 text-[10px] text-cs-muted ${compact ? 'mt-1.5' : 'mt-2'}`}
           title={`${player.fromTeam} · ${player.fromEvent || ''}`}
         >
-          {player.fromTeam}
-          {player.fromEvent ? ` · ${player.fromEvent}` : ''}
+          <TeamLogo name={player.fromTeam} size="xs" decorative />
+          <span className="truncate">
+            {player.fromTeam}
+            {player.fromEvent ? ` · ${player.fromEvent}` : ''}
+          </span>
         </div>
       )}
     </motion.button>

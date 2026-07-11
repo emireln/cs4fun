@@ -65,7 +65,6 @@ export default function LineupRadar({
             <div className="radar-ring radar-ring--outer" />
             <div className="radar-ring radar-ring--mid" />
             <div className="radar-ring radar-ring--inner" />
-            <div className="radar-crosshair" />
             <motion.div
               className="absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-cs-gold sm:h-2.5 sm:w-2.5"
               animate={{

@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { Dices, RefreshCw, Radar } from 'lucide-react'
 import PlayerCard from './PlayerCard'
+import TeamLogo from './TeamLogo'
 
 export default function ScoutPanel({
   roster,
@@ -68,9 +69,12 @@ export default function ScoutPanel({
           >
             <div className="mb-4 rounded border border-cs-gold/25 bg-cs-gold/5 px-4 py-3">
               <div className="flex flex-wrap items-end justify-between gap-2">
-                <div>
-                  <div className="font-display text-lg font-bold text-cs-gold">{roster.team}</div>
-                  <div className="text-sm text-cs-text">{roster.event}</div>
+                <div className="flex min-w-0 items-start gap-3">
+                  <TeamLogo name={roster.shortName || roster.team} size="lg" className="mt-0.5" eager />
+                  <div className="min-w-0">
+                    <div className="font-display text-lg font-bold text-cs-gold">{roster.team}</div>
+                    <div className="text-sm text-cs-text">{roster.event}</div>
+                  </div>
                 </div>
                 <div className="text-right">
                   <div className="font-mono text-xs text-cs-muted">{roster.year}</div>

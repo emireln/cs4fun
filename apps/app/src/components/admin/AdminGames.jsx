@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useI18n } from '../../i18n'
 import { adminListGames } from '../../lib/admin'
 
-const MODES = ['', 'major', 'duel', 'party', 'daily', 'gauntlet']
+const MODES = ['', 'major', 'duel', 'party', 'daily', 'career', 'box']
 
 export default function AdminGames() {
   const { t } = useI18n()

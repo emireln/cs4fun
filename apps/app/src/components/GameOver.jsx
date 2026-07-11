@@ -6,6 +6,7 @@ import { shareResult, downloadShareCard } from '../lib/history'
 import { playPerfectWin, unlockAudio } from '../lib/sound'
 import ResultCard from './ResultCard'
 import SideConfetti from './SideConfetti'
+import TeamLogo from './TeamLogo'
 
 export default function GameOver({
   title,
@@ -27,6 +28,7 @@ export default function GameOver({
   extra = null,
   sharePayload = null,
   dailyInfo = null,
+  opponentName = null,
 }) {
   const { t, locale } = useI18n()
   const [shared, setShared] = useState(false)
@@ -94,8 +96,11 @@ export default function GameOver({
           ) : (
             <Skull className="mx-auto mb-3 h-12 w-12 text-cs-loss" />
           )}
-          {subtitle && (
-            <p className="font-display text-[10px] tracking-[0.28em] text-cs-muted uppercase">{subtitle}</p>
+          {(subtitle || opponentName) && (
+            <p className="inline-flex items-center justify-center gap-2 font-display text-[10px] tracking-[0.28em] text-cs-muted uppercase">
+              {opponentName ? <TeamLogo name={opponentName} size="sm" decorative /> : null}
+              {subtitle || opponentName}
+            </p>
           )}
           <h1 className={`mt-1 font-display text-3xl font-extrabold sm:text-4xl ${won ? 'gold-text' : 'text-cs-loss'}`}>
             {title}
@@ -206,15 +211,17 @@ export default function GameOver({
               <Swords className="h-4 w-4" />
             </button>
           )}
-          <button
-            type="button"
-            className="btn-ghost inline-flex min-h-[40px] min-w-[40px] items-center justify-center rounded px-2.5 py-2.5"
-            onClick={onRetry}
-            title={t('results.newRun')}
-            aria-label={t('results.newRun')}
-          >
-            <RotateCcw className="h-4 w-4" />
-          </button>
+          {onRetry && (
+            <button
+              type="button"
+              className="btn-ghost inline-flex min-h-[40px] min-w-[40px] items-center justify-center rounded px-2.5 py-2.5"
+              onClick={onRetry}
+              title={t('results.newRun')}
+              aria-label={t('results.newRun')}
+            >
+              <RotateCcw className="h-4 w-4" />
+            </button>
+          )}
           <button
             type="button"
             className="btn-ghost inline-flex min-h-[40px] min-w-[40px] items-center justify-center rounded px-2.5 py-2.5"

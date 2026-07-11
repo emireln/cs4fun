@@ -102,7 +102,7 @@ end $$;
 -- ─── Leaderboard (read-only from clients) ─────────────────
 create table if not exists public.leaderboard (
   id bigint generated always as identity primary key,
-  board text not null check (board in ('daily', 'duel', 'gauntlet', 'major', 'party', 'box')),
+  board text not null check (board in ('daily', 'duel', 'gauntlet', 'major', 'party', 'box', 'career')),
   player_id uuid not null references auth.users(id) on delete cascade,
   nickname text not null default 'Player',
   score integer not null default 0 check (score >= 0 and score <= 1000000),
@@ -128,7 +128,7 @@ create table if not exists public.game_history (
   id bigint generated always as identity primary key,
   user_id uuid not null references auth.users(id) on delete cascade,
   nickname text,
-  mode text not null check (mode in ('major', 'duel', 'party', 'daily', 'gauntlet', 'box')),
+  mode text not null check (mode in ('major', 'duel', 'party', 'daily', 'gauntlet', 'box', 'career')),
   won boolean not null default false,
   score integer not null default 0 check (score >= 0 and score <= 1000000),
   wins integer not null default 0 check (wins >= 0 and wins <= 50),
@@ -203,6 +203,11 @@ insert into public.badge_defs (id, category, threshold, icon, sort_order) values
   ('perfect_major', 'perfect_majors', 1, 'star', 190),
   ('almanac_win', 'almanac_wins', 1, 'book', 200),
   ('social', 'party_games', 1, 'handshake', 210),
+  ('career_first_major', 'career_majors_won', 1, 'trophy', 220),
+  ('career_major_3', 'career_majors_won', 3, 'crown', 221),
+  ('career_season_1', 'career_seasons', 1, 'star', 222),
+  ('career_season_5', 'career_seasons', 5, 'flame', 223),
+  ('career_dynasty', 'career_best_season', 800, 'gem', 224),
   ('completionist', 'meta_all', 20, 'sparkles', 999)
 on conflict (id) do update set
   category = excluded.category,
@@ -230,6 +235,9 @@ create table if not exists public.user_stats (
   box_opens integer not null default 0,
   box_best_value numeric not null default 0,
   best_drop jsonb,
+  career_majors_won integer not null default 0,
+  career_best_season integer not null default 0,
+  career_seasons integer not null default 0,
   updated_at timestamptz not null default now()
 );
 
@@ -243,6 +251,23 @@ alter table public.user_stats
   add column if not exists box_best_value numeric not null default 0;
 alter table public.user_stats
   add column if not exists best_drop jsonb;
+alter table public.user_stats
+  add column if not exists career_majors_won integer not null default 0;
+alter table public.user_stats
+  add column if not exists career_best_season integer not null default 0;
+alter table public.user_stats
+  add column if not exists career_seasons integer not null default 0;
+
+-- Career persistent save (signed-in only)
+create table if not exists public.career_saves (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  state jsonb not null default '{}'::jsonb,
+  season_score integer not null default 0,
+  majors_won integer not null default 0,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.career_saves enable row level security;
 
 -- ─── Harden RLS ───────────────────────────────────────────
 alter table public.profiles enable row level security;
@@ -424,6 +449,9 @@ begin
       when 'box_covert_hits' then coalesce(s.box_covert_hits, 0)
       when 'box_opens' then coalesce(s.box_opens, 0)
       when 'box_best_value' then floor(coalesce(s.box_best_value, 0))::integer
+      when 'career_majors_won' then coalesce(s.career_majors_won, 0)
+      when 'career_best_season' then coalesce(s.career_best_season, 0)
+      when 'career_seasons' then coalesce(s.career_seasons, 0)
       else 0
     end;
     if metric >= b.threshold then
@@ -481,7 +509,7 @@ begin
   end if;
   perform public.assert_not_banned(uid);
 
-  if p_mode not in ('major', 'duel', 'party', 'daily', 'gauntlet', 'box') then
+  if p_mode not in ('major', 'duel', 'party', 'daily', 'gauntlet', 'box', 'career') then
     raise exception 'invalid_mode';
   end if;
 
@@ -547,11 +575,14 @@ begin
     perfect_majors = perfect_majors + case when p_mode = 'major' and p_won and p_wins >= 3 and p_losses = 0 then 1 else 0 end,
     almanac_wins = almanac_wins + case when p_won and coalesce(p_meta->>'difficulty', '') = 'almanac' then 1 else 0 end,
     max_streak = greatest(max_streak, case when p_mode = 'gauntlet' then p_streak else 0 end),
+    career_majors_won = coalesce(career_majors_won, 0) + case when p_mode = 'career' and coalesce(p_meta->>'event', '') = 'major_win' and p_won then 1 else 0 end,
+    career_best_season = greatest(coalesce(career_best_season, 0), case when p_mode = 'career' then score_c else 0 end),
+    career_seasons = coalesce(career_seasons, 0) + case when p_mode = 'career' and coalesce(p_meta->>'event', '') = 'season_end' then 1 else 0 end,
     updated_at = now()
   where user_id = uid;
 
   v_board := coalesce(p_board, p_mode);
-  if v_board not in ('daily', 'duel', 'gauntlet', 'major', 'party', 'box') then
+  if v_board not in ('daily', 'duel', 'gauntlet', 'major', 'party', 'box', 'career') then
     v_board := p_mode;
   end if;
 
@@ -600,6 +631,83 @@ $$;
 
 revoke all on function public.submit_game_result from public;
 grant execute on function public.submit_game_result to authenticated;
+
+-- Career save RPCs
+create or replace function public.get_career_save()
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  uid uuid := auth.uid();
+  row public.career_saves%rowtype;
+begin
+  if uid is null then
+    raise exception 'not_authenticated' using errcode = '42501';
+  end if;
+  perform public.assert_not_banned(uid);
+  select * into row from public.career_saves where user_id = uid;
+  if not found then
+    return jsonb_build_object('exists', false, 'state', '{}'::jsonb, 'season_score', 0, 'majors_won', 0);
+  end if;
+  return jsonb_build_object(
+    'exists', true,
+    'state', row.state,
+    'season_score', row.season_score,
+    'majors_won', row.majors_won,
+    'updated_at', row.updated_at
+  );
+end;
+$$;
+
+create or replace function public.upsert_career_save(
+  p_state jsonb,
+  p_season_score integer default 0,
+  p_majors_won integer default 0
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  uid uuid := auth.uid();
+  score_c integer;
+  majors_c integer;
+begin
+  if uid is null then
+    raise exception 'not_authenticated' using errcode = '42501';
+  end if;
+  perform public.assert_not_banned(uid);
+  score_c := public.clamp_int(p_season_score, 0, 1000000);
+  majors_c := public.clamp_int(p_majors_won, 0, 100);
+  insert into public.career_saves (user_id, state, season_score, majors_won, updated_at)
+  values (uid, coalesce(p_state, '{}'::jsonb), score_c, majors_c, now())
+  on conflict (user_id) do update set
+    state = coalesce(p_state, public.career_saves.state),
+    season_score = score_c,
+    majors_won = greatest(public.career_saves.majors_won, majors_c),
+    updated_at = now();
+  insert into public.user_stats (user_id) values (uid) on conflict (user_id) do nothing;
+  update public.user_stats set
+    career_majors_won = greatest(coalesce(career_majors_won, 0), majors_c),
+    career_best_season = greatest(coalesce(career_best_season, 0), score_c),
+    updated_at = now()
+  where user_id = uid;
+  perform public.award_badges(uid);
+  return jsonb_build_object('ok', true, 'season_score', score_c, 'majors_won', majors_c);
+end;
+$$;
+
+revoke all on function public.get_career_save() from public;
+grant execute on function public.get_career_save() to authenticated;
+revoke all on function public.upsert_career_save(jsonb, integer, integer) from public;
+grant execute on function public.upsert_career_save(jsonb, integer, integer) to authenticated;
+
+drop policy if exists "career_saves_select_own" on public.career_saves;
+create policy "career_saves_select_own" on public.career_saves
+  for select using (auth.uid() = user_id);
 
 -- Room RPCs
 create or replace function public.create_room(p_mode text, p_payload jsonb)

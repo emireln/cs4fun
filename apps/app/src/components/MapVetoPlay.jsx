@@ -4,6 +4,7 @@ import { useI18n } from '../i18n'
 import { useMapVetoSession } from '../hooks/useMapVetoSession'
 import MapThumb from './MapThumb'
 import MapVeto from './MapVeto'
+import TeamLogo from './TeamLogo'
 
 export default function MapVetoPlay({
   userPriority,
@@ -29,7 +30,8 @@ export default function MapVetoPlay({
     <div className="space-y-4">
       <div className="panel rounded-xl p-4">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h3 className="font-display text-[10px] font-bold tracking-[0.22em] text-cs-gold uppercase">
+          <h3 className="inline-flex items-center gap-2 font-display text-[10px] font-bold tracking-[0.22em] text-cs-gold uppercase">
+            <TeamLogo name={enemyName} size="sm" decorative />
             {bestOf === 1 ? t('tournament.mapVetoBo1') : t('tournament.mapVeto')}
           </h3>
           <span

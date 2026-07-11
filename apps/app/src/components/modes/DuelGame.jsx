@@ -23,6 +23,7 @@ import MatchLive from '../MatchLive'
 import TacticalPausePanel from '../TacticalPausePanel'
 import HypeBanner from '../HypeBanner'
 import GameOver from '../GameOver'
+import TeamLogo from '../TeamLogo'
 
 export default function DuelGame({ profile, room: initialRoom = null, onHome, onStatus, onNeedFriends }) {
   const { t } = useI18n()
@@ -679,8 +680,17 @@ export default function DuelGame({ profile, room: initialRoom = null, onHome, on
     return (
       <div className="mx-auto max-w-2xl px-4 py-8">
         <h2 className="mb-2 text-center font-display text-2xl font-bold">{t('duel.showmatch')}</h2>
-        <p className="mb-6 text-center text-sm text-cs-muted">
-          {userTeam.shortName} vs {enemyTeam.shortName} · {t('duel.bo1Tag')}
+        <p className="mb-6 flex flex-wrap items-center justify-center gap-2 text-center text-sm text-cs-muted">
+          <span className="inline-flex items-center gap-1.5">
+            <TeamLogo name={userTeam.shortName} size="sm" decorative />
+            {userTeam.shortName}
+          </span>
+          <span>vs</span>
+          <span className="inline-flex items-center gap-1.5">
+            <TeamLogo name={enemyTeam.shortName} size="sm" decorative />
+            {enemyTeam.shortName}
+          </span>
+          <span>· {t('duel.bo1Tag')}</span>
         </p>
         <MapVetoPlay
           userPriority={userTeam.mapPriority}

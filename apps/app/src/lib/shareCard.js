@@ -1,7 +1,29 @@
 import { ROLES } from '../data/constants'
 import { formatUsd, RARITY_META } from './boxBattle'
+import { teamLogoCandidates } from '../data/teamLogos'
 
 const FONT = 'Arial, Helvetica, sans-serif'
+
+function loadImage(src) {
+  return new Promise((resolve) => {
+    if (!src || typeof Image === 'undefined') {
+      resolve(null)
+      return
+    }
+    const img = new Image()
+    img.onload = () => resolve(img)
+    img.onerror = () => resolve(null)
+    img.src = src
+  })
+}
+
+async function loadTeamLogo(name) {
+  for (const src of teamLogoCandidates(name)) {
+    const img = await loadImage(src)
+    if (img) return img
+  }
+  return null
+}
 
 /**
  * Draw a shareable result card to canvas (no external deps).
@@ -149,9 +171,16 @@ export async function renderShareCardBlob({
       ctx.fillText(p?.name || '—', 200, y + 54)
 
       if (p?.fromTeam) {
+        const logo = await loadTeamLogo(p.fromTeam)
+        let textX = 520
+        if (logo) {
+          const size = 40
+          ctx.drawImage(logo, 520, y + 24, size, size)
+          textX = 520 + size + 12
+        }
         ctx.fillStyle = '#8b93a7'
         ctx.font = `22px ${FONT}`
-        ctx.fillText(p.fromTeam, 520, y + 54)
+        ctx.fillText(p.fromTeam, textX, y + 54)
       }
       y += 104
     }

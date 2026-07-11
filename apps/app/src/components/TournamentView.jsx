@@ -15,6 +15,7 @@ import MatchLive from './MatchLive'
 import TacticalPausePanel from './TacticalPausePanel'
 import LineupRadar from './LineupRadar'
 import HypeBanner from './HypeBanner'
+import TeamLogo from './TeamLogo'
 
 const MATCH_PHASES = ['preview', 'veto', 'tactics', 'live', 'result']
 
@@ -348,10 +349,16 @@ export default function TournamentView({
           <div className="font-display text-xs tracking-[0.25em] text-cs-gold uppercase">
             {getStageLabel(stage)}
           </div>
-          <h1 className="mt-1 font-display text-2xl font-bold sm:text-3xl">
-            {userTeam.shortName}{' '}
-            <span className="text-cs-muted">vs</span>{' '}
-            <span className="text-cs-loss">{enemy.shortName}</span>
+          <h1 className="mt-1 flex flex-wrap items-center gap-2 font-display text-2xl font-bold sm:text-3xl">
+            <span className="inline-flex items-center gap-2">
+              <TeamLogo name={userTeam.shortName} size="md" decorative />
+              {userTeam.shortName}
+            </span>
+            <span className="text-cs-muted">vs</span>
+            <span className="inline-flex items-center gap-2 text-cs-loss">
+              <TeamLogo name={enemy.shortName} size="md" decorative />
+              {enemy.shortName}
+            </span>
           </h1>
           <p className="text-sm text-cs-muted">
             {enemy.name} · {enemy.event} ({enemy.year})
@@ -607,19 +614,25 @@ function BracketMini({ bracket, userId, t }) {
     return (
       <div className="rounded border border-cs-border bg-cs-bg/50 px-2 py-1.5 text-xs">
         <div
-          className={`flex justify-between ${m.home?.id === userId ? 'text-cs-gold' : ''} ${
+          className={`flex items-center justify-between gap-1 ${m.home?.id === userId ? 'text-cs-gold' : ''} ${
             homeWin ? 'font-bold' : ''
           }`}
         >
-          <span>{m.home?.shortName || '—'}</span>
+          <span className="inline-flex min-w-0 items-center gap-1">
+            <TeamLogo name={m.home?.shortName} size="xs" decorative />
+            <span className="truncate">{m.home?.shortName || '—'}</span>
+          </span>
           {m.result && <span>{homeWin ? 'W' : 'L'}</span>}
         </div>
         <div
-          className={`flex justify-between ${m.away?.id === userId ? 'text-cs-gold' : ''} ${
+          className={`flex items-center justify-between gap-1 ${m.away?.id === userId ? 'text-cs-gold' : ''} ${
             awayWin ? 'font-bold' : ''
           }`}
         >
-          <span>{m.away?.shortName || '—'}</span>
+          <span className="inline-flex min-w-0 items-center gap-1">
+            <TeamLogo name={m.away?.shortName} size="xs" decorative />
+            <span className="truncate">{m.away?.shortName || '—'}</span>
+          </span>
           {m.result && <span>{awayWin ? 'W' : 'L'}</span>}
         </div>
       </div>

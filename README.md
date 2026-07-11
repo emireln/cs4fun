@@ -108,7 +108,7 @@ Source: [`apps/web/src/docsCopy.js`](apps/web/src/docsCopy.js) + [`apps/web/src/
 | **Party Race** | Same scouts for the whole room — highest team power wins |
 | **Box Battle** | Queue up to 10 real CS cases; highest vault value wins |
 | **Daily Challenge** | Global UTC seed, pick timer, worldwide leaderboard |
-| **Gauntlet** | Survive escalating BO1 waves |
+| **Career** | Signed-in org sim: contracts, camps, Major (replaces Gauntlet) |
 
 ## Friends
 

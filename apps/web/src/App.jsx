@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { BookOpen, Coffee, Mail, Swords, Users, Trophy, Flame, Calendar, Download, Package } from 'lucide-react'
+import { BookOpen, Coffee, Mail, Swords, Users, Trophy, Star, Calendar, Download, Package } from 'lucide-react'
 import copy from './copy'
 import DocsPage from './DocsPage'
 import LogoMark from './LogoMark'
@@ -22,10 +22,10 @@ const MODE_ICONS = {
   party: Users,
   box: Package,
   daily: Calendar,
-  gauntlet: Flame,
+  career: Star,
 }
 
-const MODE_IDS = ['major', 'duel', 'party', 'box', 'daily', 'gauntlet']
+const MODE_IDS = ['major', 'duel', 'party', 'box', 'daily', 'career']
 
 function normalizePath(pathname) {
   const p = (pathname || '/').replace(/\/+$/, '') || '/'

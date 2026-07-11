@@ -38,6 +38,11 @@ export const BADGE_DEFS = [
   { id: 'box_covert_10', category: 'box_covert_hits', threshold: 10, icon: 'skull' },
   { id: 'box_jackpot', category: 'box_best_value', threshold: 500, icon: 'star' },
   { id: 'box_opener', category: 'box_opens', threshold: 50, icon: 'dices' },
+  { id: 'career_first_major', category: 'career_majors_won', threshold: 1, icon: 'trophy' },
+  { id: 'career_major_3', category: 'career_majors_won', threshold: 3, icon: 'crown' },
+  { id: 'career_season_1', category: 'career_seasons', threshold: 1, icon: 'star' },
+  { id: 'career_season_5', category: 'career_seasons', threshold: 5, icon: 'flame' },
+  { id: 'career_dynasty', category: 'career_best_season', threshold: 800, icon: 'gem' },
   { id: 'perfect_major', category: 'perfect_majors', threshold: 1, icon: 'star' },
   { id: 'almanac_win', category: 'almanac_wins', threshold: 1, icon: 'book' },
   { id: 'social', category: 'party_games', threshold: 1, icon: 'handshake' },
@@ -62,6 +67,9 @@ function emptyStats() {
     box_opens: 0,
     box_best_value: 0,
     best_drop: null,
+    career_majors_won: 0,
+    career_best_season: 0,
+    career_seasons: 0,
     perfect_majors: 0,
     almanac_wins: 0,
     max_streak: 0,
@@ -121,6 +129,7 @@ function writeLocalBadges(playerId, badges) {
 
 function metricFor(stats, category) {
   if (category === 'box_best_value') return Math.floor(Number(stats.box_best_value) || 0)
+  if (category === 'career_best_season') return Math.floor(Number(stats.career_best_season) || 0)
   return stats[category] ?? 0
 }
 

@@ -17,6 +17,7 @@ import MatchLive from '../MatchLive'
 import TacticalPausePanel from '../TacticalPausePanel'
 import HypeBanner from '../HypeBanner'
 import GameOver from '../GameOver'
+import TeamLogo from '../TeamLogo'
 import { pick } from '../../data/constants'
 
 export default function GauntletGame({ profile, onHome, onStatus }) {
@@ -255,8 +256,12 @@ export default function GauntletGame({ profile, onHome, onStatus }) {
           {t('gauntlet.wave', { n: wave })}
         </p>
         <h2 className="mt-2 font-display text-3xl font-bold">{t('gauntlet.survive')}</h2>
-        <p className="mt-2 text-cs-muted">
-          {t('gauntlet.next')}: <span className="text-cs-loss">{enemy?.name}</span>
+        <p className="mt-2 inline-flex flex-wrap items-center justify-center gap-2 text-cs-muted">
+          {t('gauntlet.next')}:
+          <span className="inline-flex items-center gap-1.5 text-cs-loss">
+            <TeamLogo name={enemy?.shortName || enemy?.name} size="sm" decorative />
+            {enemy?.name}
+          </span>
         </p>
         {enemy?.chaos && (
           <p className="mt-3 rounded border border-cs-warn/40 bg-cs-warn/10 px-3 py-2 text-sm text-cs-warn">

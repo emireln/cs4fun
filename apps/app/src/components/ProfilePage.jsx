@@ -353,7 +353,7 @@ export default function ProfilePage({ onBack, onNeedAuth, onStartMatch, onInvite
                       { k: 'statDuel', v: stats.duel_wins },
                       { k: 'statParty', v: stats.party_wins },
                       { k: 'statDaily', v: stats.daily_wins },
-                      { k: 'statGauntlet', v: stats.max_streak },
+                      { k: 'statCareer', v: stats.career_majors_won },
                       { k: 'statBox', v: stats.box_wins },
                     ].map((row) => (
                       <span

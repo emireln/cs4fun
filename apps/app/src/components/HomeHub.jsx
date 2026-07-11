@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Swords, Users, Trophy, Flame, Calendar, Package, ArrowLeft } from 'lucide-react'
+import { Swords, Users, Trophy, Calendar, Package, ArrowLeft, Star, Lock } from 'lucide-react'
 import { useI18n } from '../i18n'
 import { useAuth } from '../lib/auth'
 import { getDailyStreak } from '../lib/dailyStreak'
@@ -12,14 +12,22 @@ const MODE_META = [
   { id: 'party', icon: Users },
   { id: 'box', icon: Package },
   { id: 'daily', icon: Calendar },
-  { id: 'gauntlet', icon: Flame },
+  { id: 'career', icon: Star, starred: true },
 ]
 
-export default function HomeHub({ onSelectMode, onOpenFriends }) {
+export default function HomeHub({ onSelectMode, onOpenFriends, onNeedAuth }) {
   const { t } = useI18n()
-  const { profile } = useAuth()
+  const { profile, isAuthed } = useAuth()
   const streak = useMemo(() => getDailyStreak(profile?.id), [profile?.id])
   const [pickingSolo, setPickingSolo] = useState(false)
+
+  const handleSelect = (id) => {
+    if (id === 'career' && !isAuthed) {
+      onNeedAuth?.()
+      return
+    }
+    onSelectMode(id)
+  }
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col justify-center">
@@ -49,10 +57,10 @@ export default function HomeHub({ onSelectMode, onOpenFriends }) {
                 {streak.currentStreak > 0 && (
                   <button
                     type="button"
-                    onClick={() => onSelectMode('daily')}
+                    onClick={() => handleSelect('daily')}
                     className="mt-4 inline-flex items-center gap-2 rounded border border-cs-gold/40 bg-cs-gold/10 px-4 py-2 text-sm text-cs-gold transition hover:bg-cs-gold/20"
                   >
-                    <Flame className="h-4 w-4" />
+                    <Calendar className="h-4 w-4" />
                     {streak.playedToday
                       ? t('daily.streakDay', { n: streak.currentStreak })
                       : t('daily.returnCta', { n: streak.currentStreak })}
@@ -77,7 +85,7 @@ export default function HomeHub({ onSelectMode, onOpenFriends }) {
                 </div>
               </div>
 
-              <ModeGrid streak={streak} onSelectMode={onSelectMode} t={t} />
+              <ModeGrid streak={streak} onSelectMode={handleSelect} t={t} isAuthed={isAuthed} />
             </motion.div>
           ) : (
             <motion.div
@@ -102,7 +110,7 @@ export default function HomeHub({ onSelectMode, onOpenFriends }) {
                 <p className="mx-auto mt-2 max-w-md text-sm text-cs-muted">{t('home.pickSoloHint')}</p>
               </div>
 
-              <ModeGrid streak={streak} onSelectMode={onSelectMode} t={t} />
+              <ModeGrid streak={streak} onSelectMode={handleSelect} t={t} isAuthed={isAuthed} />
             </motion.div>
           )}
         </AnimatePresence>
@@ -111,12 +119,14 @@ export default function HomeHub({ onSelectMode, onOpenFriends }) {
   )
 }
 
-function ModeGrid({ streak, onSelectMode, t }) {
+function ModeGrid({ streak, onSelectMode, t, isAuthed }) {
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {MODE_META.map((mode, i) => {
         const Icon = mode.icon
         const isDaily = mode.id === 'daily'
+        const isCareer = mode.id === 'career'
+        const locked = isCareer && !isAuthed
         return (
           <motion.button
             key={mode.id}
@@ -127,14 +137,29 @@ function ModeGrid({ streak, onSelectMode, t }) {
             whileHover={{ y: -3 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => onSelectMode(mode.id)}
-            className="panel rounded-xl p-4 text-left"
+            className={`panel rounded-xl p-4 text-left ${
+              mode.starred ? 'border border-cs-gold/45 ring-1 ring-cs-gold/20' : ''
+            } ${locked ? 'opacity-90' : ''}`}
           >
-            <Icon className="mb-3 h-5 w-5 text-cs-gold" />
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <Icon className={`h-5 w-5 text-cs-gold ${mode.starred ? 'fill-cs-gold' : ''}`} />
+              {locked && <Lock className="h-3.5 w-3.5 text-cs-muted" />}
+              {mode.starred && !locked && (
+                <span className="rounded border border-cs-gold/40 bg-cs-gold/10 px-1.5 py-0.5 text-[9px] font-bold tracking-wider text-cs-gold uppercase">
+                  {t('career.hubBadge')}
+                </span>
+              )}
+            </div>
             <div className="font-display text-sm font-bold">{t(`modes.${mode.id}.title`)}</div>
             <div className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-cs-gold/80">
               {t(`modes.${mode.id}.tag`)}
             </div>
             <div className="mt-1 text-xs text-cs-muted">{t(`modes.${mode.id}.blurb`)}</div>
+            {locked && (
+              <div className="mt-2 text-[10px] font-semibold uppercase tracking-wider text-cs-gold">
+                {t('career.guestLockedShort')}
+              </div>
+            )}
             {isDaily && streak.currentStreak > 0 && (
               <div className="mt-2 text-[10px] font-semibold uppercase tracking-wider text-cs-gold">
                 {t('daily.streakShort', { n: streak.currentStreak })}
