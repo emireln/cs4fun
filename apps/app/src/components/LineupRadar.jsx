@@ -3,13 +3,17 @@ import { ROLES } from '../data/constants'
 import PlayerCard from './PlayerCard'
 import RoleIcon from './RoleIcon'
 
-/** Diamond: IGL top-center, AWP/ENT mid, LRK/SUP bottom — equal-width cells */
+/**
+ * Diamond via CSS grid (no Framer transforms on layout wrappers).
+ * Radar décor sits in a true square behind mid slots so its rim never
+ * peeks out as a broken gold line under the LINEUP header.
+ */
 const SLOT_CELL = {
   IGL: 'col-span-2 flex justify-center',
-  AWPer: 'justify-self-stretch',
-  Entry: 'justify-self-stretch',
-  Lurker: 'justify-self-stretch',
-  Support: 'justify-self-stretch',
+  AWPer: 'min-w-0 justify-self-stretch',
+  Entry: 'min-w-0 justify-self-stretch',
+  Lurker: 'min-w-0 justify-self-stretch',
+  Support: 'min-w-0 justify-self-stretch',
 }
 
 export default function LineupRadar({
@@ -32,42 +36,49 @@ export default function LineupRadar({
         <div className="lineup-ambient" />
       </div>
 
-      <div className="relative mb-3 flex items-center justify-between sm:mb-4">
-        <h2 className="font-display text-xs font-bold tracking-[0.22em] text-cs-gold uppercase">
-          {title}
-        </h2>
-        <motion.span
-          key={filled}
-          initial={{ scale: 0.85, opacity: 0.5 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="font-mono text-xs text-cs-muted"
-        >
-          <span className={filled === 5 ? 'text-cs-win' : 'text-cs-gold'}>{filled}</span>/5
-        </motion.span>
+      <div className="relative mb-3 sm:mb-4">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="font-display text-xs font-bold tracking-[0.22em] text-cs-gold uppercase">
+            {title}
+          </h2>
+          <motion.span
+            key={filled}
+            initial={{ scale: 0.85, opacity: 0.5 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="font-mono text-xs text-cs-muted"
+          >
+            <span className={filled === 5 ? 'text-cs-win' : 'text-cs-gold'}>{filled}</span>/5
+          </motion.span>
+        </div>
+        {/* Full-bleed header rule — replaces the accidental radar rim stub */}
+        <div className="mt-2 h-px w-full bg-gradient-to-r from-cs-gold/55 via-cs-gold/25 to-transparent" />
       </div>
 
       <div className="relative mx-auto w-full max-w-md">
+        {/* True circle, anchored mid-stage so the top rim stays under IGL */}
         <div
-          className="radar-grid pointer-events-none absolute inset-[6%] overflow-hidden rounded-full border border-cs-gold/20 sm:inset-[8%]"
+          className="pointer-events-none absolute top-[18%] left-1/2 aspect-square w-[78%] -translate-x-1/2 sm:top-[16%] sm:w-[72%]"
           aria-hidden
         >
-          <div className="radar-sweep" />
-          <div className="radar-ring radar-ring--outer" />
-          <div className="radar-ring radar-ring--mid" />
-          <div className="radar-ring radar-ring--inner" />
-          <div className="radar-crosshair" />
-          <motion.div
-            className="absolute left-1/2 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-cs-gold"
-            animate={{
-              boxShadow: [
-                '0 0 8px 2px rgba(232,197,71,0.45)',
-                '0 0 18px 6px rgba(232,197,71,0.75)',
-                '0 0 8px 2px rgba(232,197,71,0.45)',
-              ],
-              scale: [1, 1.15, 1],
-            }}
-            transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
-          />
+          <div className="radar-grid absolute inset-0 overflow-hidden rounded-full border border-cs-gold/15">
+            <div className="radar-sweep" />
+            <div className="radar-ring radar-ring--outer" />
+            <div className="radar-ring radar-ring--mid" />
+            <div className="radar-ring radar-ring--inner" />
+            <div className="radar-crosshair" />
+            <motion.div
+              className="absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-cs-gold sm:h-2.5 sm:w-2.5"
+              animate={{
+                boxShadow: [
+                  '0 0 8px 2px rgba(232,197,71,0.35)',
+                  '0 0 16px 5px rgba(232,197,71,0.65)',
+                  '0 0 8px 2px rgba(232,197,71,0.35)',
+                ],
+                scale: [1, 1.12, 1],
+              }}
+              transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+            />
+          </div>
         </div>
 
         <div className="relative z-10 grid grid-cols-2 gap-2 sm:gap-3">
@@ -78,10 +89,7 @@ export default function LineupRadar({
             const isIgl = role.id === 'IGL'
 
             return (
-              <div
-                key={role.id}
-                className={`${SLOT_CELL[role.id]} ${isIgl ? '' : 'min-w-0'}`}
-              >
+              <div key={role.id} className={SLOT_CELL[role.id]}>
                 <motion.div
                   className={`w-full ${isIgl ? 'max-w-[11rem] sm:max-w-[12rem]' : ''}`}
                   initial={{ opacity: 0, y: 8 }}
