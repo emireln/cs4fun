@@ -269,11 +269,11 @@ jobs:
           yml.write_text(text2, encoding="utf-8")
           print("--- latest.yml ---")
           print(yml.read_text(encoding="utf-8"))
-          # Require versioned exe named in yaml
-          m = re.search(r"(?m)^\s*url:\s*(\S+)", text2)
+          # Require versioned exe named in yaml (electron-builder nests `url:` under files:)
+          m = re.search(r"(?mi)\burl:\s*(\S+)", text2)
           if not m:
               sys.exit("latest.yml missing url:")
-          need = d / m.group(1).strip()
+          need = d / m.group(1).strip().strip('"').strip("'")
           if not need.is_file():
               print("files:", sorted(x.name for x in d.iterdir()))
               sys.exit(f"missing {need.name} referenced by latest.yml")
