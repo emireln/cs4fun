@@ -144,7 +144,7 @@ Never put `service_role` in the client. Landing uses `VITE_APP_URL` (default `ht
 - Main: `apps/app/electron/main.cjs`
 - Dev: `npm run electron:dev` (Vite on `:5173` + Electron)
 - Build installer: `npm run electron:build` → builds in TEMP then copies `cs4fun-Setup-*.exe` to `apps/app/release/` (avoids Windows EPERM under Downloads)
-- Icons: `npm run icons -w @cs4fun/app` → `build/icon.ico` (desktop, bg+rounded), `build/tray.*` (transparent), NSIS BMPs (no text)
+- Icons: drop `logo.png` at repo root, then `npm run icons -w @cs4fun/app` → `build/icon.ico` (solid carbon bg + rounded), `build/tray.*` (transparent), public favicons, NSIS BMPs (no text)
 - Pin exact `electron` version in `apps/app/package.json` (electron-builder rejects ranges)
 - `vite.config.js` uses `base: './'` for `file://` asset loading
 - External http(s) links open in the system browser

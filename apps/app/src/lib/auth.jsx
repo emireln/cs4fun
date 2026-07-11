@@ -10,6 +10,21 @@ const AuthContext = createContext(null)
 
 const EMPTY_ACCESS = { isAdmin: false, banned: false, banReason: null }
 
+/** Guest local ids are `p_……`; signed-in profiles use auth UUIDs. */
+function isAuthUserId(id) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    String(id || ''),
+  )
+}
+
+async function resolveLiveSession() {
+  if (!isSupabaseConfigured) return null
+  const { data } = await supabase.auth.getSession()
+  if (data.session?.user) return data.session
+  const refreshed = await supabase.auth.refreshSession()
+  return refreshed.data.session ?? null
+}
+
 function mergeUserProfile(user, local = loadProfile()) {
   const preset = normalizeSetupPresetFields(local)
   return saveProfile({
@@ -103,24 +118,60 @@ export function AuthProvider({ children }) {
     }
 
     let cancelled = false
-    ;(async () => {
-      const { data } = await supabase.auth.getSession()
+
+    const applySession = (next, event = null) => {
       if (cancelled) return
-      setSession(data.session ?? null)
-      if (data.session?.user) await hydrateFromDb(data.session.user)
-      else setAccess(EMPTY_ACCESS)
+
+      if (next?.user) {
+        setSession(next)
+        queueMicrotask(() => {
+          if (!cancelled) hydrateFromDb(next.user)
+        })
+        return
+      }
+
+      // Explicit logout / account delete — clear. Boot resolve with null — clear.
+      // Other null callbacks (e.g. ambiguous INITIAL_SESSION) must not flip a live
+      // signed-in React session to Guest while local profile data is still present.
+      if (!event || event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+        setSession(null)
+        queueMicrotask(() => {
+          if (!cancelled) setAccess(EMPTY_ACCESS)
+        })
+      }
+    }
+
+    ;(async () => {
+      let live = await resolveLiveSession()
+      if (cancelled) return
+
+      // Local profile still looks signed-in (UUID + email) but storage session was stale.
+      if (!live?.user && isAuthUserId(profileRef.current?.id) && profileRef.current?.email) {
+        const again = await supabase.auth.refreshSession()
+        live = again.data.session ?? null
+      }
+
+      applySession(live)
       if (!cancelled) setLoading(false)
     })()
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, next) => {
-      setSession(next)
-      if (next?.user) hydrateFromDb(next.user)
-      else setAccess(EMPTY_ACCESS)
+    const { data: sub } = supabase.auth.onAuthStateChange((event, next) => {
+      applySession(next, event)
     })
+
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible') return
+      resolveLiveSession().then((live) => {
+        if (cancelled || !live?.user) return
+        setSession((prev) => (prev?.user?.id === live.user.id ? prev : live))
+      })
+    }
+    document.addEventListener('visibilitychange', onVisible)
 
     return () => {
       cancelled = true
       sub.subscription.unsubscribe()
+      document.removeEventListener('visibilitychange', onVisible)
     }
   }, [hydrateFromDb])
 
@@ -167,23 +218,15 @@ export function AuthProvider({ children }) {
 
     if (!isSupabaseConfigured) return next
 
-    // Prefer a fresh auth session — React `session` can be stale ("Auth session missing!")
-    let liveSession = session
-    {
-      const { data } = await supabase.auth.getSession()
-      liveSession = data.session ?? null
-      if (!liveSession?.user) {
-        const refreshed = await supabase.auth.refreshSession()
-        liveSession = refreshed.data.session ?? null
-      }
-    }
+    const liveSession = await resolveLiveSession()
 
     if (!liveSession?.user) {
-      if (session?.user) setSession(null)
+      // Do not clear React session on a transient refresh failure — that flipped signed-in
+      // users to Guest while their nickname/avatar were still in localStorage.
       return { error: 'not_authenticated', profile: next }
     }
 
-    if (liveSession !== session) setSession(liveSession)
+    setSession(liveSession)
 
     // JWT metadata is optional; preset + profile fields live on `profiles`
     const { error: metaError } = await supabase.auth.updateUser({
@@ -220,7 +263,7 @@ export function AuthProvider({ children }) {
     }
 
     return next
-  }, [session])
+  }, [])
 
   const updateNickname = useCallback(
     async (nickname) => updateProfile({ nickname }),

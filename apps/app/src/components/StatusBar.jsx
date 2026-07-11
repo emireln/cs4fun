@@ -108,9 +108,15 @@ export default function StatusBar({
               {(wins != null || losses != null) && (
                 <Pill>
                   <Swords className="h-3 w-3 text-cs-gold" />
-                  <span className="font-semibold text-cs-win">{wins ?? 0}W</span>
+                  <span className="font-semibold text-cs-win">
+                    {wins ?? 0}
+                    {t('common.winsShort')}
+                  </span>
                   <span className="text-cs-muted">/</span>
-                  <span className="font-semibold text-cs-loss">{losses ?? 0}L</span>
+                  <span className="font-semibold text-cs-loss">
+                    {losses ?? 0}
+                    {t('common.lossesShort')}
+                  </span>
                 </Pill>
               )}
               {stageLabel && (
@@ -175,9 +181,15 @@ export default function StatusBar({
         <div className="flex items-center gap-2 overflow-x-auto border-t border-cs-border/50 px-3 py-1.5 text-[11px] sm:hidden">
           {(wins != null || losses != null) && (
             <span className="shrink-0 font-mono">
-              <span className="text-cs-win">{wins ?? 0}W</span>
+              <span className="text-cs-win">
+                {wins ?? 0}
+                {t('common.winsShort')}
+              </span>
               <span className="text-cs-muted">/</span>
-              <span className="text-cs-loss">{losses ?? 0}L</span>
+              <span className="text-cs-loss">
+                {losses ?? 0}
+                {t('common.lossesShort')}
+              </span>
             </span>
           )}
           {stageLabel && <span className="shrink-0 text-cs-gold">{stageLabel}</span>}

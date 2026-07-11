@@ -25,10 +25,13 @@ import DuelGame from './components/modes/DuelGame'
 import PartyGame from './components/modes/PartyGame'
 import DailyGame from './components/modes/DailyGame'
 import GauntletGame from './components/modes/GauntletGame'
+import BoxGame from './components/modes/BoxGame'
 import DesktopUpdateOverlay from './components/DesktopUpdateOverlay'
 import LogoMark from './components/LogoMark'
 import MatchInvitePopup from './components/MatchInvitePopup'
 import AppToast from './components/AppToast'
+import ConnectionLostModal from './components/ConnectionLostModal'
+import { useOnlineStatus } from './hooks/useOnlineStatus'
 
 function AppShell() {
   const { t } = useI18n()
@@ -56,6 +59,13 @@ function AppShell() {
     navSnapshot.current = { screen, room, friendsMode, status }
   }, [screen, room, friendsMode, status])
 
+  const { online } = useOnlineStatus()
+  const [offlineDismissed, setOfflineDismissed] = useState(false)
+
+  useEffect(() => {
+    if (online) setOfflineDismissed(false)
+  }, [online])
+
   const showToast = useCallback((message) => {
     if (toastTimer.current) clearTimeout(toastTimer.current)
     setToast(message)
@@ -81,7 +91,7 @@ function AppShell() {
     setStatus(
       prev.status ?? {
         phase: prev.screen === 'hub' ? 'hub' : prev.screen,
-        gameMode: ['major', 'duel', 'party', 'daily', 'gauntlet'].includes(prev.screen)
+        gameMode: ['major', 'duel', 'party', 'daily', 'gauntlet', 'box'].includes(prev.screen)
           ? prev.screen
           : undefined,
       },
@@ -112,8 +122,10 @@ function AppShell() {
   const startMatchRoom = useCallback(
     (startedRoom) => {
       if (!startedRoom) return
+      const screen =
+        startedRoom.mode === 'duel' ? 'duel' : startedRoom.mode === 'box' ? 'box' : 'party'
       navigateTo({
-        screen: startedRoom.mode === 'duel' ? 'duel' : 'party',
+        screen,
         room: startedRoom,
         status: { phase: 'setup', gameMode: startedRoom.mode },
       })
@@ -123,9 +135,10 @@ function AppShell() {
 
   const openFriends = useCallback(
     (mode = 'party') => {
+      const friendsMode = mode === 'duel' ? 'duel' : mode === 'box' ? 'box' : 'party'
       navigateTo({
         screen: 'friends',
-        friendsMode: mode === 'duel' ? 'duel' : 'party',
+        friendsMode,
         room: null,
         status: { phase: 'friends' },
       })
@@ -275,7 +288,7 @@ function AppShell() {
         phase={status.phase || (screen === 'hub' ? 'hub' : screen)}
         gameMode={
           status.gameMode ||
-          (['major', 'duel', 'party', 'daily', 'gauntlet'].includes(screen) ? screen : null)
+          (['major', 'duel', 'party', 'daily', 'gauntlet', 'box'].includes(screen) ? screen : null)
         }
         extra={status.extra}
         onHome={goHome}
@@ -359,6 +372,15 @@ function AppShell() {
           {screen === 'gauntlet' && (
             <GauntletGame profile={profile} onHome={goHome} onStatus={setStatus} />
           )}
+          {screen === 'box' && (
+            <BoxGame
+              profile={profile}
+              room={room}
+              onHome={goHome}
+              onStatus={setStatus}
+              onNeedFriends={() => openFriends('box')}
+            />
+          )}
         </motion.main>
       </AnimatePresence>
 
@@ -369,6 +391,10 @@ function AppShell() {
         busy={inviteBusy}
         onAccept={handleAcceptInvite}
         onDecline={handleDeclineInvite}
+      />
+      <ConnectionLostModal
+        open={!online && !offlineDismissed}
+        onDismiss={() => setOfflineDismissed(true)}
       />
 
       {peekProfileId && (

@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
-  <!-- Minimal creative crosshair: sight + gold pick diamond -->
-  <circle cx="64" cy="64" r="38" stroke="#E8EDF5" stroke-width="5"/>
-  <path d="M64 18v20M64 90v20M18 64h20M90 64h20" stroke="#E8EDF5" stroke-width="5" stroke-linecap="round"/>
-  <path d="M64 52l12 12-12 12-12-12 12-12z" fill="#E8C547"/>
-</svg>

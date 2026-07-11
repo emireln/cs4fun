@@ -6,7 +6,7 @@ import { useAuth } from '../lib/auth'
 import { fetchLeaderboard, fetchMyRank, utcDayKey, TOP_LIMIT } from '../lib/leaderboard'
 import { isSupabaseConfigured } from '../lib/supabase'
 
-const BOARDS = ['daily', 'duel', 'gauntlet', 'major']
+const BOARDS = ['daily', 'duel', 'box', 'gauntlet', 'major']
 
 export default function LeaderboardPanel({ profile, onBack, onNeedAuth }) {
   const { t } = useI18n()

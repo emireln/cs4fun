@@ -4,7 +4,7 @@ import { useI18n } from '../../i18n'
 import { useDraftSession } from '../../hooks/useDraftSession'
 import { generateSharedRolls, teamPowerScore } from '../../lib/gameModes'
 import { saveGameResult } from '../../lib/history'
-import { updateRoom } from '../../lib/rooms'
+import { subscribeRoom, updateRoom } from '../../lib/rooms'
 import { initialSoloSetupState, retrySoloSetupState } from '../../lib/setupPreset'
 import DraftPlay from '../DraftPlay'
 import GameOver from '../GameOver'
@@ -27,6 +27,7 @@ export default function PartyGame({ profile, room, onHome, onStatus, onNeedFrien
   const [ranking, setRanking] = useState([])
   const [place, setPlace] = useState(null)
   const [submitInfo, setSubmitInfo] = useState(null)
+  const [waitingFriends, setWaitingFriends] = useState(false)
 
   const seed = localRoom?.seed || `party-solo-${profile.id}`
   const sharedRolls = useMemo(() => generateSharedRolls(seed, 5), [seed])
@@ -40,6 +41,11 @@ export default function PartyGame({ profile, room, onHome, onStatus, onNeedFrien
   const mentality = MENTALITIES.find((m) => m.id === cfg?.mentality) || MENTALITIES[1]
 
   useEffect(() => {
+    if (!localRoom?.code) return undefined
+    return subscribeRoom(localRoom.code, (next) => setLocalRoom(next))
+  }, [localRoom?.code])
+
+  useEffect(() => {
     onStatus?.({
       phase: step,
       gameMode: 'party',
@@ -49,6 +55,39 @@ export default function PartyGame({ profile, room, onHome, onStatus, onNeedFrien
       rerolls: 0,
     })
   }, [step, cfg]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // When friends all locked lineups, resolve ranking for everyone still waiting
+  useEffect(() => {
+    if (!waitingFriends || !localRoom) return
+    const players = localRoom.players || []
+    const ready = players.filter((p) => p.lineup && p.power != null)
+    if (ready.length === 0) return
+    if (ready.length < players.length) return
+
+    const sorted = [...ready].sort((a, b) => b.power - a.power)
+    setRanking(sorted)
+    const myPlace = sorted.findIndex((p) => p.id === profile.id) + 1
+    if (myPlace < 1) return
+    setPlace(myPlace)
+    setWaitingFriends(false)
+    const mine = sorted.find((p) => p.id === profile.id)
+    const power = mine?.power || 0
+    ;(async () => {
+      const score = Math.round(power * 100 + (sorted.length - myPlace + 1) * 40)
+      const res = await saveGameResult({
+        userId: profile.id,
+        nickname: profile.nickname,
+        mode: 'party',
+        won: myPlace === 1,
+        score,
+        lineup: mine?.lineup || draft.lineup,
+        meta: { place: myPlace, power, room: localRoom?.code },
+        board: 'party',
+      })
+      setSubmitInfo(res)
+      setStep('results')
+    })()
+  }, [waitingFriends, localRoom]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (step === 'setup') {
     return (
@@ -72,21 +111,22 @@ export default function PartyGame({ profile, room, onHome, onStatus, onNeedFrien
     )
   }
 
-  if (step === 'draft') {
+  if (step === 'draft' || waitingFriends) {
     return (
       <DraftPlay
         draft={draft}
         hideReroll
-        launchLabel={t('draft.launchParty')}
+        launchLabel={waitingFriends ? t('draft.waitingFriends') : t('draft.launchParty')}
+        launchDisabled={waitingFriends}
         banner={
           <div className="mb-4 rounded border border-sky-400/30 bg-sky-400/10 px-4 py-2 text-sm text-sky-300">
-            {t('party.sharedRolls')}
+            {waitingFriends ? t('party.waitingLock') : t('party.sharedRolls')}
             {localRoom?.code ? ` · ${localRoom.code}` : ''}
           </div>
         }
         onLaunch={async () => {
+          if (waitingFriends) return
           const power = teamPowerScore(draft.lineup, cfg.mentality, cfg.mapPriority)
-          let players = []
 
           if (localRoom) {
             const updated = await updateRoom(localRoom.code, (r) => ({
@@ -98,43 +138,51 @@ export default function PartyGame({ profile, room, onHome, onStatus, onNeedFrien
               ),
             }))
             setLocalRoom(updated)
-            players = updated?.players || []
-          } else {
-            players = [
-              {
-                id: profile.id,
-                nickname: profile.nickname || 'You',
-                power,
-                lineup: draft.lineup,
-              },
-            ]
+            const players = updated?.players || []
+            const ready = players.filter((p) => p.lineup && p.power != null)
+            if (ready.length < players.length || players.length < 2) {
+              setWaitingFriends(true)
+              return
+            }
+            const sorted = [...ready].sort((a, b) => b.power - a.power)
+            setRanking(sorted)
+            const myPlace = sorted.findIndex((p) => p.id === profile.id) + 1
+            setPlace(myPlace)
+            const score = Math.round(power * 100 + (sorted.length - myPlace + 1) * 40)
+            const res = await saveGameResult({
+              userId: profile.id,
+              nickname: profile.nickname,
+              mode: 'party',
+              won: myPlace === 1,
+              score,
+              lineup: draft.lineup,
+              meta: { place: myPlace, power, room: localRoom?.code },
+              board: 'party',
+            })
+            setSubmitInfo(res)
+            setStep('results')
+            return
           }
 
-          // Include any ready players; if solo/local incomplete, just rank yourself
-          const ready = players.filter((p) => p.lineup && p.power)
-          if (ready.length === 0) {
-            ready.push({
+          const players = [
+            {
               id: profile.id,
-              nickname: profile.nickname || 'You',
+              nickname: profile.nickname || t('common.you'),
               power,
               lineup: draft.lineup,
-            })
-          }
-
-          const sorted = [...ready].sort((a, b) => b.power - a.power)
-          setRanking(sorted)
-          const myPlace = sorted.findIndex((p) => p.id === profile.id) + 1
-          setPlace(myPlace)
-
-          const score = Math.round(power * 100 + (sorted.length - myPlace + 1) * 40)
+            },
+          ]
+          setRanking(players)
+          setPlace(1)
+          const score = Math.round(power * 100 + 40)
           const res = await saveGameResult({
             userId: profile.id,
             nickname: profile.nickname,
             mode: 'party',
-            won: myPlace === 1,
+            won: true,
             score,
             lineup: draft.lineup,
-            meta: { place: myPlace, power, room: localRoom?.code },
+            meta: { place: 1, power },
             board: 'party',
           })
           setSubmitInfo(res)
@@ -157,6 +205,7 @@ export default function PartyGame({ profile, room, onHome, onStatus, onNeedFrien
       onHome={onHome}
       onRetry={() => {
         draft.reset()
+        setWaitingFriends(false)
         if (localRoom) {
           setStep('draft')
           return

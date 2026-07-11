@@ -1,7 +1,8 @@
 /**
- * Generates Electron desktop icon (carbon bg + rounded, no outline), tray (transparent),
- * and NSIS installer bitmaps (no text).
+ * Generates Electron desktop icon (solid bg + rounded), tray (transparent),
+ * public favicons, and NSIS installer bitmaps (no text).
  *
+ * Source: repo-root logo.png
  * Run: node electron/generate-icons.mjs
  */
 import fs from 'node:fs'
@@ -12,104 +13,79 @@ import pngToIco from 'png-to-ico'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const appRoot = path.join(__dirname, '..')
+const repoRoot = path.join(appRoot, '..', '..')
 const buildDir = path.join(appRoot, 'build')
-const publicLogoSvg = path.join(appRoot, 'public', 'logo.svg')
+const sourceLogo = path.join(repoRoot, 'logo.png')
 
+/** Solid carbon — no lines / gradients */
 const BG = '#0a0c10'
-const PANEL = '#11151c'
-const GOLD = '#e8c547'
-const GOLD_DIM = '#b8942e'
 
 fs.mkdirSync(buildDir, { recursive: true })
 
-const logoSvg = fs.readFileSync(publicLogoSvg, 'utf8')
-
-/** Desktop / taskbar / installer icon — carbon panel, rounded (no gold outline) */
-function desktopIconSvg(size = 512) {
-  const r = Math.round(size * 0.18)
-  const pad = Math.round(size * 0.1)
-  const inner = size - pad * 2
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" fill="none">
-  <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="${PANEL}"/>
-      <stop offset="55%" stop-color="${BG}"/>
-      <stop offset="100%" stop-color="#07090c"/>
-    </linearGradient>
-    <radialGradient id="glow" cx="50%" cy="28%" r="55%">
-      <stop offset="0%" stop-color="${GOLD}" stop-opacity="0.22"/>
-      <stop offset="100%" stop-color="${GOLD}" stop-opacity="0"/>
-    </radialGradient>
-    <clipPath id="round">
-      <rect width="${size}" height="${size}" rx="${r}" ry="${r}"/>
-    </clipPath>
-  </defs>
-  <g clip-path="url(#round)">
-    <rect width="${size}" height="${size}" fill="url(#g)"/>
-    <rect width="${size}" height="${size}" fill="url(#glow)"/>
-    <g opacity="0.07">
-      ${Array.from({ length: 18 }, (_, i) => {
-        const y = Math.round((i + 1) * (size / 19))
-        return `<line x1="0" y1="${y}" x2="${size}" y2="${y}" stroke="#ffffff" stroke-width="1"/>`
-      }).join('')}
-    </g>
-    <g transform="translate(${pad} ${pad})">
-      <svg width="${inner}" height="${inner}" viewBox="0 0 128 128">${logoSvg.replace(/<\/?svg[^>]*>/g, '')}</svg>
-    </g>
-  </g>
-</svg>`
+if (!fs.existsSync(sourceLogo)) {
+  console.error('Missing source logo:', sourceLogo)
+  process.exit(1)
 }
 
-/** Installer sidebar 164×314 — visual only, no text */
-function sidebarSvg() {
+async function resizeLogo(size) {
+  return sharp(sourceLogo)
+    .resize(size, size, {
+      fit: 'contain',
+      background: { r: 0, g: 0, b: 0, alpha: 0 },
+    })
+    .ensureAlpha()
+    .png()
+    .toBuffer()
+}
+
+/** Desktop / taskbar / installer icon — solid fill, rounded corners */
+async function desktopIconPng(size = 512) {
+  const r = Math.round(size * 0.18)
+  const pad = Math.round(size * 0.08)
+  const inner = size - pad * 2
+  const logo = await resizeLogo(inner)
+  const bgSvg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+  <rect width="${size}" height="${size}" rx="${r}" ry="${r}" fill="${BG}"/>
+</svg>`
+  return sharp(Buffer.from(bgSvg))
+    .composite([{ input: logo, top: pad, left: pad }])
+    .png()
+    .toBuffer()
+}
+
+/** Installer sidebar 164×314 — solid bg + logo, no text / lines */
+async function sidebarPng() {
   const w = 164
   const h = 314
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" fill="none">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="${PANEL}"/>
-      <stop offset="100%" stop-color="${BG}"/>
-    </linearGradient>
-    <radialGradient id="glow" cx="50%" cy="22%" r="70%">
-      <stop offset="0%" stop-color="${GOLD}" stop-opacity="0.28"/>
-      <stop offset="100%" stop-color="${GOLD}" stop-opacity="0"/>
-    </radialGradient>
-  </defs>
-  <rect width="${w}" height="${h}" fill="url(#bg)"/>
-  <rect width="${w}" height="${h}" fill="url(#glow)"/>
-  <g opacity="0.06">
-    ${Array.from({ length: 40 }, (_, i) => {
-      const y = (i + 1) * 8
-      return `<line x1="0" y1="${y}" x2="${w}" y2="${y}" stroke="#fff" stroke-width="1"/>`
-    }).join('')}
-  </g>
-  <rect x="0" y="0" width="3" height="${h}" fill="${GOLD}" fill-opacity="0.75"/>
-  <g transform="translate(34 72)">
-    <svg width="96" height="96" viewBox="0 0 128 128">${logoSvg.replace(/<\/?svg[^>]*>/g, '')}</svg>
-  </g>
+  const logo = await resizeLogo(96)
+  const bgSvg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+  <rect width="${w}" height="${h}" fill="${BG}"/>
+  <rect x="0" y="0" width="3" height="${h}" fill="#e8c547" fill-opacity="0.75"/>
 </svg>`
+  return sharp(Buffer.from(bgSvg))
+    .composite([{ input: logo, top: 72, left: 34 }])
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true })
 }
 
-/** Installer header 150×57 — visual only, no text */
-function headerSvg() {
+/** Installer header 150×57 — solid bg + logo, no text */
+async function headerPng() {
   const w = 150
   const h = 57
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" fill="none">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="${BG}"/>
-      <stop offset="100%" stop-color="${PANEL}"/>
-    </linearGradient>
-  </defs>
-  <rect width="${w}" height="${h}" fill="url(#bg)"/>
-  <rect x="0" y="${h - 2}" width="${w}" height="2" fill="${GOLD}" fill-opacity="0.7"/>
-  <g transform="translate(53 6)">
-    <svg width="44" height="44" viewBox="0 0 128 128">${logoSvg.replace(/<\/?svg[^>]*>/g, '')}</svg>
-  </g>
+  const logo = await resizeLogo(44)
+  const bgSvg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+  <rect width="${w}" height="${h}" fill="${BG}"/>
+  <rect x="0" y="${h - 2}" width="${w}" height="2" fill="#e8c547" fill-opacity="0.7"/>
 </svg>`
+  return sharp(Buffer.from(bgSvg))
+    .composite([{ input: logo, top: 6, left: 53 }])
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true })
 }
 
 function writeBmp24(filePath, width, height, rgba) {
@@ -149,60 +125,54 @@ function writeBmp24(filePath, width, height, rgba) {
   fs.writeFileSync(filePath, buf)
 }
 
-async function svgToRgba(svg, width, height) {
-  const { data } = await sharp(Buffer.from(svg))
-    .resize(width, height)
-    .ensureAlpha()
-    .raw()
-    .toBuffer({ resolveWithObject: true })
-  return data
-}
-
 async function main() {
-  const desktopSvg = desktopIconSvg(512)
   const desktopPng = path.join(buildDir, 'icon.png')
-  await sharp(Buffer.from(desktopSvg)).png().toFile(desktopPng)
+  await sharp(await desktopIconPng(512)).toFile(desktopPng)
 
   const sizes = [16, 24, 32, 48, 64, 128, 256]
   const pngBuffers = []
   for (const size of sizes) {
-    const buf = await sharp(Buffer.from(desktopIconSvg(size))).png().toBuffer()
+    const buf = await desktopIconPng(size)
     pngBuffers.push(buf)
     await sharp(buf).toFile(path.join(buildDir, `icon-${size}.png`))
   }
-  const ico = await pngToIco(pngBuffers)
-  fs.writeFileSync(path.join(buildDir, 'icon.ico'), ico)
+  fs.writeFileSync(path.join(buildDir, 'icon.ico'), await pngToIco(pngBuffers))
 
-  // Favicon PNG fallbacks (app + web public)
-  const favicon = await sharp(Buffer.from(logoSvg)).resize(192, 192).png().toBuffer()
-  fs.writeFileSync(path.join(appRoot, 'public', 'logo.png'), favicon)
-  const webLogo = path.join(appRoot, '..', 'web', 'public', 'logo.png')
+  // Public favicons + brand avatar (app + web)
+  const favicon512 = await resizeLogo(512)
+  const favicon192 = await resizeLogo(192)
+  const brand256 = await resizeLogo(256)
+
+  fs.writeFileSync(path.join(appRoot, 'public', 'logo.png'), favicon512)
+  fs.writeFileSync(path.join(appRoot, 'public', 'avatars', 'cs4fun.png'), brand256)
+
+  const webPublic = path.join(appRoot, '..', 'web', 'public')
   try {
-    fs.writeFileSync(webLogo, favicon)
+    fs.mkdirSync(webPublic, { recursive: true })
+    fs.writeFileSync(path.join(webPublic, 'logo.png'), favicon512)
   } catch {
     /* web workspace optional */
   }
 
-  // Transparent tray / in-window fallback (no background)
-  const traySvg = `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" fill="none">
-  ${logoSvg.replace(/<\/?svg[^>]*>/g, '')}
-</svg>`
-  await sharp(Buffer.from(traySvg)).resize(32, 32).png().toFile(path.join(buildDir, 'tray.png'))
-  await sharp(Buffer.from(traySvg)).resize(128, 128).png().toFile(path.join(buildDir, 'tray@2x.png'))
-  const trayIco = await pngToIco([
-    await sharp(Buffer.from(traySvg)).resize(16, 16).png().toBuffer(),
-    await sharp(Buffer.from(traySvg)).resize(32, 32).png().toBuffer(),
-  ])
-  fs.writeFileSync(path.join(buildDir, 'tray.ico'), trayIco)
+  // Apple-touch / PWA-sized copy
+  fs.writeFileSync(path.join(appRoot, 'public', 'logo-192.png'), favicon192)
 
-  const sideRgba = await svgToRgba(sidebarSvg(), 164, 314)
-  writeBmp24(path.join(buildDir, 'installerSidebar.bmp'), 164, 314, sideRgba)
+  // Transparent tray (logo already has transparent bg)
+  await sharp(await resizeLogo(32)).toFile(path.join(buildDir, 'tray.png'))
+  await sharp(await resizeLogo(128)).toFile(path.join(buildDir, 'tray@2x.png'))
+  fs.writeFileSync(
+    path.join(buildDir, 'tray.ico'),
+    await pngToIco([await resizeLogo(16), await resizeLogo(32)]),
+  )
 
-  const headRgba = await svgToRgba(headerSvg(), 150, 57)
-  writeBmp24(path.join(buildDir, 'installerHeader.bmp'), 150, 57, headRgba)
+  const side = await sidebarPng()
+  writeBmp24(path.join(buildDir, 'installerSidebar.bmp'), 164, 314, side.data)
 
-  console.log('Generated icons in', buildDir)
+  const head = await headerPng()
+  writeBmp24(path.join(buildDir, 'installerHeader.bmp'), 150, 57, head.data)
+
+  console.log('Generated icons from', sourceLogo)
+  console.log('→', buildDir)
 }
 
 main().catch((err) => {

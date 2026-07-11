@@ -102,7 +102,7 @@ end $$;
 -- ─── Leaderboard (read-only from clients) ─────────────────
 create table if not exists public.leaderboard (
   id bigint generated always as identity primary key,
-  board text not null check (board in ('daily', 'duel', 'gauntlet', 'major', 'party')),
+  board text not null check (board in ('daily', 'duel', 'gauntlet', 'major', 'party', 'box')),
   player_id uuid not null references auth.users(id) on delete cascade,
   nickname text not null default 'Player',
   score integer not null default 0 check (score >= 0 and score <= 1000000),
@@ -128,7 +128,7 @@ create table if not exists public.game_history (
   id bigint generated always as identity primary key,
   user_id uuid not null references auth.users(id) on delete cascade,
   nickname text,
-  mode text not null check (mode in ('major', 'duel', 'party', 'daily', 'gauntlet')),
+  mode text not null check (mode in ('major', 'duel', 'party', 'daily', 'gauntlet', 'box')),
   won boolean not null default false,
   score integer not null default 0 check (score >= 0 and score <= 1000000),
   wins integer not null default 0 check (wins >= 0 and wins <= 50),
@@ -145,7 +145,7 @@ create index if not exists game_history_user_idx
 -- ─── Rooms (payload updates via RPC) ──────────────────────
 create table if not exists public.rooms (
   code text primary key check (code ~ '^[A-Z0-9]{6}$'),
-  mode text not null check (mode in ('party', 'duel')),
+  mode text not null check (mode in ('party', 'duel', 'box')),
   host_id uuid not null references auth.users(id) on delete cascade,
   status text not null default 'lobby' check (status in ('lobby', 'drafting', 'reveal', 'finished')),
   seed text not null,
@@ -190,6 +190,9 @@ insert into public.badge_defs (id, category, threshold, icon, sort_order) values
   ('gauntlet_15', 'max_streak', 15, 'mountain', 150),
   ('daily_3', 'daily_wins', 3, 'sun', 160),
   ('party_king', 'party_wins', 5, 'party', 170),
+  ('box_3', 'box_wins', 3, 'package', 175),
+  ('box_10', 'box_wins', 10, 'gem', 176),
+  ('box_whale', 'box_wins', 25, 'crown', 177),
   ('perfect_major', 'perfect_majors', 1, 'star', 180),
   ('almanac_win', 'almanac_wins', 1, 'book', 190),
   ('social', 'party_games', 1, 'handshake', 200),
@@ -214,6 +217,7 @@ create table if not exists public.user_stats (
   perfect_majors integer not null default 0,
   almanac_wins integer not null default 0,
   max_streak integer not null default 0,
+  box_wins integer not null default 0,
   updated_at timestamptz not null default now()
 );
 
@@ -392,6 +396,7 @@ begin
       when 'perfect_majors' then s.perfect_majors
       when 'almanac_wins' then s.almanac_wins
       when 'max_streak' then s.max_streak
+      when 'box_wins' then coalesce(s.box_wins, 0)
       else 0
     end;
     if metric >= b.threshold then
@@ -449,7 +454,7 @@ begin
   end if;
   perform public.assert_not_banned(uid);
 
-  if p_mode not in ('major', 'duel', 'party', 'daily', 'gauntlet') then
+  if p_mode not in ('major', 'duel', 'party', 'daily', 'gauntlet', 'box') then
     raise exception 'invalid_mode';
   end if;
 
@@ -497,6 +502,7 @@ begin
     daily_wins = daily_wins + case when p_mode = 'daily' and p_won then 1 else 0 end,
     party_wins = party_wins + case when p_mode = 'party' and p_won then 1 else 0 end,
     party_games = party_games + case when p_mode = 'party' then 1 else 0 end,
+    box_wins = coalesce(box_wins, 0) + case when p_mode = 'box' and p_won then 1 else 0 end,
     perfect_majors = perfect_majors + case when p_mode = 'major' and p_won and p_wins >= 3 and p_losses = 0 then 1 else 0 end,
     almanac_wins = almanac_wins + case when p_won and coalesce(p_meta->>'difficulty', '') = 'almanac' then 1 else 0 end,
     max_streak = greatest(max_streak, case when p_mode = 'gauntlet' then p_streak else 0 end),
@@ -504,7 +510,7 @@ begin
   where user_id = uid;
 
   v_board := coalesce(p_board, p_mode);
-  if v_board not in ('daily', 'duel', 'gauntlet', 'major', 'party') then
+  if v_board not in ('daily', 'duel', 'gauntlet', 'major', 'party', 'box') then
     v_board := p_mode;
   end if;
 
@@ -569,7 +575,7 @@ declare
 begin
   if uid is null then raise exception 'not_authenticated' using errcode = '42501'; end if;
   perform public.assert_not_banned(uid);
-  if p_mode not in ('party', 'duel') then raise exception 'invalid_mode'; end if;
+  if p_mode not in ('party', 'duel', 'box') then raise exception 'invalid_mode'; end if;
 
   for i in 1..12 loop
     v_code := '';
@@ -765,7 +771,7 @@ create table if not exists public.friend_invites (
   id bigint generated always as identity primary key,
   from_id uuid not null references auth.users(id) on delete cascade,
   to_id uuid not null references auth.users(id) on delete cascade,
-  mode text not null check (mode in ('duel', 'party')),
+  mode text not null check (mode in ('duel', 'party', 'box')),
   room_code text not null,
   status text not null default 'pending' check (status in ('pending', 'accepted', 'declined', 'expired')),
   created_at timestamptz not null default now()

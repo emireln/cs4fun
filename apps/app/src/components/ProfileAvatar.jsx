@@ -23,6 +23,7 @@ import {
   PartyPopper,
   Handshake,
   Sparkles,
+  Package,
 } from 'lucide-react'
 
 const BADGE_ICONS = {
@@ -44,6 +45,7 @@ const BADGE_ICONS = {
   sun: Sun,
   calendar: Calendar,
   party: PartyPopper,
+  package: Package,
   users: Users,
   star: Star,
   book: BookOpen,

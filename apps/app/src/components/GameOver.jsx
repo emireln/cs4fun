@@ -100,8 +100,18 @@ export default function GameOver({
           {place != null && <p className="mt-2 text-cs-gold">{t('results.partyPlace', { place })}</p>}
 
           <div className="mt-4 inline-flex flex-wrap items-center justify-center gap-3 rounded border border-cs-border bg-cs-bg/50 px-4 py-2 font-mono text-sm">
-            {wins != null && <span className="text-cs-win">{wins}W</span>}
-            {losses != null && <span className="text-cs-loss">{losses}L</span>}
+            {wins != null && (
+              <span className="text-cs-win">
+                {wins}
+                {t('common.winsShort')}
+              </span>
+            )}
+            {losses != null && (
+              <span className="text-cs-loss">
+                {losses}
+                {t('common.lossesShort')}
+              </span>
+            )}
             {streak != null && <span className="text-cs-warn">{streak}</span>}
             {score != null && <span className="text-cs-gold">{score}</span>}
             {mapPriority && <span className="text-cs-muted">{mapPriority}</span>}

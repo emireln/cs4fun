@@ -41,7 +41,7 @@ function emptyRoom(code, host, mode) {
         isHost: true,
       },
     ],
-    maxPlayers: mode === 'duel' ? 2 : 6,
+    maxPlayers: mode === 'duel' || mode === 'box' ? 2 : 6,
   }
 }
 
@@ -272,7 +272,7 @@ export function subscribeRoom(code, onRoom) {
     const poll = setInterval(async () => {
       const room = await fetchRoom(normalized)
       if (room) onRoom(room)
-    }, 1500)
+    }, 800)
     cleanups.push(() => clearInterval(poll))
   }
 

@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Check, Swords, Users, X } from 'lucide-react'
+import { Check, Package, Swords, Users, X } from 'lucide-react'
 import { useI18n } from '../i18n'
 import ProfileAvatar from './ProfileAvatar'
 
-/** Floating popup when another player invites you to duel/party. */
+/** Floating popup when another player invites you to duel/party/box. */
 export default function MatchInvitePopup({ invite, busy = false, onAccept, onDecline }) {
   const { t } = useI18n()
   const [seconds, setSeconds] = useState(45)
@@ -27,8 +27,8 @@ export default function MatchInvitePopup({ invite, busy = false, onAccept, onDec
 
   if (!invite) return null
 
-  const mode = invite.mode === 'party' ? 'party' : 'duel'
-  const ModeIcon = mode === 'party' ? Users : Swords
+  const mode = invite.mode === 'party' ? 'party' : invite.mode === 'box' ? 'box' : 'duel'
+  const ModeIcon = mode === 'party' ? Users : mode === 'box' ? Package : Swords
 
   return (
     <AnimatePresence>

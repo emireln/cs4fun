@@ -390,11 +390,12 @@ export async function cancelFriendRequest({ profileId, requestId, addresseeId })
   return { ok: true, global: false }
 }
 
-/** Invite a friend into a new duel/party room — no code sharing needed */
+/** Invite a friend into a new duel/party/box room — no code sharing needed */
 export async function inviteFriendToMatch({ from, friend, mode = 'duel' }) {
+  const roomMode = mode === 'party' ? 'party' : mode === 'box' ? 'box' : 'duel'
   const created = await createRoom({
     profile: from,
-    mode: mode === 'party' ? 'party' : 'duel',
+    mode: roomMode,
   })
   if (created.error || !created.room?.code) {
     return { ok: false, error: created.error || 'room_failed' }

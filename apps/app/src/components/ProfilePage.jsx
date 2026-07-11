@@ -319,10 +319,38 @@ export default function ProfilePage({ onBack, onNeedAuth, onStartMatch, onInvite
               </p>
             )}
             {isAuthed && stats && (
-              <div className="mt-2 flex flex-wrap gap-2 text-xs lg:mt-3 lg:gap-3 lg:text-sm">
-                <Chip label={t('profile.statWins')} value={stats.wins} />
-                <Chip label={t('profile.statGames')} value={stats.games} />
-                <Chip label={t('profile.statBadges')} value={ownedIds.size} />
+              <div className="mt-2 space-y-2 lg:mt-3">
+                <div className="flex flex-wrap gap-2 text-xs lg:gap-3 lg:text-sm">
+                  <Chip label={t('profile.statWins')} value={stats.wins} />
+                  <Chip label={t('profile.statGames')} value={stats.games} />
+                  <Chip label={t('profile.statBadges')} value={ownedIds.size} />
+                  {stats.max_streak > 0 && (
+                    <Chip label={t('profile.statStreak')} value={stats.max_streak} />
+                  )}
+                </div>
+                <div>
+                  <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-cs-muted">
+                    {t('profile.modeBreakdown')}
+                  </p>
+                  <div className="flex flex-wrap gap-1.5 text-[10px] sm:text-xs">
+                    {[
+                      { k: 'statMajor', v: stats.major_wins },
+                      { k: 'statDuel', v: stats.duel_wins },
+                      { k: 'statParty', v: stats.party_wins },
+                      { k: 'statDaily', v: stats.daily_wins },
+                      { k: 'statGauntlet', v: stats.max_streak },
+                      { k: 'statBox', v: stats.box_wins },
+                    ].map((row) => (
+                      <span
+                        key={row.k}
+                        className="inline-flex items-center gap-1 rounded border border-cs-border/70 bg-cs-bg/40 px-2 py-1"
+                      >
+                        <span className="text-cs-muted">{t(`profile.${row.k}`)}</span>
+                        <span className="font-mono font-bold text-cs-gold">{row.v || 0}</span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
             <div className="mt-3 flex flex-wrap gap-2">

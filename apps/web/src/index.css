@@ -165,49 +165,34 @@ canvas {
   background: #11151c;
 }
 
-/* Logo mark — spin diamond around SVG viewBox center */
+/* Brand logo mark (PNG) */
 .logo-mark {
   display: block;
   flex-shrink: 0;
-  overflow: visible;
+  object-fit: contain;
   cursor: pointer;
+  transition: transform 0.2s ease;
 }
 
-.logo-mark .logo-diamond {
-  transform-box: view-box;
-  transform-origin: 64px 64px;
-  will-change: transform;
+.logo-mark:hover,
+.group:hover .logo-mark {
+  transform: scale(1.04);
 }
 
-.logo-mark:hover .logo-diamond,
-.group:hover .logo-mark .logo-diamond {
-  animation: logo-diamond-spin 1.15s linear infinite;
-}
-
-.logo-mark.logo-mark--click .logo-diamond,
-.logo-mark:active .logo-diamond,
-.group:active .logo-mark .logo-diamond {
-  animation: logo-diamond-spin-once 0.65s ease-in-out;
-}
-
-@keyframes logo-diamond-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes logo-diamond-spin-once {
-  to {
-    transform: rotate(360deg);
-  }
+.logo-mark:active,
+.group:active .logo-mark {
+  transform: scale(0.98);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .logo-mark .logo-diamond,
-  .logo-mark:hover .logo-diamond,
-  .group:hover .logo-mark .logo-diamond,
-  .logo-mark.logo-mark--click .logo-diamond,
-  .logo-mark:active .logo-diamond {
-    animation: none !important;
+  .logo-mark {
+    transition: none;
+  }
+
+  .logo-mark:hover,
+  .group:hover .logo-mark,
+  .logo-mark:active,
+  .group:active .logo-mark {
+    transform: none;
   }
 }

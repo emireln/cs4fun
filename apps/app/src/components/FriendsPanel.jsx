@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { UserPlus, Swords, Users, Check, X, Trash2, UserRound } from 'lucide-react'
+import { UserPlus, Swords, Users, Check, X, Trash2, UserRound, Package } from 'lucide-react'
 import { useI18n } from '../i18n'
 import { useAuth } from '../lib/auth'
 import ProfileAvatar from './ProfileAvatar'
@@ -409,6 +409,15 @@ export default function FriendsPanel({
                           >
                             <Swords className="h-3.5 w-3.5" />
                             {t('friends.inviteDuel')}
+                          </button>
+                          <button
+                            type="button"
+                            disabled={busy}
+                            className="btn-ghost inline-flex flex-1 items-center justify-center gap-1.5 rounded px-3 py-2 text-xs uppercase tracking-wider"
+                            onClick={() => handleInvite(friend, 'box')}
+                          >
+                            <Package className="h-3.5 w-3.5" />
+                            {t('friends.inviteBox')}
                           </button>
                           <button
                             type="button"

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { motion } from 'framer-motion'
 import { MENTALITIES, TACTICAL_CALLS } from '../../data/constants'
 import { useI18n } from '../../i18n'
 import { useDraftSession } from '../../hooks/useDraftSession'
@@ -9,6 +10,7 @@ import {
   scoreDuel,
   teamPowerScore,
 } from '../../lib/gameModes'
+import { simulateMapVeto } from '../../engine/simulation'
 import { createPlaybackController, streamLiveSeries } from '../../lib/matchPlayback'
 import { saveGameResult } from '../../lib/history'
 import { recordFriendMatch } from '../../lib/friends'
@@ -207,7 +209,7 @@ export default function DuelGame({ profile, room: initialRoom = null, onHome, on
       const enemy = buildUserTeam(them.lineup, {
         mapPriority: them.lineup?.IGL?.bestMaps?.[0] || 'Inferno',
         mentalityId: 'aggressive',
-        name: them.nickname || 'Rival',
+        name: them.nickname || t('common.rival'),
         shortName: (them.nickname || 'RIV').slice(0, 8).toUpperCase(),
       })
       enemy.isUser = false
@@ -215,14 +217,66 @@ export default function DuelGame({ profile, room: initialRoom = null, onHome, on
       enemy.mapPoolBias = Object.values(them.lineup).flatMap((p) => p?.bestMaps || [])
       setEnemyTeam(enemy)
       setWaitingOpp(false)
-      setStep('veto')
+
+      // Friend duel: host publishes a shared veto + match seed so both see the same live match
+      if (isHost && !liveRoom.match?.veto) {
+        const sharedVeto = simulateMapVeto(
+          me.lineup?.IGL?.bestMaps?.[0] || cfg.mapPriority || 'Mirage',
+          enemy.mapPoolBias || [],
+          cfg.mentality || 'tactical',
+          { bestOf: 1 },
+        )
+        const matchSeed = `${liveRoom.seed || seed}-live`
+        updateRoom(liveRoom.code, (r) => ({
+          ...r,
+          status: 'live',
+          match: {
+            seed: matchSeed,
+            veto: sharedVeto,
+            callsByMap: Object.fromEntries((sharedVeto.mapOrder || []).map((m) => [m, TACTICAL_CALLS[0]?.id || 'default_mid'])),
+            startedAt: Date.now(),
+          },
+        }))
+      }
+      setStep('arming')
     }
-  }, [waitingOpp, liveRoom, profile.id])
+  }, [waitingOpp, liveRoom, profile.id, isHost]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Both clients start the same seeded live match when room.match is ready
+  useEffect(() => {
+    if (step !== 'arming' || !liveRoom?.match?.veto || !userTeam || !enemyTeam) return
+    if (simStarted.current) return
+    const finalVeto = liveRoom.match.veto
+    const matchSeed = liveRoom.match.seed || `${liveRoom.seed}-live`
+    // Hydrate tactical calls from room (by id)
+    const byId = Object.fromEntries(TACTICAL_CALLS.map((c) => [c.id, c]))
+    const remoteCalls = liveRoom.match.callsByMap || {}
+    callsRef.current = Object.fromEntries(
+      (finalVeto.mapOrder || []).map((m) => [m, byId[remoteCalls[m]] || TACTICAL_CALLS[0]]),
+    )
+    startLive(finalVeto, matchSeed)
+  }, [step, liveRoom?.match?.seed, liveRoom?.match?.veto, userTeam, enemyTeam]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Mirror remote tactical calls during live
+  useEffect(() => {
+    if (!isFriend || step !== 'live' || !liveRoom?.match?.callsByMap) return
+    const byId = Object.fromEntries(TACTICAL_CALLS.map((c) => [c.id, c]))
+    const next = { ...callsRef.current }
+    let changed = false
+    for (const [map, id] of Object.entries(liveRoom.match.callsByMap)) {
+      const call = byId[id]
+      if (call && next[map]?.id !== call.id) {
+        next[map] = call
+        changed = true
+      }
+    }
+    if (changed) callsRef.current = next
+  }, [isFriend, step, liveRoom?.match?.callsByMap]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Rematch signal from room
   useEffect(() => {
     if (!liveRoom || liveRoom.status !== 'rematch') return
-    if (step === 'results' || step === 'draft') {
+    if (step === 'results' || step === 'draft' || step === 'arming') {
       draft.reset()
       simStarted.current = false
       setSeries(null)
@@ -236,6 +290,8 @@ export default function DuelGame({ profile, room: initialRoom = null, onHome, on
         updateRoom(liveRoom.code, (r) => ({
           ...r,
           status: 'drafting',
+          match: null,
+          playback: null,
           pickEndsAt: Date.now() + 90_000,
           players: r.players.map((p) => ({
             ...p,
@@ -252,7 +308,7 @@ export default function DuelGame({ profile, room: initialRoom = null, onHome, on
 
   useEffect(() => {
     onStatus?.({
-      phase: step === 'live' || step === 'results' ? 'tournament' : step,
+      phase: step === 'live' || step === 'results' || step === 'arming' ? 'tournament' : step,
       gameMode: 'duel',
       mode: cfg?.mode,
       mentality,
@@ -269,7 +325,7 @@ export default function DuelGame({ profile, room: initialRoom = null, onHome, on
     })
   }, [step, cfg, won, timerLeft, isFriend]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const startLive = async (finalVeto) => {
+  const startLive = async (finalVeto, matchSeed = null) => {
     if (simStarted.current) return
     simStarted.current = true
     setVeto(finalVeto)
@@ -282,9 +338,11 @@ export default function DuelGame({ profile, room: initialRoom = null, onHome, on
     setLiveMapName(finalVeto.mapOrder[0] || null)
     mapResultsLenRef.current = 0
     mapSimulatingRef.current = false
-    callsRef.current = Object.fromEntries(
-      (finalVeto.mapOrder || []).map((m) => [m, TACTICAL_CALLS[0]]),
-    )
+    if (!Object.keys(callsRef.current || {}).length) {
+      callsRef.current = Object.fromEntries(
+        (finalVeto.mapOrder || []).map((m) => [m, TACTICAL_CALLS[0]]),
+      )
+    }
 
     const pb = playbackRef.current
     pb.reset()
@@ -299,6 +357,7 @@ export default function DuelGame({ profile, room: initialRoom = null, onHome, on
       veto: finalVeto,
       getCalls: () => callsRef.current,
       playback: pb,
+      matchSeed: matchSeed || (isFriend ? `${liveRoom?.seed || seed}-live` : null),
       shouldStop: () => !liveRef.current,
       beforeMap: async (mapName) => {
         mapSimulatingRef.current = false
@@ -414,13 +473,29 @@ export default function DuelGame({ profile, room: initialRoom = null, onHome, on
     callsRef.current = { ...callsRef.current, [map]: call }
     setLogs((prev) => [
       ...prev,
-      { type: 'tactical', text: `Tactical timeout — new call on ${map}: ${call.label}`, map },
+      {
+        type: 'tactical',
+        text: t('duel.tacticalLog', { map, label: call.label }),
+        map,
+      },
     ])
     setTacticalOpen(false)
     setPendingTacticMap(null)
     playbackRef.current.setPaused(false)
     setPaused(false)
     clearTacticalRoom()
+    if (isFriend && liveRoom?.code) {
+      updateRoom(liveRoom.code, (r) => ({
+        ...r,
+        match: {
+          ...(r.match || {}),
+          callsByMap: {
+            ...(r.match?.callsByMap || {}),
+            [map]: call.id,
+          },
+        },
+      }))
+    }
   }
 
   const cancelTacticalPause = () => {
@@ -578,6 +653,25 @@ export default function DuelGame({ profile, room: initialRoom = null, onHome, on
           setStep('veto')
         }}
       />
+    )
+  }
+
+  if (step === 'arming') {
+    return (
+      <div className="mx-auto flex max-w-lg flex-col items-center px-4 py-16 text-center">
+        <motion.div
+          className="mb-4 h-12 w-12 rounded-full border-2 border-cs-gold/40 border-t-cs-gold"
+          animate={{ rotate: 360 }}
+          transition={{ duration: 0.9, repeat: Infinity, ease: 'linear' }}
+        />
+        <h2 className="font-display text-2xl font-bold gold-text">{t('duel.syncing')}</h2>
+        <p className="mt-2 text-sm text-cs-muted">{t('duel.syncingHint')}</p>
+        {liveRoom?.match?.veto?.mapOrder?.[0] && (
+          <p className="mt-4 font-display text-sm text-cs-gold">
+            {t('duel.mapsLocked', { map: liveRoom.match.veto.mapOrder[0] })}
+          </p>
+        )}
+      </div>
     )
   }
 

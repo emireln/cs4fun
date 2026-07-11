@@ -28,6 +28,9 @@ export const BADGE_DEFS = [
   { id: 'gauntlet_15', category: 'max_streak', threshold: 15, icon: 'mountain' },
   { id: 'daily_3', category: 'daily_wins', threshold: 3, icon: 'sun' },
   { id: 'party_king', category: 'party_wins', threshold: 5, icon: 'party' },
+  { id: 'box_3', category: 'box_wins', threshold: 3, icon: 'package' },
+  { id: 'box_10', category: 'box_wins', threshold: 10, icon: 'gem' },
+  { id: 'box_whale', category: 'box_wins', threshold: 25, icon: 'crown' },
   { id: 'perfect_major', category: 'perfect_majors', threshold: 1, icon: 'star' },
   { id: 'almanac_win', category: 'almanac_wins', threshold: 1, icon: 'book' },
   { id: 'social', category: 'party_games', threshold: 1, icon: 'handshake' },
@@ -46,6 +49,7 @@ function emptyStats() {
     daily_wins: 0,
     party_wins: 0,
     party_games: 0,
+    box_wins: 0,
     perfect_majors: 0,
     almanac_wins: 0,
     max_streak: 0,
@@ -215,6 +219,7 @@ export async function saveGameResult({
     stats.party_games += 1
     if (won) stats.party_wins += 1
   }
+  if (mode === 'box' && won) stats.box_wins += 1
   if (mode === 'major' && won && wins >= 3 && losses === 0) stats.perfect_majors += 1
   if (won && meta.difficulty === 'almanac') stats.almanac_wins += 1
   if (mode === 'gauntlet') stats.max_streak = Math.max(stats.max_streak, streak)

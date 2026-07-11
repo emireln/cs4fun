@@ -264,7 +264,7 @@ function tacticalLabel(call) {
   return { label: call.label || '', description: call.description || '' }
 }
 
-function chooseStar(powers, lineup, bias = null) {
+function chooseStar(powers, lineup, bias = null, pickFn = pick) {
   const entries = Object.entries(powers || {}).filter(([, p]) => p != null)
   if (!entries.length) {
     const fallback = Object.entries(lineup || {}).find(([, p]) => p)
@@ -276,7 +276,7 @@ function chooseStar(powers, lineup, bias = null) {
   }
   weighted.sort((a, b) => b[1] - a[1])
   const top = weighted.slice(0, 3)
-  const chosen = pick(top)
+  const chosen = pickFn(top)
   if (!chosen) {
     const fallback = Object.entries(lineup || {}).find(([, p]) => p)
     return fallback ? { slot: fallback[0], player: fallback[1] } : { slot: null, player: null }
@@ -284,7 +284,13 @@ function chooseStar(powers, lineup, bias = null) {
   return { slot: chosen[0], player: lineup[chosen[0]] }
 }
 
-export function simulateMap(userTeam, enemyTeam, mapName, mentality, tacticalCall) {
+export function simulateMap(userTeam, enemyTeam, mapName, mentality, tacticalCall, rngFn = null) {
+  const rng = typeof rngFn === 'function' ? rngFn : Math.random
+  const pickOne = (arr) => {
+    if (!arr?.length) return null
+    return arr[Math.floor(rng() * arr.length)]
+  }
+
   const userPow = computeTeamPower(userTeam.lineup, mentality, mapName)
   const enemyMentality = { bonuses: {} }
   const enemyPow = computeTeamPower(enemyTeam.lineup, enemyMentality, mapName)
@@ -330,16 +336,16 @@ export function simulateMap(userTeam, enemyTeam, mapName, mentality, tacticalCal
   }
 
   const playRound = (roundNum, userCT) => {
-    const noise = (Math.random() - 0.5) * 0.35
+    const noise = (rng() - 0.5) * 0.35
     const ctBonus = 0.02
     let u = userStrength + (userCT ? ctBonus : 0) + noise
-    let e = enemyStrength + (!userCT ? ctBonus : 0) + (Math.random() - 0.5) * 0.35
+    let e = enemyStrength + (!userCT ? ctBonus : 0) + (rng() - 0.5) * 0.35
 
-    const ecoChance = Math.random()
+    const ecoChance = rng()
     let eco = false
     if (ecoChance < 0.08) {
       eco = true
-      if (Math.random() > 0.55) u += 0.12
+      if (rng() > 0.55) u += 0.12
       else e += 0.12
     }
 
@@ -353,7 +359,7 @@ export function simulateMap(userTeam, enemyTeam, mapName, mentality, tacticalCal
     const winnerTeamLabel = userWins ? userTeam.shortName : enemyTeam.shortName
     const score = { r: roundNum, ur: userRounds, er: enemyRounds, winner: winnerName }
 
-    const roll = Math.random()
+    const roll = rng()
     let eventText
     let eventType = 'round'
 
@@ -365,7 +371,7 @@ export function simulateMap(userTeam, enemyTeam, mapName, mentality, tacticalCal
       })
     } else if (roll < 0.04) {
       eventType = 'ace'
-      const star = chooseStar(winnerPowers, winnerLineup)
+      const star = chooseStar(winnerPowers, winnerLineup, null, pickOne)
       bumpImpact(star.player, winnerTeamLabel, star.slot, 5)
       eventText = translate('liveLog.roundAce', {
         ...score,
@@ -374,9 +380,9 @@ export function simulateMap(userTeam, enemyTeam, mapName, mentality, tacticalCal
       })
     } else if (roll < 0.12) {
       eventType = 'clutch'
-      const star = chooseStar(winnerPowers, winnerLineup, 'Lurker')
+      const star = chooseStar(winnerPowers, winnerLineup, 'Lurker', pickOne)
       bumpImpact(star.player, winnerTeamLabel, star.slot, 4)
-      const n = pick([2, 2, 3, 3, 4])
+      const n = pickOne([2, 2, 3, 3, 4])
       eventText = translate('liveLog.roundClutch', {
         ...score,
         name: star.player.name,
@@ -384,16 +390,16 @@ export function simulateMap(userTeam, enemyTeam, mapName, mentality, tacticalCal
       })
     } else if (roll < 0.28) {
       eventType = 'multikill'
-      const star = chooseStar(winnerPowers, winnerLineup)
+      const star = chooseStar(winnerPowers, winnerLineup, null, pickOne)
       bumpImpact(star.player, winnerTeamLabel, star.slot, 3)
-      const n = pick([3, 3, 4])
+      const n = pickOne([3, 3, 4])
       eventText = translate('liveLog.roundMulti', {
         ...score,
         name: star.player.name,
         flavor: formatFlavor('multiKill', { n }),
       })
     } else if (roll < 0.42) {
-      const star = chooseStar(winnerPowers, winnerLineup, 'AWPer')
+      const star = chooseStar(winnerPowers, winnerLineup, 'AWPer', pickOne)
       bumpImpact(star.player, winnerTeamLabel, star.slot, 2)
       eventText = translate('liveLog.roundAwp', {
         ...score,
@@ -405,7 +411,7 @@ export function simulateMap(userTeam, enemyTeam, mapName, mentality, tacticalCal
     } else if (roll < 0.56) {
       eventText = translate('liveLog.roundDefuse', score)
     } else if (roll < 0.68) {
-      const star = chooseStar(winnerPowers, winnerLineup, userCT ? 'Support' : 'Entry')
+      const star = chooseStar(winnerPowers, winnerLineup, userCT ? 'Support' : 'Entry', pickOne)
       bumpImpact(star.player, winnerTeamLabel, star.slot, 1)
       eventText = translate('liveLog.roundAction', {
         ...score,
@@ -419,7 +425,7 @@ export function simulateMap(userTeam, enemyTeam, mapName, mentality, tacticalCal
     push(eventType, eventText, { userWins })
   }
 
-  let userCT = Math.random() > 0.5
+  let userCT = rng() > 0.5
   push('system', translate('liveLog.side', { side: userCT ? 'CT' : 'T' }))
 
   for (let r = 1; r <= 12; r++) playRound(r, userCT)
@@ -453,7 +459,7 @@ export function simulateMap(userTeam, enemyTeam, mapName, mentality, tacticalCal
   }
 
   while (userRounds < 13 && enemyRounds < 13) {
-    if (Math.random() > 0.5) userRounds++
+    if (rng() > 0.5) userRounds++
     else enemyRounds++
   }
 
@@ -491,7 +497,23 @@ export function simulateMap(userTeam, enemyTeam, mapName, mentality, tacticalCal
   }
 }
 
-export function simulateFullSeries(userTeam, enemyTeam, mentality, veto, tacticalCallsByMap = {}) {
+export function simulateFullSeries(userTeam, enemyTeam, mentality, veto, tacticalCallsByMap = {}, matchSeed = null) {
+  let seriesRng = null
+  if (matchSeed != null) {
+    // lazy import avoided — use inline mulberry from hash
+    let t = 0
+    for (let i = 0; i < String(matchSeed).length; i++) {
+      t = Math.imul(t ^ String(matchSeed).charCodeAt(i), 16777619)
+    }
+    let state = t >>> 0
+    seriesRng = () => {
+      state += 0x6d2b79f5
+      let r = Math.imul(state ^ (state >>> 15), 1 | state)
+      r ^= r + Math.imul(r ^ (r >>> 7), 61 | r)
+      return ((r ^ (r >>> 14)) >>> 0) / 4294967296
+    }
+  }
+
   const maps = []
   const allLogs = []
   let userMaps = 0
@@ -506,7 +528,7 @@ export function simulateFullSeries(userTeam, enemyTeam, mentality, veto, tactica
   for (const mapName of veto.mapOrder) {
     if (userMaps === need || enemyMaps === need) break
     const call = tacticalCallsByMap[mapName] || null
-    const result = simulateMap(userTeam, enemyTeam, mapName, mentality, call)
+    const result = simulateMap(userTeam, enemyTeam, mapName, mentality, call, seriesRng)
     maps.push(result)
     allLogs.push(...result.logs)
     if (result.userWon) userMaps++

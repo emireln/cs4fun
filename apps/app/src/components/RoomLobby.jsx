@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Copy, Users, Swords } from 'lucide-react'
+import { ArrowLeft, Copy, Users, Swords, Package } from 'lucide-react'
 import { useI18n } from '../i18n'
 import { createRoom, joinRoom, subscribeRoom, updateRoom } from '../lib/rooms'
 import { displayName } from '../lib/profile'
 
 export default function RoomLobby({ profile, initialMode = 'party', onBack, onStart, embedded = false }) {
   const { t } = useI18n()
-  const [mode, setMode] = useState(initialMode === 'duel' ? 'duel' : 'party')
+  const [mode, setMode] = useState(
+    initialMode === 'duel' ? 'duel' : initialMode === 'box' ? 'box' : 'party',
+  )
   const [room, setRoom] = useState(null)
   const [joinCode, setJoinCode] = useState('')
   const [error, setError] = useState('')
@@ -107,7 +109,7 @@ export default function RoomLobby({ profile, initialMode = 'party', onBack, onSt
         )}
         <h1 className="mb-6 font-display text-3xl font-bold gold-text sm:text-4xl">{t('room.title')}</h1>
 
-        <div className="mb-5 grid gap-3 sm:grid-cols-2">
+        <div className="mb-5 grid gap-3 sm:grid-cols-3">
           <button
             type="button"
             onClick={() => setMode('party')}
@@ -129,6 +131,17 @@ export default function RoomLobby({ profile, initialMode = 'party', onBack, onSt
             <Swords className="mb-2 h-5 w-5" />
             <div className="text-sm font-bold">{t('modes.duel.title')}</div>
             <div className="mt-1 text-xs text-cs-muted">{t('modes.duel.blurb')}</div>
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode('box')}
+            className={`rounded border px-4 py-4 text-left transition ${
+              mode === 'box' ? 'border-cs-gold bg-cs-gold/15 text-cs-gold' : 'border-cs-border hover:border-cs-gold/40'
+            }`}
+          >
+            <Package className="mb-2 h-5 w-5" />
+            <div className="text-sm font-bold">{t('modes.box.title')}</div>
+            <div className="mt-1 text-xs text-cs-muted">{t('modes.box.blurb')}</div>
           </button>
         </div>
 
@@ -226,9 +239,13 @@ export default function RoomLobby({ profile, initialMode = 'party', onBack, onSt
               type="button"
               className="btn-gold flex-1 rounded py-3 text-sm uppercase tracking-wider"
               onClick={startGame}
-              disabled={room.mode === 'duel' && room.players.length < 2}
+              disabled={(room.mode === 'duel' || room.mode === 'box') && room.players.length < 2}
             >
-              {room.mode === 'duel' ? t('room.startDuel') : t('room.startRace')}
+              {room.mode === 'duel'
+                ? t('room.startDuel')
+                : room.mode === 'box'
+                  ? t('room.startBox')
+                  : t('room.startRace')}
             </button>
           ) : (
             <p className="flex-1 text-center text-sm text-cs-muted sm:text-left">{t('room.waitingHost')}</p>

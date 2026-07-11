@@ -3,6 +3,7 @@
  */
 import { simulateMap } from '../engine/simulation'
 import { translate } from '../i18n/translate'
+import { hashString, mulberry32 } from './seed'
 
 export function createPlaybackController(initialSpeed = 1) {
   const state = {
@@ -60,7 +61,8 @@ function sleep(ms) {
 }
 
 /** Base delay between live log lines (1x). Slightly tense / readable. */
-export function logDelayMs(index, log) {
+export function logDelayMs(index, log, rng = Math.random) {
+  const r = typeof rng === 'function' ? rng : Math.random
   if (index < 2) return 420
   if (log?.type === 'series' || log?.type === 'mapwin' || log?.type === 'maploss' || log?.type === 'mvp') {
     return 900
@@ -68,12 +70,13 @@ export function logDelayMs(index, log) {
   if (log?.type === 'halftime' || log?.type === 'tactical') return 700
   if (log?.type === 'ace' || log?.type === 'clutch') return 650
   if (log?.type === 'eco' || log?.type === 'multikill') return 520
-  return 280 + Math.random() * 120
+  return 280 + r() * 120
 }
 
 /**
  * Simulate + stream an MD3 map-by-map so the live UI can track every map,
  * MVP, and allow mid-series tactical call changes via getCalls().
+ * Pass matchSeed for deterministic multiplayer (both clients see the same match).
  */
 export async function streamLiveSeries({
   userTeam,
@@ -87,6 +90,7 @@ export async function streamLiveSeries({
   onMapEnd,
   beforeMap,
   shouldStop,
+  matchSeed = null,
 }) {
   const mapOrder = veto?.mapOrder || []
   const maps = []
@@ -94,10 +98,18 @@ export async function streamLiveSeries({
   let enemyMaps = 0
   const allLogs = []
 
+  let delayRng = Math.random
+  let mapRng = null
+  if (matchSeed != null) {
+    const base = hashString(String(matchSeed))
+    delayRng = mulberry32(base ^ 0xabc123)
+    mapRng = mulberry32(base ^ 0x55aa55)
+  }
+
   const pushLog = async (log, index = 0) => {
     allLogs.push(log)
     onLog?.(log)
-    await playback.delay(logDelayMs(index, log))
+    await playback.delay(logDelayMs(index, log, delayRng))
   }
 
   const stopped = () => playback.aborted || shouldStop?.()
@@ -131,7 +143,12 @@ export async function streamLiveSeries({
 
     const calls = getCalls?.() || {}
     const call = calls[mapName] || null
-    const result = simulateMap(userTeam, enemyTeam, mapName, mentality, call)
+    // Per-map deterministic child rng so mid-series call changes stay aligned
+    let thisMapRng = mapRng
+    if (matchSeed != null) {
+      thisMapRng = mulberry32(hashString(`${matchSeed}:${mapName}:${i}`))
+    }
+    const result = simulateMap(userTeam, enemyTeam, mapName, mentality, call, thisMapRng)
 
     for (let j = 0; j < result.logs.length; j++) {
       if (stopped()) return null
