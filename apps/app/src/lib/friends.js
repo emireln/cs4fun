@@ -546,6 +546,8 @@ export async function declineInvite({ profileId, invite }) {
 
 export function subscribeInvites(profileId, onInvite) {
   const cleanups = []
+  if (!profileId) return () => {}
+
   try {
     const bc = new BroadcastChannel(INVITE_CHANNEL + profileId)
     bc.onmessage = (e) => {
@@ -559,28 +561,34 @@ export function subscribeInvites(profileId, onInvite) {
   const onStorage = () => {
     listIncomingInvites(profileId).then((list) => {
       if (list[0]) onInvite(list[0])
-    })
+    }).catch(() => {})
   }
   window.addEventListener('storage', onStorage)
   cleanups.push(() => window.removeEventListener('storage', onStorage))
 
   const seenInviteIds = new Set()
   const poll = setInterval(() => {
-    listIncomingInvites(profileId).then((list) => {
-      for (const invite of list) {
-        const key = String(invite.id)
-        if (seenInviteIds.has(key)) continue
-        seenInviteIds.add(key)
-        onInvite(invite)
-      }
-    })
+    listIncomingInvites(profileId)
+      .then((list) => {
+        for (const invite of list) {
+          const key = String(invite.id)
+          if (seenInviteIds.has(key)) continue
+          seenInviteIds.add(key)
+          onInvite(invite)
+        }
+      })
+      .catch(() => {})
   }, 4000)
   cleanups.push(() => clearInterval(poll))
 
   if (isSupabaseConfigured) {
-    const channel = supabase
-      .channel(`invites:${profileId}`)
-      .on(
+    // Unique topic per subscriber — reusing `invites:${id}` after subscribe() throws
+    // ("cannot add postgres_changes callbacks … after subscribe()") when App + FriendsPanel
+    // (or React Strict Mode) both call subscribeInvites.
+    const topic = `invites:${profileId}:${Math.random().toString(36).slice(2, 10)}`
+    try {
+      const channel = supabase.channel(topic)
+      channel.on(
         'postgres_changes',
         {
           event: 'INSERT',
@@ -619,11 +627,28 @@ export function subscribeInvites(profileId, onInvite) {
           })
         },
       )
-      .subscribe()
-    cleanups.push(() => supabase.removeChannel(channel))
+      channel.subscribe()
+      cleanups.push(() => {
+        try {
+          supabase.removeChannel(channel)
+        } catch {
+          /* ignore */
+        }
+      })
+    } catch {
+      /* realtime optional — poll/BroadcastChannel still work */
+    }
   }
 
-  return () => cleanups.forEach((fn) => fn())
+  return () => {
+    for (const fn of cleanups) {
+      try {
+        fn()
+      } catch {
+        /* ignore */
+      }
+    }
+  }
 }
 
 export async function getFriendH2H(profileId, friendId) {

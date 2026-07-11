@@ -238,9 +238,10 @@ export function subscribeRoom(code, onRoom) {
   const cleanups = []
 
   if (isSupabaseConfigured) {
-    const channel = supabase
-      .channel(`room:${normalized}`)
-      .on(
+    const topic = `room:${normalized}:${Math.random().toString(36).slice(2, 10)}`
+    try {
+      const channel = supabase.channel(topic)
+      channel.on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'rooms', filter: `code=eq.${normalized}` },
         (payload) => {
@@ -256,8 +257,17 @@ export function subscribeRoom(code, onRoom) {
           }
         },
       )
-      .subscribe()
-    cleanups.push(() => supabase.removeChannel(channel))
+      channel.subscribe()
+      cleanups.push(() => {
+        try {
+          supabase.removeChannel(channel)
+        } catch {
+          /* ignore */
+        }
+      })
+    } catch {
+      /* realtime optional */
+    }
 
     const poll = setInterval(async () => {
       const room = await fetchRoom(normalized)
