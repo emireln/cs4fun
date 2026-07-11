@@ -1,9 +1,17 @@
-import { useDeferredValue, useMemo, useState } from 'react'
-import { ArrowLeft, Search, UserMinus, UserPlus } from 'lucide-react'
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
+import { ArrowLeft, ChevronDown, Search, UserMinus, UserPlus } from 'lucide-react'
 import { useI18n } from '../../i18n'
 import { ROLES } from '../../data/constants'
 import { marketPool, releasePlayer, signPlayer, contractCost, weeklySalary } from '../../lib/career'
 import TeamLogo from '../TeamLogo'
+
+const SORT_OPTIONS = [
+  { value: 'rating', labelKey: 'career.sortRating' },
+  { value: 'cost', labelKey: 'career.sortCostAsc' },
+  { value: 'cost_desc', labelKey: 'career.sortCostDesc' },
+  { value: 'name', labelKey: 'career.sortName' },
+  { value: 'team', labelKey: 'career.sortTeam' },
+]
 
 export default function CareerMarket({ state, onChange, onBack }) {
   const { t, money } = useI18n()
@@ -114,18 +122,7 @@ export default function CareerMarket({ state, onChange, onBack }) {
             spellCheck={false}
           />
         </label>
-        <select
-          value={sort}
-          onChange={(e) => setSort(e.target.value)}
-          className="rounded-lg border border-cs-border bg-cs-bg/60 px-3 py-2.5 text-xs uppercase tracking-wider text-cs-muted outline-none focus:border-cs-gold/50"
-          aria-label={t('career.sortLabel')}
-        >
-          <option value="rating">{t('career.sortRating')}</option>
-          <option value="cost">{t('career.sortCostAsc')}</option>
-          <option value="cost_desc">{t('career.sortCostDesc')}</option>
-          <option value="name">{t('career.sortName')}</option>
-          <option value="team">{t('career.sortTeam')}</option>
-        </select>
+        <SortMenu value={sort} onChange={setSort} t={t} />
       </div>
 
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
@@ -181,6 +178,76 @@ export default function CareerMarket({ state, onChange, onBack }) {
             </div>
           ))}
         </div>
+      )}
+    </div>
+  )
+}
+
+function SortMenu({ value, onChange, t }) {
+  const [open, setOpen] = useState(false)
+  const rootRef = useRef(null)
+  const current = SORT_OPTIONS.find((o) => o.value === value) || SORT_OPTIONS[0]
+
+  useEffect(() => {
+    if (!open) return undefined
+    const onDoc = (e) => {
+      if (!rootRef.current?.contains(e.target)) setOpen(false)
+    }
+    const onKey = (e) => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('mousedown', onDoc)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDoc)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+
+  return (
+    <div ref={rootRef} className="relative shrink-0 sm:min-w-[9.5rem]">
+      <button
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={t('career.sortLabel')}
+        onClick={() => setOpen((v) => !v)}
+        className={`inline-flex w-full items-center justify-between gap-2 rounded-lg border px-3 py-2.5 text-xs font-bold tracking-wider uppercase transition ${
+          open
+            ? 'border-cs-gold/50 bg-cs-gold/15 text-cs-gold'
+            : 'border-cs-border bg-cs-bg/60 text-cs-muted hover:border-cs-gold/40 hover:text-cs-gold'
+        }`}
+      >
+        <span>{t(current.labelKey)}</span>
+        <ChevronDown className={`h-3.5 w-3.5 shrink-0 transition ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <ul
+          role="listbox"
+          className="absolute top-[calc(100%+0.35rem)] right-0 z-30 min-w-full overflow-hidden rounded-lg border border-cs-border bg-[#12151c] py-1 shadow-[0_12px_32px_rgba(0,0,0,0.55)]"
+        >
+          {SORT_OPTIONS.map((opt) => {
+            const active = opt.value === value
+            return (
+              <li key={opt.value} role="option" aria-selected={active}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onChange(opt.value)
+                    setOpen(false)
+                  }}
+                  className={`flex w-full items-center px-3 py-2 text-left text-xs font-bold tracking-wider uppercase transition ${
+                    active
+                      ? 'bg-cs-gold/15 text-cs-gold'
+                      : 'text-cs-muted hover:bg-cs-gold/10 hover:text-cs-text'
+                  }`}
+                >
+                  {t(opt.labelKey)}
+                </button>
+              </li>
+            )
+          })}
+        </ul>
       )}
     </div>
   )
