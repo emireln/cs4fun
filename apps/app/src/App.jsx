@@ -440,7 +440,7 @@ function AppShell() {
               href="https://cs4fun.online"
               className="group inline-flex items-center gap-2 text-cs-muted transition hover:text-cs-gold"
             >
-              <LogoMark className="h-10 w-auto shrink-0" />
+              <LogoMark className="h-8 w-auto max-h-8 shrink-0" />
               <span className="font-display text-[10px] font-bold tracking-[0.22em] sm:text-[11px]">
                 {t('meta.footer')}
               </span>

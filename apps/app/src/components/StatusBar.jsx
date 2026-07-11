@@ -91,7 +91,7 @@ export default function StatusBar({
     >
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-3 py-2 sm:gap-3 sm:px-4 sm:py-2.5">
         <button type="button" onClick={onHome} className="group/logo flex min-w-0 items-center gap-2 sm:gap-2.5">
-          <LogoMark className="h-11 w-auto shrink-0 sm:h-12" />
+          <LogoMark className="h-9 w-auto max-h-9 shrink-0 sm:h-10 sm:max-h-10" />
           <div className="min-w-0 text-left">
             <BrandWordmark />
             {!quiet && gameMode && (

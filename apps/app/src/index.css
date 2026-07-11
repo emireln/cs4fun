@@ -51,7 +51,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-img,
+img:not(.logo-mark),
 svg,
 video,
 canvas {
@@ -436,21 +436,27 @@ canvas {
   }
 }
 
-/* Brand logo mark — tight natural-aspect PNG; size via Tailwind h-* + w-auto */
+/* Brand logo mark — size ONLY via Tailwind h-* / max-h-* / max-w-* (not global img height:auto) */
 .logo-mark {
   display: block;
   flex-shrink: 0;
+  width: auto;
   max-width: 100%;
   object-fit: contain;
   object-position: center;
   cursor: pointer;
-  transition: transform 0.2s ease;
+  /* Alpha-aware glow (follows the gold mark, not the transparent box) */
+  filter: drop-shadow(0 0 10px rgba(232, 197, 71, 0.35))
+    drop-shadow(0 0 22px rgba(232, 197, 71, 0.2));
+  transition: transform 0.2s ease, filter 0.2s ease;
 }
 
 .logo-mark:hover,
 .group:hover .logo-mark,
 .group\/logo:hover .logo-mark {
   transform: scale(1.04);
+  filter: drop-shadow(0 0 12px rgba(232, 197, 71, 0.45))
+    drop-shadow(0 0 28px rgba(232, 197, 71, 0.28));
 }
 
 .logo-mark:active,

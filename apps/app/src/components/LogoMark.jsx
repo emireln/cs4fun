@@ -1,7 +1,8 @@
 /**
- * Brand mark — root logo.png (served from /logo.png).
+ * Brand mark — public/logo.png.
+ * Height must come from className (h-* / max-h-*) — global img { height:auto } excludes .logo-mark.
  */
-export default function LogoMark({ className = '', title, decorative = true }) {
+export default function LogoMark({ className = 'h-10 w-auto max-h-10', title, decorative = true }) {
   const alt = title || (decorative ? '' : 'CS4FUN')
 
   return (
