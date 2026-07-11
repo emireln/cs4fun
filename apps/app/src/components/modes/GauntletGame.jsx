@@ -47,6 +47,8 @@ export default function GauntletGame({ profile, onHome, onStatus }) {
   const mapSimulatingRef = useRef(false)
   const mapResultsLenRef = useRef(0)
 
+  const waveStartedRef = useRef(false)
+
   const draft = useDraftSession({
     hideRatings: cfg?.mode === 'almanac',
     pickTimerSec: 32,
@@ -110,6 +112,8 @@ export default function GauntletGame({ profile, onHome, onStatus }) {
   }
 
   const startWave = async () => {
+    if (waveStartedRef.current) return
+    waveStartedRef.current = true
     setStep('fight')
     setSimulating(true)
     setLogs([{ type: 'series', text: `═══ WAVE ${wave}: vs ${enemy.shortName} ═══` }])
@@ -172,7 +176,10 @@ export default function GauntletGame({ profile, onHome, onStatus }) {
       },
     })
 
-    if (!result || !liveRef.current) return
+    if (!result || !liveRef.current) {
+      waveStartedRef.current = false
+      return
+    }
     setSimulating(false)
     setPaused(false)
     setMapResults(result.maps)
@@ -183,6 +190,7 @@ export default function GauntletGame({ profile, onHome, onStatus }) {
       setStreak(nextWave - 1)
       setWave(nextWave)
       setEnemy(buildGauntletOpponent(nextWave, seed))
+      waveStartedRef.current = false
       setStep('preview')
     } else {
       const finalStreak = streak

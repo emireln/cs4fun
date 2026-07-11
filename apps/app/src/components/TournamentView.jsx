@@ -57,6 +57,9 @@ export default function TournamentView({
   const liveRef = useRef(true)
   const mapSimulatingRef = useRef(false)
   const mapResultsLenRef = useRef(0)
+  const seriesStartedRef = useRef(false)
+  const finishingRef = useRef(false)
+  const [finishing, setFinishing] = useState(false)
 
   useEffect(() => {
     liveRef.current = true
@@ -78,18 +81,12 @@ export default function TournamentView({
   const userMatchInfo = useMemo(() => findUserMatch(bracket), [bracket])
 
   useEffect(() => {
-    if (!userMatchInfo) {
-      const gf = bracket.grandfinal[0]
-      if (gf?.result) {
-        const winnerIsUser =
-          (gf.home?.isUser && gf.result.winnerId === gf.home.id) ||
-          (gf.away?.isUser && gf.result.winnerId === gf.away.id)
-        if (winnerIsUser) onChampion(gf.result)
-        else onEliminated(gf.result)
-      }
-      return
-    }
+    // Only reset when a new user match appears — never auto-fire champion/elim here
+    // (that caused duplicate saveGameResult on GF win).
+    if (!userMatchInfo) return
+    if (finishingRef.current) return
     playbackRef.current.abort()
+    seriesStartedRef.current = false
     setStage(userMatchInfo.stage)
     setMatchPhase('preview')
     setVeto(null)
@@ -104,6 +101,7 @@ export default function TournamentView({
     setLiveMvp(null)
     setTacticalOpen(false)
     setPaused(false)
+    setPendingSeriesCalls(null)
   }, [userMatchInfo?.match?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Series tactical call — one 15s timer for the whole MD3 pool
@@ -126,7 +124,7 @@ export default function TournamentView({
   // Auto-pick one call for all maps on timeout
   useEffect(() => {
     if (matchPhase !== 'tactics' || tacticTimer !== 0 || !veto || !userMatchInfo) return
-    if (autoTacticRef.current) return
+    if (autoTacticRef.current || seriesStartedRef.current) return
     autoTacticRef.current = true
     const call = TACTICAL_CALLS[Math.floor(Math.random() * TACTICAL_CALLS.length)]
     const next = Object.fromEntries(veto.mapOrder.map((m) => [m, call]))
@@ -137,12 +135,23 @@ export default function TournamentView({
   // Start series when auto-tactic fills the last map
   useEffect(() => {
     if (!pendingSeriesCalls || !userMatchInfo || !veto) return
+    if (seriesStartedRef.current) {
+      setPendingSeriesCalls(null)
+      return
+    }
     const calls = pendingSeriesCalls
     setPendingSeriesCalls(null)
     runSeries(calls)
   }, [pendingSeriesCalls]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!userMatchInfo) {
+    if (finishingRef.current) {
+      return (
+        <div className="mx-auto max-w-3xl px-4 py-16 text-center text-cs-muted">
+          {t('tournament.resolving')}
+        </div>
+      )
+    }
     return (
       <div className="mx-auto max-w-3xl px-4 py-16 text-center text-cs-muted">
         {t('tournament.resolving')}
@@ -162,7 +171,7 @@ export default function TournamentView({
 
   /** One call for the whole MD3 map pool (maps already locked by veto). */
   const selectSeriesTactic = (call) => {
-    if (!veto?.mapOrder?.length) return
+    if (!veto?.mapOrder?.length || seriesStartedRef.current) return
     const next = Object.fromEntries(veto.mapOrder.map((m) => [m, call]))
     setTacticalCalls(next)
     autoTacticRef.current = true
@@ -170,7 +179,9 @@ export default function TournamentView({
   }
 
   const skipRemainingTactics = () => {
-    if (!veto?.mapOrder?.length) return
+    if (!veto?.mapOrder?.length || seriesStartedRef.current) return
+    autoTacticRef.current = true
+    setPendingSeriesCalls(null)
     const call = TACTICAL_CALLS[0]
     const next = Object.fromEntries(veto.mapOrder.map((m) => [m, call]))
     setTacticalCalls(next)
@@ -221,6 +232,8 @@ export default function TournamentView({
   }
 
   const runSeries = async (calls) => {
+    if (seriesStartedRef.current) return
+    seriesStartedRef.current = true
     const pb = playbackRef.current
     pb.reset()
     pb.setSpeed(speed)
@@ -276,7 +289,10 @@ export default function TournamentView({
       },
     })
 
-    if (!result || !liveRef.current) return
+    if (!result || !liveRef.current) {
+      seriesStartedRef.current = false
+      return
+    }
     setSeriesResult(result)
     setMapResults(result.maps)
     setSeriesScore({ user: result.userMaps, enemy: result.enemyMaps })
@@ -288,6 +304,10 @@ export default function TournamentView({
   }
 
   const continueAfterMatch = () => {
+    if (!seriesResult || finishingRef.current) return
+    finishingRef.current = true
+    setFinishing(true)
+
     const userWon = seriesResult.userWon
     const winner = userWon ? userTeam : enemy
     const loser = userWon ? enemy : userTeam
@@ -295,17 +315,7 @@ export default function TournamentView({
     if (userWon) setWins((w) => w + 1)
     else setLosses((l) => l + 1)
 
-    if (!userWon) {
-      onEliminated(seriesResult)
-      return
-    }
-
-    if (stage === 'grandfinal') {
-      setBracket((prev) => advanceBracket(prev, match.id, seriesResult, winner, loser))
-      onChampion(seriesResult)
-      return
-    }
-
+    // Always record the series on the bracket (wins and losses)
     setBracket((prev) => {
       let next = advanceBracket(prev, match.id, seriesResult, winner, loser)
       next = resolveNonUserMatches(next, 'quarterfinals')
@@ -313,6 +323,20 @@ export default function TournamentView({
       next = resolveNonUserMatches(next, 'grandfinal')
       return next
     })
+
+    if (!userWon) {
+      onEliminated(seriesResult)
+      return
+    }
+
+    if (stage === 'grandfinal') {
+      onChampion(seriesResult)
+      return
+    }
+
+    // Next user match — allow reset effect to run
+    finishingRef.current = false
+    setFinishing(false)
   }
 
   return (
@@ -524,7 +548,7 @@ export default function TournamentView({
                       type="button"
                       className="btn-gold mt-5 inline-flex min-h-[48px] items-center gap-2 rounded px-6 py-3 text-sm uppercase tracking-wider"
                       onClick={continueAfterMatch}
-                      disabled={simulating}
+                      disabled={simulating || finishing}
                     >
                       {t('tournament.continue')} <ChevronRight className="h-4 w-4" />
                     </button>
