@@ -766,4 +766,14 @@ export async function saveCareerSave(state) {
   return { ok: true, ...data }
 }
 
+/** Wipe the signed-in player's career save, career board row, and career stats. Irreversible. */
+export async function resetCareerSave() {
+  if (!isSupabaseConfigured) return { ok: false, error: 'no_supabase' }
+  const { data: sessionData } = await supabase.auth.getSession()
+  if (!sessionData?.session?.user) return { ok: false, error: 'not_authenticated' }
+  const { data, error } = await supabase.rpc('reset_own_career')
+  if (error) return { ok: false, error: error.message }
+  return { ok: true, ...data }
+}
+
 export { MENTALITIES, MAPS, lineupComplete, emptyLineup }

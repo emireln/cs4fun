@@ -53,7 +53,8 @@ export default function FriendsHub({
         </div>
       </div>
 
-      {tab === 'lobby' ? (
+      {/* Keep both mounted so lobby room state & layout survive tab switches */}
+      <div className={tab === 'lobby' ? 'block' : 'hidden'} aria-hidden={tab !== 'lobby'}>
         <RoomLobby
           profile={profile}
           initialMode={initialMode}
@@ -61,7 +62,8 @@ export default function FriendsHub({
           onStart={onStart}
           embedded
         />
-      ) : (
+      </div>
+      <div className={tab === 'friends' ? 'block' : 'hidden'} aria-hidden={tab !== 'friends'}>
         <FriendsPanel
           profile={profile}
           onStart={onStart}
@@ -69,7 +71,7 @@ export default function FriendsHub({
           onPendingChange={setFriendRequestCount}
           onInviteSent={onInviteSent}
         />
-      )}
+      </div>
     </div>
   )
 }

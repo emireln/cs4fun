@@ -14,6 +14,7 @@ import {
   updateOrgIdentity,
   effectiveMentalityId,
   loadCareerSave,
+  resetCareerSave,
   saveCareerSave,
   scoreCareerSeason,
   startNextSeason,
@@ -138,6 +139,20 @@ export default function CareerGame({ profile, onHome, onStatus, onNeedAuth }) {
     if (!state) return
     const next = updateOrgIdentity(state, patch)
     await persist(next)
+  }
+
+  const wipeCareer = async () => {
+    setSaving(true)
+    const res = await resetCareerSave()
+    setSaving(false)
+    if (!res.ok) return res
+    setState(null)
+    setView('setup')
+    setEnemy(null)
+    setUserTeam(null)
+    setBracket(null)
+    setWeekOutcome(null)
+    return res
   }
 
   useEffect(() => {
@@ -485,6 +500,7 @@ export default function CareerGame({ profile, onHome, onStatus, onNeedAuth }) {
       saving={saving}
       onHome={onHome}
       onChange={(next) => persist(next)}
+      onResetCareer={wipeCareer}
       onOpenMarket={(opts) => {
         setMarketTier(opts?.tier === 'academy' ? 'academy' : 'pro')
         setView('market')

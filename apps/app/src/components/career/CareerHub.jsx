@@ -45,6 +45,7 @@ export default function CareerHub({
   onUpdateOrg,
   onChange,
   onHome,
+  onResetCareer,
   saving,
 }) {
   const { t, money } = useI18n()
@@ -58,7 +59,24 @@ export default function CareerHub({
   const [editing, setEditing] = useState(false)
   const [selectedSlot, setSelectedSlot] = useState(null)
   const [financeMsg, setFinanceMsg] = useState('')
+  const [resetOpen, setResetOpen] = useState(false)
+  const [resetBusy, setResetBusy] = useState(false)
+  const [resetError, setResetError] = useState('')
   const finance = useMemo(() => rosterFinance(state), [state])
+
+  const handleResetCareer = async () => {
+    if (!onResetCareer || resetBusy) return
+    setResetBusy(true)
+    setResetError('')
+    const res = await onResetCareer()
+    if (!res?.ok) {
+      setResetError(res?.error ? String(res.error) : t('career.resetFailed'))
+      setResetBusy(false)
+      return
+    }
+    setResetBusy(false)
+    setResetOpen(false)
+  }
 
   const handleSelectSlot = (slotId) => {
     if (!selectedSlot) {
@@ -446,6 +464,56 @@ export default function CareerHub({
           </div>
         </div>
       </div>
+
+      {onResetCareer && (
+        <div className="panel mt-6 rounded-xl border border-cs-loss/35 p-4 sm:p-5">
+          <div className="mb-2 flex items-center gap-2 text-cs-loss">
+            <Trash2 className="h-4 w-4 shrink-0" />
+            <h2 className="font-display text-sm font-bold tracking-[0.14em] uppercase">
+              {t('career.resetTitle')}
+            </h2>
+          </div>
+          <p className="mb-4 text-xs leading-relaxed text-cs-muted">{t('career.resetWarning')}</p>
+          {!resetOpen ? (
+            <button
+              type="button"
+              className="rounded border border-cs-loss/50 bg-cs-loss/15 px-4 py-2.5 text-xs font-bold tracking-wider text-cs-loss uppercase"
+              onClick={() => {
+                setResetError('')
+                setResetOpen(true)
+              }}
+            >
+              {t('career.resetButton')}
+            </button>
+          ) : (
+            <div className="space-y-3 rounded border border-cs-loss/40 bg-cs-loss/10 p-3">
+              <p className="text-xs font-medium leading-relaxed text-cs-loss">{t('career.resetWarning')}</p>
+              {resetError && <p className="text-xs text-cs-loss">{resetError}</p>}
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  disabled={resetBusy}
+                  className="rounded border border-cs-loss/60 bg-cs-loss/25 px-4 py-2.5 text-xs font-bold tracking-wider text-cs-loss uppercase disabled:opacity-50"
+                  onClick={handleResetCareer}
+                >
+                  {resetBusy ? t('career.resetBusy') : t('career.resetConfirm')}
+                </button>
+                <button
+                  type="button"
+                  disabled={resetBusy}
+                  className="btn-ghost rounded px-4 py-2.5 text-xs uppercase disabled:opacity-50"
+                  onClick={() => {
+                    setResetOpen(false)
+                    setResetError('')
+                  }}
+                >
+                  {t('career.resetCancel')}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

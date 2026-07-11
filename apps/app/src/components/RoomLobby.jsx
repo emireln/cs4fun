@@ -190,21 +190,26 @@ export default function RoomLobby({ profile, initialMode = 'party', onBack, onSt
           </button>
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-2">
-          <div className="panel space-y-4 rounded-xl p-5 sm:p-6">
+        <div className="grid items-stretch gap-4 lg:grid-cols-2">
+          <div className="panel flex flex-col rounded-xl p-5 sm:p-6">
             <h2 className="font-display text-xs font-bold tracking-[0.18em] text-cs-gold uppercase">
               {t('room.create')}
             </h2>
-            <p className="text-sm text-cs-muted">{t('room.share')}</p>
-            <button type="button" className="btn-gold w-full rounded py-3 text-sm uppercase tracking-wider" onClick={handleCreate}>
+            <p className="mt-2 flex-1 text-sm text-cs-muted">{t('room.createHint')}</p>
+            <button
+              type="button"
+              className="btn-gold mt-4 w-full rounded py-2.5 text-sm uppercase tracking-wider"
+              onClick={handleCreate}
+            >
               {t('room.create')}
             </button>
           </div>
-          <div className="panel space-y-4 rounded-xl p-5 sm:p-6">
+          <div className="panel flex flex-col rounded-xl p-5 sm:p-6">
             <h2 className="font-display text-xs font-bold tracking-[0.18em] text-cs-gold uppercase">
               {t('room.join')}
             </h2>
-            <div className="flex flex-col gap-2 sm:flex-row">
+            <p className="mt-2 flex-1 text-sm text-cs-muted">{t('room.joinHint')}</p>
+            <div className="mt-4 flex min-w-0 flex-col gap-2 sm:flex-row sm:items-stretch">
               <input
                 value={joinCode}
                 onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
@@ -212,7 +217,11 @@ export default function RoomLobby({ profile, initialMode = 'party', onBack, onSt
                 maxLength={6}
                 className="min-w-0 flex-1 rounded border border-cs-border bg-cs-bg/60 px-3 py-2.5 font-mono tracking-widest outline-none focus:border-cs-gold/50"
               />
-              <button type="button" className="btn-ghost shrink-0 rounded px-5 py-2.5 text-sm" onClick={handleJoin}>
+              <button
+                type="button"
+                className="btn-ghost shrink-0 rounded px-5 py-2.5 text-sm uppercase tracking-wider sm:self-stretch"
+                onClick={handleJoin}
+              >
                 {t('room.join')}
               </button>
             </div>
@@ -235,13 +244,13 @@ export default function RoomLobby({ profile, initialMode = 'party', onBack, onSt
       )}
 
       <motion.div
-        initial={{ opacity: 0, y: 10 }}
+        initial={false}
         animate={{ opacity: 1, y: 0 }}
-        className="panel mx-auto max-w-3xl rounded-xl p-5 sm:p-8"
+        className="panel mx-auto w-full max-w-3xl rounded-xl p-5 sm:p-8"
       >
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-xs uppercase tracking-[0.25em] text-cs-muted">{t('room.share')}</p>
+            <p className="text-xs uppercase tracking-[0.25em] text-cs-muted">{t('room.code')}</p>
             <div className="mt-2 flex flex-wrap items-center gap-3">
               <div className="min-w-0 font-display text-3xl font-bold tracking-[0.18em] text-cs-gold sm:text-5xl sm:tracking-[0.2em]">
                 {room.code}
@@ -262,7 +271,7 @@ export default function RoomLobby({ profile, initialMode = 'party', onBack, onSt
             </button>
           )}
         </div>
-        <h3 className="mb-2 mt-8 font-display text-[10px] tracking-[0.2em] text-cs-gold uppercase">
+        <h3 className="mb-2 mt-6 font-display text-[10px] tracking-[0.2em] text-cs-gold uppercase">
           {t('room.players')} ({room.players.length}/{room.maxPlayers})
         </h3>
         <ul className="grid gap-2 sm:grid-cols-2">
@@ -327,14 +336,14 @@ export default function RoomLobby({ profile, initialMode = 'party', onBack, onSt
           </div>
         )}
 
-        <div className="mt-8 flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:items-stretch">
           <button type="button" className="btn-ghost flex-1 rounded py-2.5 text-sm" onClick={toggleReady}>
-            {me?.ready ? t('room.notReady') : t('room.ready')}
+            {me?.ready ? t('room.unready') : t('room.ready')}
           </button>
           {isHost ? (
             <button
               type="button"
-              className="btn-gold flex-1 rounded py-3 text-sm uppercase tracking-wider"
+              className="btn-gold flex-1 rounded py-2.5 text-sm uppercase tracking-wider"
               onClick={startGame}
               disabled={(room.mode === 'duel' || room.mode === 'box') && room.players.length < 2}
             >
@@ -345,7 +354,9 @@ export default function RoomLobby({ profile, initialMode = 'party', onBack, onSt
                   : t('room.startRace')}
             </button>
           ) : (
-            <p className="flex-1 text-center text-sm text-cs-muted sm:text-left">{t('room.waitingHost')}</p>
+            <p className="flex flex-1 items-center justify-center text-sm text-cs-muted sm:justify-start">
+              {t('room.waitingHost')}
+            </p>
           )}
         </div>
       </motion.div>
