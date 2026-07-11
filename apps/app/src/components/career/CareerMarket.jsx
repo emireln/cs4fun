@@ -1,8 +1,27 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft, ChevronDown, Search, UserMinus, UserPlus } from 'lucide-react'
+import {
+  ArrowLeft,
+  ChevronDown,
+  GraduationCap,
+  Landmark,
+  Search,
+  UserMinus,
+  UserPlus,
+} from 'lucide-react'
 import { useI18n } from '../../i18n'
 import { ROLES } from '../../data/constants'
-import { marketPool, releasePlayer, signPlayer, movePlayerSlot, contractCost, weeklySalary } from '../../lib/career'
+import {
+  marketPool,
+  releasePlayer,
+  signPlayer,
+  movePlayerSlot,
+  contractCost,
+  weeklySalary,
+  rosterFinance,
+  fillEmptyWithAcademy,
+  takeBridgeLoan,
+  BRIDGE_LOAN_AMOUNT,
+} from '../../lib/career'
 import TeamLogo from '../TeamLogo'
 
 const SORT_OPTIONS = [
@@ -13,17 +32,16 @@ const SORT_OPTIONS = [
   { value: 'team', labelKey: 'career.sortTeam' },
 ]
 
-export default function CareerMarket({ state, onChange, onBack }) {
+export default function CareerMarket({ state, onChange, onBack, initialTier = 'pro' }) {
   const { t, money } = useI18n()
+  const [tier, setTier] = useState(initialTier === 'academy' ? 'academy' : 'pro')
   const [filter, setFilter] = useState('all')
   const [query, setQuery] = useState('')
-  const [sort, setSort] = useState('rating')
+  const [sort, setSort] = useState(initialTier === 'academy' ? 'cost' : 'rating')
   const [msg, setMsg] = useState('')
   const deferredQuery = useDeferredValue(query)
-  const openSlots = useMemo(
-    () => ROLES.filter((r) => !state.lineup?.[r.id]).map((r) => r.id),
-    [state.lineup],
-  )
+  const finance = useMemo(() => rosterFinance(state), [state])
+  const openSlots = finance.openSlots
   const [signSlot, setSignSlot] = useState(null)
 
   useEffect(() => {
@@ -39,8 +57,9 @@ export default function CareerMarket({ state, onChange, onBack }) {
         role: filter === 'all' ? null : filter,
         query: deferredQuery,
         sort,
+        tier,
       }),
-    [state, filter, deferredQuery, sort],
+    [state, filter, deferredQuery, sort, tier],
   )
 
   const handleRelease = (slotId) => {
@@ -66,7 +85,35 @@ export default function CareerMarket({ state, onChange, onBack }) {
       return
     }
     onChange(res.state)
-    setMsg(t('career.signed', { name: player.name, slot: ROLES.find((r) => r.id === slot)?.short || slot }))
+    setMsg(
+      t(player.academy ? 'career.signedAcademy' : 'career.signed', {
+        name: player.name,
+        slot: ROLES.find((r) => r.id === slot)?.short || slot,
+      }),
+    )
+  }
+
+  const handleFillAcademy = () => {
+    const res = fillEmptyWithAcademy(state)
+    if (!res.ok) {
+      setMsg(t(`career.err.${res.error}`))
+      return
+    }
+    onChange(res.state)
+    setTier('academy')
+    setMsg(t('career.academyFilled', { n: res.filled }))
+  }
+
+  const handleLoan = () => {
+    const res = takeBridgeLoan(state)
+    if (!res.ok) {
+      setMsg(t(`career.err.${res.error}`))
+      return
+    }
+    onChange(res.state)
+    setTier('academy')
+    setSort('cost')
+    setMsg(t('career.loanTaken', { amount: money(BRIDGE_LOAN_AMOUNT) }))
   }
 
   return (
@@ -80,13 +127,97 @@ export default function CareerMarket({ state, onChange, onBack }) {
         {t('common.back')}
       </button>
       <h1 className="mb-1 font-display text-2xl font-bold">{t('career.marketTitle')}</h1>
-      <p className="mb-4 text-sm text-cs-muted">
+      <p className="mb-3 text-sm text-cs-muted">
         {t('career.budget')}: <span className="font-mono text-cs-gold">{money(state.budget)}</span>
+        {finance.debt > 0 ? ` · ${t('career.loanDebt', { amount: money(finance.debt) })}` : ''}
         {signSlot
           ? ` · ${t('career.signingFor', { slot: ROLES.find((r) => r.id === signSlot)?.short || signSlot })}`
           : ` · ${t('career.releaseToSign')}`}
       </p>
       {msg && <p className="mb-3 text-xs text-cs-gold">{msg}</p>}
+
+      {!finance.ready && (
+        <div className="mb-4 rounded-xl border border-cs-gold/35 bg-cs-gold/10 px-3 py-3">
+          <p className="font-display text-[10px] tracking-[0.2em] text-cs-gold uppercase">
+            {t('career.brokeTitle')}
+          </p>
+          <p className="mt-1 text-sm text-cs-muted">
+            {finance.canSignOneAcademy || finance.canFillAcademy
+              ? t('career.brokeAcademyHint', {
+                  n: finance.openCount,
+                  cost: money(finance.cheapestOne),
+                })
+              : t('career.brokeLoanHint', {
+                  gap: money(finance.gap),
+                  loan: money(BRIDGE_LOAN_AMOUNT),
+                })}
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {finance.canFillAcademy && (
+              <button
+                type="button"
+                className="btn-gold inline-flex items-center gap-1.5 rounded px-3 py-2 text-[10px] uppercase"
+                onClick={handleFillAcademy}
+              >
+                <GraduationCap className="h-3.5 w-3.5" />
+                {t('career.fillAcademy', { n: finance.openCount, cost: money(finance.fillCost) })}
+              </button>
+            )}
+            {finance.loanAvailable && !finance.canSignOneAcademy && (
+              <button
+                type="button"
+                className="btn-gold inline-flex items-center gap-1.5 rounded px-3 py-2 text-[10px] uppercase"
+                onClick={handleLoan}
+              >
+                <Landmark className="h-3.5 w-3.5" />
+                {t('career.takeLoan', { amount: money(BRIDGE_LOAN_AMOUNT) })}
+              </button>
+            )}
+            <button
+              type="button"
+              className="btn-ghost inline-flex items-center gap-1.5 rounded px-3 py-2 text-[10px] uppercase"
+              onClick={() => {
+                setTier('academy')
+                setSort('cost')
+              }}
+            >
+              {t('career.browseAcademy')}
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="mb-3 flex flex-wrap gap-1.5">
+        <button
+          type="button"
+          onClick={() => setTier('pro')}
+          className={`rounded border px-3 py-1.5 text-[10px] font-bold tracking-wider uppercase ${
+            tier === 'pro'
+              ? 'border-cs-gold bg-cs-gold/15 text-cs-gold'
+              : 'border-cs-border text-cs-muted hover:border-cs-gold/40'
+          }`}
+        >
+          {t('career.tierPro')}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setTier('academy')
+            setSort('cost')
+          }}
+          className={`inline-flex items-center gap-1 rounded border px-3 py-1.5 text-[10px] font-bold tracking-wider uppercase ${
+            tier === 'academy'
+              ? 'border-cs-gold bg-cs-gold/15 text-cs-gold'
+              : 'border-cs-border text-cs-muted hover:border-cs-gold/40'
+          }`}
+        >
+          <GraduationCap className="h-3 w-3" />
+          {t('career.tierAcademyMarket')}
+        </button>
+      </div>
+      {tier === 'academy' && (
+        <p className="mb-3 text-[11px] text-cs-muted">{t('career.academyBlurb')}</p>
+      )}
 
       {openSlots.length > 0 && (
         <div className="mb-3">
@@ -135,7 +266,10 @@ export default function CareerMarket({ state, onChange, onBack }) {
                 <div className="flex min-w-0 items-center gap-2">
                   {p?.fromTeam && <TeamLogo name={p.fromTeam} size="sm" decorative />}
                   <div className="min-w-0">
-                    <div className="text-[10px] text-cs-muted">{role.short}</div>
+                    <div className="text-[10px] text-cs-muted">
+                      {role.short}
+                      {p?.academy ? ` · ${t('career.academyTag')}` : ''}
+                    </div>
                     <div className="truncate text-sm font-semibold">{p?.name || '—'}</div>
                     {p && (
                       <div className="font-mono text-[10px] text-cs-gold">
@@ -196,7 +330,7 @@ export default function CareerMarket({ state, onChange, onBack }) {
           ))}
         </div>
         <p className="font-mono text-[10px] text-cs-muted">
-          {t('career.marketCount', { n: pool.length })}
+          {t(tier === 'academy' ? 'career.academyCount' : 'career.marketCount', { n: pool.length })}
         </p>
       </div>
 
@@ -208,13 +342,20 @@ export default function CareerMarket({ state, onChange, onBack }) {
         <div className="grid max-h-[min(70dvh,36rem)] gap-2 overflow-y-auto overscroll-contain pr-0.5 sm:grid-cols-2">
           {pool.map((p) => (
             <div
-              key={p.id}
+              key={`${tier}-${p.id}`}
               className="flex items-center justify-between gap-2 rounded-lg border border-cs-border bg-cs-panel/70 px-3 py-2.5"
             >
               <div className="flex min-w-0 items-center gap-2">
                 <TeamLogo name={p.fromTeam} size="sm" decorative />
                 <div className="min-w-0">
-                  <div className="truncate font-display text-sm font-bold">{p.name}</div>
+                  <div className="truncate font-display text-sm font-bold">
+                    {p.name}
+                    {p.academy ? (
+                      <span className="ml-1.5 font-sans text-[9px] font-bold tracking-wider text-cs-gold uppercase">
+                        {t('career.academyTag')}
+                      </span>
+                    ) : null}
+                  </div>
                   <div className="truncate text-[10px] text-cs-muted">
                     {p.role} · {p.fromTeam}
                     {p.year ? ` · ${p.year}` : ''} · {Number(p.rating).toFixed(2)}
@@ -385,7 +526,7 @@ function FilterChip({ active, onClick, label }) {
     <button
       type="button"
       onClick={onClick}
-      className={`rounded border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${
+      className={`rounded border px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase ${
         active ? 'border-cs-gold bg-cs-gold/15 text-cs-gold' : 'border-cs-border text-cs-muted'
       }`}
     >

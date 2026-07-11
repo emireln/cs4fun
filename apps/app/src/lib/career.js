@@ -17,6 +17,12 @@ export const STARTING_BUDGET = 500_000
 export const MIN_OPERATING_BUDGET = 80_000
 export const WEEKLY_SALARY_DRAIN = true
 export const ECONOMY_VERSION = 2
+/** One soft loan per season when you can't afford to fill open slots. */
+export const BRIDGE_LOAN_AMOUNT = 75_000
+/** Share of week match prize applied to outstanding bridge debt. */
+export const BRIDGE_REPAY_RATE = 0.35
+/** Max rating for the academy / developmental market. */
+export const ACADEMY_RATING_CAP = 1.08
 
 export const PHASE = {
   SETUP: 'setup',
@@ -52,6 +58,30 @@ export function contractCost(player) {
 /** Weekly wage in USD. */
 export function weeklySalary(player) {
   return Math.max(2_500, Math.round(contractCost(player) * 0.045))
+}
+
+/** Cheaper developmental contracts so a thin war chest can still fill the five. */
+export function academyContractCost(player) {
+  const r = Math.min(1.05, Math.max(0.8, Number(player?.rating) || 0.95))
+  return Math.round(14_000 + r * r * 26_000)
+}
+
+export function academyWeeklySalary(player) {
+  return Math.max(1_200, Math.round(academyContractCost(player) * 0.04))
+}
+
+export function isAcademyEligible(player) {
+  return Number(player?.rating) <= ACADEMY_RATING_CAP
+}
+
+function signingCost(player) {
+  if (player?.academy) return academyContractCost(player)
+  return Number(player?.cost) > 0 ? Math.round(player.cost) : contractCost(player)
+}
+
+function signingSalary(player) {
+  if (player?.academy) return academyWeeklySalary(player)
+  return Number(player?.salary) > 0 ? Math.round(player.salary) : weeklySalary(player)
 }
 
 function flatPlayers() {
@@ -296,10 +326,17 @@ export function scoreCareerSeason(state, { majorWon = false } = {}) {
 export function afterMatchResult(state, { won, opponentName }) {
   const salary = totalWeeklySalary(state.lineup)
   let budget = state.budget - (WEEKLY_SALARY_DRAIN ? salary : 0)
-  if (won) budget += 35_000 + state.week * 5_000
-  else budget += 12_000
+  const matchPrize = won ? 35_000 + state.week * 5_000 : 12_000
+  budget += matchPrize
   // Org growth stipend each week
   budget += 8_000 + Math.min(state.season, 8) * 2_000
+
+  let bridgeLoanDebt = Math.max(0, Number(state.bridgeLoanDebt) || 0)
+  if (bridgeLoanDebt > 0) {
+    const repay = Math.min(bridgeLoanDebt, Math.round(matchPrize * BRIDGE_REPAY_RATE))
+    budget -= repay
+    bridgeLoanDebt -= repay
+  }
 
   const camp =
     state.camp && state.camp.weeksLeft > 0
@@ -338,6 +375,7 @@ export function afterMatchResult(state, { won, opponentName }) {
   return {
     ...state,
     budget: Math.max(0, budget),
+    bridgeLoanDebt,
     camp: camp && camp.weeksLeft === 0 ? null : camp,
     record,
     results,
@@ -348,6 +386,14 @@ export function afterMatchResult(state, { won, opponentName }) {
 }
 
 export function afterMajorResult(state, { won, wins, losses }) {
+  const prize = won ? 250_000 : 45_000
+  let budget = state.budget + prize
+  let bridgeLoanDebt = Math.max(0, Number(state.bridgeLoanDebt) || 0)
+  if (bridgeLoanDebt > 0) {
+    const repay = Math.min(bridgeLoanDebt, Math.round(prize * BRIDGE_REPAY_RATE))
+    budget -= repay
+    bridgeLoanDebt -= repay
+  }
   const majorsWonCareer = (state.majorsWonCareer || 0) + (won ? 1 : 0)
   const next = {
     ...state,
@@ -356,7 +402,8 @@ export function afterMajorResult(state, { won, wins, losses }) {
       losses: (state.record?.losses || 0) + (losses || 0),
     },
     majorsWonCareer,
-    budget: state.budget + (won ? 250_000 : 45_000),
+    budget: Math.max(0, budget),
+    bridgeLoanDebt,
     phase: PHASE.SEASON_END,
     majorResult: { won, wins, losses },
   }
@@ -380,6 +427,8 @@ export function startNextSeason(state) {
     results: [],
     majorResult: null,
     seasonScore: 0,
+    bridgeLoanDebt: 0,
+    bridgeLoanTakenSeason: null,
     mapPriority: state.mapPriority || 'Mirage',
     mentalityId: state.mentalityId || 'tactical',
   }
@@ -417,17 +466,25 @@ export function movePlayerSlot(state, fromSlot, toSlot) {
 
 export function signPlayer(state, slotId, player) {
   if (!player || state.lineup?.[slotId]) return { ok: false, error: 'slot_taken' }
-  const cost = contractCost(player)
+  const academy = Boolean(player.academy)
+  const cost = signingCost(player)
   if (state.budget < cost) return { ok: false, error: 'broke' }
   const owned = new Set(Object.values(state.lineup || {}).filter(Boolean).map((p) => p.id))
   if (owned.has(player.id)) return { ok: false, error: 'owned' }
+  const baseRating = Number(player.rating) || 1
+  const signed = {
+    ...player,
+    academy: academy || undefined,
+    rating: academy
+      ? Math.round(Math.min(baseRating, 1.05) * 0.94 * 100) / 100
+      : baseRating,
+    salary: signingSalary(player),
+    buyout: cost,
+  }
+  delete signed.cost
   const lineup = {
     ...state.lineup,
-    [slotId]: {
-      ...player,
-      salary: weeklySalary(player),
-      buyout: cost,
-    },
+    [slotId]: signed,
   }
   return {
     ok: true,
@@ -439,11 +496,25 @@ export function signPlayer(state, slotId, player) {
   }
 }
 
-export function marketPool(state, { role = null, query = '', sort = 'rating', limit = 0 } = {}) {
+export function marketPool(
+  state,
+  { role = null, query = '', sort = 'rating', limit = 0, tier = 'pro' } = {},
+) {
   const owned = new Set(Object.values(state.lineup || {}).filter(Boolean).map((p) => p.id))
-  let pool = flatPlayers()
-    .filter((p) => !owned.has(p.id))
-    .map((p) => ({ ...p, cost: contractCost(p), salary: weeklySalary(p) }))
+  let pool = flatPlayers().filter((p) => !owned.has(p.id))
+
+  if (tier === 'academy') {
+    pool = pool
+      .filter(isAcademyEligible)
+      .map((p) => ({
+        ...p,
+        academy: true,
+        cost: academyContractCost(p),
+        salary: academyWeeklySalary(p),
+      }))
+  } else {
+    pool = pool.map((p) => ({ ...p, cost: contractCost(p), salary: weeklySalary(p) }))
+  }
 
   if (role) {
     pool = pool.filter((p) => roleFitMultiplier(role, p.role) >= 0.85 || p.role === role)
@@ -462,11 +533,107 @@ export function marketPool(state, { role = null, query = '', sort = 'rating', li
   if (sort === 'cost') pool.sort((a, b) => a.cost - b.cost || b.rating - a.rating)
   else if (sort === 'cost_desc') pool.sort((a, b) => b.cost - a.cost || b.rating - a.rating)
   else if (sort === 'name') pool.sort((a, b) => a.name.localeCompare(b.name))
-  else if (sort === 'team') pool.sort((a, b) => String(a.fromTeam).localeCompare(String(b.fromTeam)) || b.rating - a.rating)
+  else if (sort === 'team')
+    pool.sort((a, b) => String(a.fromTeam).localeCompare(String(b.fromTeam)) || b.rating - a.rating)
   else pool.sort((a, b) => b.rating - a.rating || a.name.localeCompare(b.name))
 
   if (limit > 0) return pool.slice(0, limit)
   return pool
+}
+
+/** Snapshot of open slots vs budget — drives broke / rescue UI. */
+export function rosterFinance(state) {
+  const openSlots = ROLES.filter((r) => !state.lineup?.[r.id]).map((r) => r.id)
+  const ready = openSlots.length === 0
+  const budget = Number(state.budget) || 0
+  const debt = Math.max(0, Number(state.bridgeLoanDebt) || 0)
+  const loanAvailable =
+    !ready && debt <= 0 && state.bridgeLoanTakenSeason !== state.season
+
+  const academyPool = marketPool(state, { tier: 'academy', sort: 'cost' })
+  const used = new Set()
+  let fillCost = 0
+  const picks = []
+  for (const slotId of openSlots) {
+    const pick = academyPool.find((p) => {
+      if (used.has(p.id)) return false
+      return roleFitMultiplier(slotId, p.role) >= 0.85 || p.role === slotId || !p.role
+    }) || academyPool.find((p) => !used.has(p.id))
+    if (!pick) continue
+    used.add(pick.id)
+    fillCost += pick.cost
+    picks.push({ slotId, player: pick })
+  }
+
+  const cheapestOne = openSlots.length
+    ? Math.min(
+        ...openSlots.map((slotId) => {
+          const forRole = academyPool.find(
+            (p) => roleFitMultiplier(slotId, p.role) >= 0.85 || p.role === slotId,
+          )
+          return forRole?.cost ?? academyPool[0]?.cost ?? academyContractCost({ rating: 0.95 })
+        }),
+      )
+    : 0
+
+  const canFillAcademy = !ready && picks.length === openSlots.length && budget >= fillCost
+  const canSignOneAcademy = !ready && budget >= cheapestOne && academyPool.length > 0
+  const stuck =
+    !ready &&
+    !canSignOneAcademy &&
+    !(loanAvailable && budget + BRIDGE_LOAN_AMOUNT >= cheapestOne)
+
+  return {
+    ready,
+    openSlots,
+    openCount: openSlots.length,
+    budget,
+    debt,
+    loanAvailable,
+    fillCost,
+    cheapestOne,
+    gap: Math.max(0, cheapestOne - budget),
+    fillGap: Math.max(0, fillCost - budget),
+    canFillAcademy,
+    canSignOneAcademy,
+    stuck,
+    picks,
+  }
+}
+
+/** Sign cheapest academy fits into every empty role (as far as budget allows). */
+export function fillEmptyWithAcademy(state) {
+  const finance = rosterFinance(state)
+  if (finance.ready) return { ok: false, error: 'full', state }
+  if (!finance.picks.length) return { ok: false, error: 'no_academy', state }
+
+  let next = state
+  let filled = 0
+  for (const { slotId, player } of finance.picks) {
+    if (next.lineup?.[slotId]) continue
+    const res = signPlayer(next, slotId, player)
+    if (!res.ok) break
+    next = res.state
+    filled += 1
+  }
+  if (!filled) return { ok: false, error: 'broke', state }
+  return { ok: true, state: next, filled, remaining: finance.openCount - filled }
+}
+
+export function takeBridgeLoan(state) {
+  const finance = rosterFinance(state)
+  if (finance.ready) return { ok: false, error: 'full' }
+  if ((Number(state.bridgeLoanDebt) || 0) > 0) return { ok: false, error: 'loan_open' }
+  if (state.bridgeLoanTakenSeason === state.season) return { ok: false, error: 'loan_used' }
+  return {
+    ok: true,
+    state: {
+      ...state,
+      budget: (Number(state.budget) || 0) + BRIDGE_LOAN_AMOUNT,
+      bridgeLoanDebt: BRIDGE_LOAN_AMOUNT,
+      bridgeLoanTakenSeason: state.season,
+    },
+  }
 }
 
 export function rosterPower(state) {

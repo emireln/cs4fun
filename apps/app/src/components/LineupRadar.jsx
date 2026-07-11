@@ -55,14 +55,13 @@ export default function LineupRadar({
       </div>
 
       <div className="relative mx-auto w-full max-w-md">
-        {/* True circle, anchored mid-stage so the top rim stays under IGL */}
+        {/* Mid-stage circle — top rim sits below IGL so it never draws a gold chord through that slot */}
         <div
-          className="pointer-events-none absolute top-[18%] left-1/2 aspect-square w-[78%] -translate-x-1/2 sm:top-[16%] sm:w-[72%]"
+          className="pointer-events-none absolute top-[36%] left-1/2 aspect-square w-[78%] -translate-x-1/2 sm:top-[34%] sm:w-[72%]"
           aria-hidden
         >
-          <div className="radar-grid absolute inset-0 overflow-hidden rounded-full border border-cs-gold/15">
+          <div className="radar-grid absolute inset-0 overflow-hidden rounded-full border border-cs-gold/10">
             <div className="radar-sweep" />
-            <div className="radar-ring radar-ring--outer" />
             <div className="radar-ring radar-ring--mid" />
             <div className="radar-ring radar-ring--inner" />
             <motion.div

@@ -40,6 +40,7 @@ export default function CareerGame({ profile, onHome, onStatus, onNeedAuth }) {
   const [boot, setBoot] = useState('loading') // loading | ready | locked
   const [state, setState] = useState(null)
   const [view, setView] = useState('hub') // setup | hub | market | camp | match | major | week_result | season_end
+  const [marketTier, setMarketTier] = useState('pro')
   const [saving, setSaving] = useState(false)
   const [enemy, setEnemy] = useState(null)
   const [userTeam, setUserTeam] = useState(null)
@@ -302,7 +303,9 @@ export default function CareerGame({ profile, onHome, onStatus, onNeedAuth }) {
   if (view === 'market') {
     return (
       <CareerMarket
+        key={marketTier}
         state={state}
+        initialTier={marketTier}
         onChange={(next) => persist(next)}
         onBack={() => setView('hub')}
       />
@@ -482,7 +485,10 @@ export default function CareerGame({ profile, onHome, onStatus, onNeedAuth }) {
       saving={saving}
       onHome={onHome}
       onChange={(next) => persist(next)}
-      onOpenMarket={() => setView('market')}
+      onOpenMarket={(opts) => {
+        setMarketTier(opts?.tier === 'academy' ? 'academy' : 'pro')
+        setView('market')
+      }}
       onOpenCamp={() => setView('camp')}
       onPlayWeek={startWeekMatch}
       onUpdateOrg={saveOrgIdentity}

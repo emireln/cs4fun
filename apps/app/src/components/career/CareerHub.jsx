@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   Star,
@@ -13,6 +13,8 @@ import {
   Pencil,
   ImagePlus,
   Trash2,
+  GraduationCap,
+  Landmark,
 } from 'lucide-react'
 import { useI18n } from '../../i18n'
 import { compressAvatarFile } from '../../lib/avatarImage'
@@ -28,6 +30,10 @@ import {
   rosterPower,
   nextTierProgress,
   movePlayerSlot,
+  rosterFinance,
+  fillEmptyWithAcademy,
+  takeBridgeLoan,
+  BRIDGE_LOAN_AMOUNT,
 } from '../../lib/career'
 
 export default function CareerHub({
@@ -51,6 +57,8 @@ export default function CareerHub({
   const history = [...(state.results || [])].reverse()
   const [editing, setEditing] = useState(false)
   const [selectedSlot, setSelectedSlot] = useState(null)
+  const [financeMsg, setFinanceMsg] = useState('')
+  const finance = useMemo(() => rosterFinance(state), [state])
 
   const handleSelectSlot = (slotId) => {
     if (!selectedSlot) {
@@ -63,6 +71,26 @@ export default function CareerHub({
     }
     onChange?.(movePlayerSlot(state, selectedSlot, slotId))
     setSelectedSlot(null)
+  }
+
+  const handleFillAcademy = () => {
+    const res = fillEmptyWithAcademy(state)
+    if (!res.ok) {
+      setFinanceMsg(t(`career.err.${res.error}`))
+      return
+    }
+    onChange?.(res.state)
+    setFinanceMsg(t('career.academyFilled', { n: res.filled }))
+  }
+
+  const handleLoan = () => {
+    const res = takeBridgeLoan(state)
+    if (!res.ok) {
+      setFinanceMsg(t(`career.err.${res.error}`))
+      return
+    }
+    onChange?.(res.state)
+    setFinanceMsg(t('career.loanTaken', { amount: money(BRIDGE_LOAN_AMOUNT) }))
   }
 
   return (
@@ -205,6 +233,62 @@ export default function CareerHub({
         <Stat icon={Trophy} label={t('career.seasonScore')} value={String(state.seasonScore || 0)} />
         <Stat icon={TrendingUp} label={t('career.teamPower')} value={power.toFixed(2)} />
       </div>
+
+      {finance.debt > 0 && (
+        <p className="mb-4 rounded-lg border border-cs-border bg-cs-bg/40 px-3 py-2 text-xs text-cs-muted">
+          {t('career.loanDebt', { amount: money(finance.debt) })}
+        </p>
+      )}
+
+      {!ready && (
+        <div className="mb-4 rounded-xl border border-cs-gold/35 bg-cs-gold/10 px-3 py-3 sm:px-4">
+          <p className="font-display text-[10px] tracking-[0.2em] text-cs-gold uppercase">
+            {t('career.brokeTitle')}
+          </p>
+          <p className="mt-1 text-sm text-cs-muted">
+            {finance.canSignOneAcademy || finance.canFillAcademy
+              ? t('career.brokeAcademyHint', {
+                  n: finance.openCount,
+                  cost: money(finance.cheapestOne),
+                })
+              : t('career.brokeLoanHint', {
+                  gap: money(finance.gap),
+                  loan: money(BRIDGE_LOAN_AMOUNT),
+                })}
+          </p>
+          {financeMsg && <p className="mt-2 text-xs text-cs-gold">{financeMsg}</p>}
+          <div className="mt-3 flex flex-wrap gap-2">
+            {finance.canFillAcademy && (
+              <button
+                type="button"
+                className="btn-gold inline-flex items-center gap-1.5 rounded px-3 py-2 text-[10px] uppercase"
+                onClick={handleFillAcademy}
+              >
+                <GraduationCap className="h-3.5 w-3.5" />
+                {t('career.fillAcademy', { n: finance.openCount, cost: money(finance.fillCost) })}
+              </button>
+            )}
+            {finance.loanAvailable && !finance.canSignOneAcademy && (
+              <button
+                type="button"
+                className="btn-gold inline-flex items-center gap-1.5 rounded px-3 py-2 text-[10px] uppercase"
+                onClick={handleLoan}
+              >
+                <Landmark className="h-3.5 w-3.5" />
+                {t('career.takeLoan', { amount: money(BRIDGE_LOAN_AMOUNT) })}
+              </button>
+            )}
+            <button
+              type="button"
+              className="btn-ghost inline-flex items-center gap-1.5 rounded px-3 py-2 text-[10px] uppercase"
+              onClick={() => onOpenMarket?.({ tier: 'academy' })}
+            >
+              <Users className="h-3.5 w-3.5" />
+              {t('career.browseAcademy')}
+            </button>
+          </div>
+        </div>
+      )}
 
       {state.camp?.weeksLeft > 0 && (
         <p className="mb-4 rounded-lg border border-cs-gold/30 bg-cs-gold/10 px-3 py-2 text-xs text-cs-gold">
