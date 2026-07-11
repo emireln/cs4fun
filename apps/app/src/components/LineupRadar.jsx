@@ -26,8 +26,8 @@ export default function LineupRadar({
   const filled = Object.values(lineup).filter(Boolean).length
 
   return (
-    <div className="panel relative overflow-hidden rounded-lg p-3 sm:p-6">
-      <div className="pointer-events-none absolute inset-0 opacity-40">
+    <div className="panel relative overflow-visible rounded-lg p-3 sm:p-6">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-lg opacity-40">
         <div className="lineup-ambient" />
       </div>
 
@@ -45,26 +45,32 @@ export default function LineupRadar({
         </motion.span>
       </div>
 
-      <div className="radar-grid relative mx-auto aspect-square max-w-md overflow-hidden rounded-full border border-cs-gold/25 p-2 sm:p-6">
-        <div className="radar-sweep" aria-hidden />
-        <div className="radar-ring radar-ring--outer" aria-hidden />
-        <div className="radar-ring radar-ring--mid" aria-hidden />
-        <div className="radar-ring radar-ring--inner" aria-hidden />
-        <div className="radar-crosshair" aria-hidden />
-        <motion.div
-          className="absolute left-1/2 top-1/2 z-[1] h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-cs-gold"
-          animate={{
-            boxShadow: [
-              '0 0 8px 2px rgba(232,197,71,0.45)',
-              '0 0 18px 6px rgba(232,197,71,0.75)',
-              '0 0 8px 2px rgba(232,197,71,0.45)',
-            ],
-            scale: [1, 1.15, 1],
-          }}
-          transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
-        />
+      {/* Square stage — cards must not be clipped by the circular radar mask */}
+      <div className="relative mx-auto aspect-square w-full max-w-md overflow-visible">
+        <div
+          className="radar-grid pointer-events-none absolute inset-[6%] overflow-hidden rounded-full border border-cs-gold/25 sm:inset-[4%]"
+          aria-hidden
+        >
+          <div className="radar-sweep" />
+          <div className="radar-ring radar-ring--outer" />
+          <div className="radar-ring radar-ring--mid" />
+          <div className="radar-ring radar-ring--inner" />
+          <div className="radar-crosshair" />
+          <motion.div
+            className="absolute left-1/2 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-cs-gold"
+            animate={{
+              boxShadow: [
+                '0 0 8px 2px rgba(232,197,71,0.45)',
+                '0 0 18px 6px rgba(232,197,71,0.75)',
+                '0 0 8px 2px rgba(232,197,71,0.45)',
+              ],
+              scale: [1, 1.15, 1],
+            }}
+            transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+          />
+        </div>
 
-        <div className="relative z-10 grid h-full grid-cols-3 grid-rows-3 gap-1.5 sm:gap-3">
+        <div className="relative z-10 grid h-full grid-cols-3 grid-rows-3 gap-2 p-1 sm:gap-3 sm:p-2">
           {ROLES.map((role, i) => {
             const player = lineup[role.id]
             const isSelected = selectedSlot === role.id
@@ -73,13 +79,13 @@ export default function LineupRadar({
             return (
               <motion.div
                 key={role.id}
-                className={`${SLOT_POSITIONS[role.id]} flex items-center justify-center`}
+                className={`${SLOT_POSITIONS[role.id]} flex min-h-0 items-center justify-center`}
                 layout
                 initial={{ opacity: 0, scale: 0.88 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.05 * i, type: 'spring', stiffness: 320, damping: 24 }}
               >
-                <div className="w-full max-w-[140px]">
+                <div className="w-full max-w-[132px] sm:max-w-[140px]">
                   <AnimatePresence mode="wait">
                     {player ? (
                       <motion.div
