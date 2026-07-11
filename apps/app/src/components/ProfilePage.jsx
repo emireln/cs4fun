@@ -33,6 +33,9 @@ import { compressAvatarFile } from '../lib/avatarImage'
 import { ACTIVE_MAP_POOL, MENTALITIES } from '../data/constants'
 import { normalizeSetupPresetFields } from '../lib/setupPreset'
 import { countIncomingFriendRequests } from '../lib/friends'
+import BestDropCard from './BestDropCard'
+import SteamIcon from './SteamIcon'
+import { readBoxStats } from '../lib/boxBattle'
 import MapThumb from './MapThumb'
 import CountBadge from './CountBadge'
 
@@ -313,9 +316,21 @@ export default function ProfilePage({ onBack, onNeedAuth, onStartMatch, onInvite
               {isAuthed ? profile.email : t('profile.guestBlurb')}
             </p>
             {isAuthed && (
-              <p className="mt-1 text-[11px] text-cs-muted lg:text-xs">
-                {profilePublic ? t('profile.visibilityPublic') : t('profile.visibilityPrivate')}
-                {steamUrl ? ` · ${t('profile.steam')}` : ''}
+              <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-cs-muted lg:text-xs">
+                <span>
+                  {profilePublic ? t('profile.visibilityPublic') : t('profile.visibilityPrivate')}
+                </span>
+                {steamUrl ? (
+                  <a
+                    href={steamUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-[#66c0f4] transition hover:text-cs-gold"
+                  >
+                    <SteamIcon className="h-3.5 w-3.5" />
+                    {t('profile.steam')}
+                  </a>
+                ) : null}
               </p>
             )}
             {isAuthed && stats && (
@@ -351,6 +366,19 @@ export default function ProfilePage({ onBack, onNeedAuth, onStartMatch, onInvite
                     ))}
                   </div>
                 </div>
+                <BestDropCard
+                  drop={
+                    stats.best_drop ||
+                    readBoxStats(profile.id)?.bestDrop ||
+                    null
+                  }
+                  compact
+                />
+              </div>
+            )}
+            {!isAuthed && (
+              <div className="mt-3">
+                <BestDropCard drop={readBoxStats(profile.id)?.bestDrop || null} compact />
               </div>
             )}
             <div className="mt-3 flex flex-wrap gap-2">
@@ -427,14 +455,19 @@ export default function ProfilePage({ onBack, onNeedAuth, onStartMatch, onInvite
                   <label className="mb-1.5 block text-[10px] font-bold tracking-wider text-cs-muted uppercase">
                     {t('profile.steam')}
                   </label>
-                  <input
-                    value={steamUrl}
-                    onChange={(e) => setSteamUrl(e.target.value)}
-                    placeholder={t('profile.steamPlaceholder')}
-                    inputMode="url"
-                    autoComplete="url"
-                    className="w-full rounded border border-cs-border bg-cs-bg/60 px-3 py-2 text-sm outline-none focus:border-cs-gold/50"
-                  />
+                  <div className="relative">
+                    <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#66c0f4]">
+                      <SteamIcon className="h-4 w-4" />
+                    </span>
+                    <input
+                      value={steamUrl}
+                      onChange={(e) => setSteamUrl(e.target.value)}
+                      placeholder={t('profile.steamPlaceholder')}
+                      inputMode="url"
+                      autoComplete="url"
+                      className="w-full rounded border border-cs-border bg-cs-bg/60 py-2 pr-3 pl-10 text-sm outline-none focus:border-cs-gold/50"
+                    />
+                  </div>
                   <p className="mt-1.5 text-[11px] text-cs-muted">{t('profile.steamHint')}</p>
                 </div>
 

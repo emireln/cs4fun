@@ -35,9 +35,9 @@ export default function HomeHub({ onSelectMode, onOpenFriends }) {
             >
               <div className="mb-8 text-center sm:mb-10">
                 <LogoMark
-                  title="cs4fun"
+                  title="CS4FUN"
                   decorative={false}
-                  className="mx-auto mb-4 h-20 w-20 cursor-pointer sm:h-24 sm:w-24"
+                  className="mx-auto mb-5 h-56 w-56 cursor-pointer sm:mb-6 sm:h-72 sm:w-72"
                 />
                 <h1 className="font-display text-5xl font-extrabold tracking-tight sm:text-6xl">
                   <span className="gold-text">{t('home.title')}</span>

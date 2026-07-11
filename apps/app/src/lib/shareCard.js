@@ -1,11 +1,14 @@
 import { ROLES } from '../data/constants'
+import { formatUsd, RARITY_META } from './boxBattle'
+
+const FONT = 'Arial, Helvetica, sans-serif'
 
 /**
  * Draw a shareable result card to canvas (no external deps).
  * Returns a Blob (PNG) or null.
  */
 export async function renderShareCardBlob({
-  mode = 'cs4fun',
+  mode = 'CS4FUN',
   won = false,
   title = '',
   score,
@@ -16,6 +19,10 @@ export async function renderShareCardBlob({
   mapPriority,
   lineup,
   locale = 'en',
+  boxDrops = null,
+  myTotal = null,
+  oppTotal = null,
+  caseName = null,
 }) {
   const W = 1080
   const H = 1350
@@ -25,7 +32,7 @@ export async function renderShareCardBlob({
   const ctx = canvas.getContext('2d')
   if (!ctx) return null
 
-  // Background
+  // Solid fills first — never rely on web fonts / external images for readability
   const bg = ctx.createLinearGradient(0, 0, W, H)
   bg.addColorStop(0, '#0a0c10')
   bg.addColorStop(0.45, '#12161f')
@@ -33,8 +40,7 @@ export async function renderShareCardBlob({
   ctx.fillStyle = bg
   ctx.fillRect(0, 0, W, H)
 
-  // Grid texture
-  ctx.strokeStyle = 'rgba(255,255,255,0.03)'
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)'
   ctx.lineWidth = 1
   for (let x = 0; x < W; x += 48) {
     ctx.beginPath()
@@ -49,22 +55,19 @@ export async function renderShareCardBlob({
     ctx.stroke()
   }
 
-  // Gold accent bar
   ctx.fillStyle = won ? '#e8c547' : '#e85d5d'
-  ctx.fillRect(0, 0, W, 10)
+  ctx.fillRect(0, 0, W, 12)
 
-  // Brand
   ctx.fillStyle = '#e8c547'
-  ctx.font = 'bold 42px system-ui, sans-serif'
-  ctx.fillText('cs4fun', 72, 100)
+  ctx.font = `bold 48px ${FONT}`
+  ctx.fillText('CS4FUN', 72, 100)
 
   ctx.fillStyle = '#8b93a7'
-  ctx.font = '28px system-ui, sans-serif'
+  ctx.font = `28px ${FONT}`
   ctx.fillText(String(mode).toUpperCase(), 72, 150)
 
-  // Result
   ctx.fillStyle = won ? '#e8c547' : '#e85d5d'
-  ctx.font = 'bold 72px system-ui, sans-serif'
+  ctx.font = `bold 72px ${FONT}`
   const resultWord =
     title ||
     (won
@@ -76,27 +79,59 @@ export async function renderShareCardBlob({
         : 'LOSS')
   wrapText(ctx, resultWord, 72, 280, W - 144, 80)
 
-  // Stats row
   ctx.fillStyle = '#e8ecf4'
-  ctx.font = 'bold 40px ui-monospace, monospace'
+  ctx.font = `bold 40px ${FONT}`
   const bits = []
   if (wins != null || losses != null) bits.push(`${wins ?? 0}W-${losses ?? 0}L`)
   if (score != null) bits.push(`SCORE ${score}`)
   if (streak != null) bits.push(`STREAK ${streak}`)
-  if (mapPriority) bits.push(mapPriority)
-  ctx.fillText(bits.join('  ·  '), 72, 420)
+  if (mapPriority) bits.push(String(mapPriority))
+  if (myTotal != null && oppTotal != null) {
+    bits.push(`${formatUsd(myTotal)} vs ${formatUsd(oppTotal)}`)
+  }
+  if (caseName) bits.push(String(caseName))
+  ctx.fillText(bits.join('  ·  ') || '—', 72, 420)
 
-  // Nickname
   ctx.fillStyle = '#8b93a7'
-  ctx.font = '32px system-ui, sans-serif'
-  ctx.fillText(`@${nickname}`, 72, 480)
+  ctx.font = `32px ${FONT}`
+  ctx.fillText(`@${nickname || 'Player'}`, 72, 480)
 
-  // Lineup
-  if (lineup) {
+  if (mode === 'box' && Array.isArray(boxDrops) && boxDrops.length) {
+    let y = 540
+    ctx.fillStyle = '#e8c547'
+    ctx.font = `bold 28px ${FONT}`
+    ctx.fillText(locale === 'pt-BR' ? 'SEUS DROPS' : 'YOUR PULLS', 72, y)
+    y += 36
+
+    for (const drop of boxDrops.slice(0, 8)) {
+      const color = RARITY_META[drop.rarity]?.color || '#e8c547'
+      ctx.fillStyle = '#1a2030'
+      roundRect(ctx, 72, y, W - 144, 78, 12)
+      ctx.fill()
+      ctx.strokeStyle = color
+      ctx.lineWidth = 2
+      ctx.stroke()
+
+      ctx.fillStyle = color
+      ctx.font = `bold 22px ${FONT}`
+      ctx.fillText((drop.rarity || '').toUpperCase(), 96, y + 48)
+
+      ctx.fillStyle = '#e8ecf4'
+      ctx.font = `bold 28px ${FONT}`
+      const name = String(drop.name || '—')
+      const clipped = name.length > 28 ? `${name.slice(0, 27)}…` : name
+      ctx.fillText(clipped, 280, y + 48)
+
+      ctx.fillStyle = '#e8c547'
+      ctx.font = `bold 26px ${FONT}`
+      ctx.fillText(formatUsd(drop.value), W - 220, y + 48)
+      y += 90
+    }
+  } else if (lineup) {
     let y = 560
     ctx.fillStyle = '#e8c547'
-    ctx.font = 'bold 28px system-ui, sans-serif'
-    ctx.fillText(locale === 'pt-BR' ? 'LINEUP' : 'LINEUP', 72, y)
+    ctx.font = `bold 28px ${FONT}`
+    ctx.fillText('LINEUP', 72, y)
     y += 50
 
     for (const role of ROLES) {
@@ -106,31 +141,66 @@ export async function renderShareCardBlob({
       ctx.fill()
 
       ctx.fillStyle = '#e8c547'
-      ctx.font = 'bold 24px system-ui, sans-serif'
+      ctx.font = `bold 24px ${FONT}`
       ctx.fillText(role.short, 96, y + 54)
 
       ctx.fillStyle = '#e8ecf4'
-      ctx.font = 'bold 32px system-ui, sans-serif'
+      ctx.font = `bold 32px ${FONT}`
       ctx.fillText(p?.name || '—', 200, y + 54)
 
       if (p?.fromTeam) {
         ctx.fillStyle = '#8b93a7'
-        ctx.font = '22px system-ui, sans-serif'
+        ctx.font = `22px ${FONT}`
         ctx.fillText(p.fromTeam, 520, y + 54)
       }
       y += 104
     }
   }
 
-  // Footer
   ctx.fillStyle = '#8b93a7'
-  ctx.font = '24px system-ui, sans-serif'
-  const url = typeof window !== 'undefined' ? window.location.origin : 'cs4fun'
-  ctx.fillText(url, 72, H - 60)
+  ctx.font = `24px ${FONT}`
+  const url = typeof window !== 'undefined' ? window.location.origin || 'cs4fun.online' : 'cs4fun.online'
+  ctx.fillText(String(url).replace(/^file:.*/, 'cs4fun.online'), 72, H - 60)
 
-  return new Promise((resolve) => {
-    canvas.toBlob((blob) => resolve(blob), 'image/png')
-  })
+  return canvasToPngBlob(canvas)
+}
+
+export async function canvasToPngBlob(canvas) {
+  if (!canvas) return null
+  if (typeof canvas.toBlob === 'function') {
+    const blob = await new Promise((resolve) => {
+      try {
+        canvas.toBlob((b) => resolve(b), 'image/png')
+      } catch {
+        resolve(null)
+      }
+    })
+    if (blob && blob.size > 0) return blob
+  }
+  try {
+    const dataUrl = canvas.toDataURL('image/png')
+    const res = await fetch(dataUrl)
+    return await res.blob()
+  } catch {
+    return null
+  }
+}
+
+export function triggerBlobDownload(blob, filename = 'cs4fun-result.png') {
+  if (!blob) return false
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.rel = 'noopener'
+  a.style.display = 'none'
+  document.body.appendChild(a)
+  a.click()
+  setTimeout(() => {
+    URL.revokeObjectURL(url)
+    a.remove()
+  }, 1500)
+  return true
 }
 
 function wrapText(ctx, text, x, y, maxWidth, lineHeight) {

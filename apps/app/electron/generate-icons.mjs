@@ -27,13 +27,31 @@ if (!fs.existsSync(sourceLogo)) {
   process.exit(1)
 }
 
-async function resizeLogo(size) {
-  return sharp(sourceLogo)
-    .resize(size, size, {
+/**
+ * Trim transparent padding then fit into a square so the mark fills the box
+ * (source art is wide with large empty margins).
+ */
+async function resizeLogo(size, fill = 0.92) {
+  const trimmed = await sharp(sourceLogo).trim({ threshold: 12 }).ensureAlpha().toBuffer()
+  const inner = Math.max(1, Math.round(size * fill))
+  const fitted = await sharp(trimmed)
+    .resize(inner, inner, {
       fit: 'contain',
       background: { r: 0, g: 0, b: 0, alpha: 0 },
     })
     .ensureAlpha()
+    .png()
+    .toBuffer()
+
+  return sharp({
+    create: {
+      width: size,
+      height: size,
+      channels: 4,
+      background: { r: 0, g: 0, b: 0, alpha: 0 },
+    },
+  })
+    .composite([{ input: fitted, gravity: 'centre' }])
     .png()
     .toBuffer()
 }

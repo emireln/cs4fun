@@ -292,6 +292,58 @@ export function playPerfectWin() {
   tone(1318, 0.5, 'sine', 0.07, 1.35)
 }
 
+/**
+ * Box Battle rare land — original synth (not Valve assets).
+ * classified → soft shimmer · covert → red hit · gold (knife/gloves) → jackpot
+ */
+export function playBoxRareDrop(rarity = 'classified') {
+  if (!enabled) return
+  unlockAudio()
+  const now = Date.now()
+  if (now - lastPlay < 80) return
+  lastPlay = now
+
+  if (rarity === 'gold') {
+    // Deep thud + rising gold cascade
+    noiseBurst(0.18, 0.22, 0, 420)
+    tone(90, 0.22, 'sine', 0.16, 0)
+    tone(180, 0.18, 'triangle', 0.1, 0.04)
+    const cascade = [523, 659, 784, 988, 1175, 1568]
+    cascade.forEach((f, i) => {
+      tone(f, 0.14 + i * 0.02, 'sine', 0.1 - i * 0.008, 0.12 + i * 0.07)
+      tone(f * 1.01, 0.1, 'triangle', 0.04, 0.14 + i * 0.07)
+    })
+    noiseBurst(0.35, 0.14, 0.45, 2400)
+    tone(2093, 0.55, 'sine', 0.09, 0.55)
+    return
+  }
+
+  if (rarity === 'covert') {
+    noiseBurst(0.12, 0.2, 0, 700)
+    tone(140, 0.16, 'sawtooth', 0.12, 0)
+    tone(880, 0.1, 'sine', 0.12, 0.08)
+    tone(1175, 0.14, 'sine', 0.14, 0.18)
+    tone(1480, 0.28, 'sine', 0.11, 0.3)
+    noiseBurst(0.2, 0.1, 0.22, 1800)
+    return
+  }
+
+  // classified
+  noiseBurst(0.08, 0.12, 0, 1100)
+  tone(740, 0.1, 'sine', 0.1, 0)
+  tone(932, 0.12, 'sine', 0.11, 0.09)
+  tone(1108, 0.22, 'triangle', 0.1, 0.2)
+}
+
+/** Soft tick while the reel spins (optional, throttled). */
+export function playBoxReelTick() {
+  if (!enabled) return
+  const now = Date.now()
+  if (now - lastPlay < 55) return
+  lastPlay = now
+  tone(220 + Math.random() * 80, 0.03, 'square', 0.035, 0)
+}
+
 export function playMatchEvent(type, text = '') {
   if (!enabled) return
   const now = Date.now()

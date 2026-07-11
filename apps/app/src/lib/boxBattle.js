@@ -18,6 +18,22 @@ export const RARITY_META = {
   gold: { label: 'Extraordinary', color: '#e4ae39', rank: 5 },
 }
 
+/** Classified+ — pink / red / gold hits get FX + sound */
+export function isHighTierDrop(dropOrRarity) {
+  const rarity = typeof dropOrRarity === 'string' ? dropOrRarity : dropOrRarity?.rarity
+  return rarity === 'classified' || rarity === 'covert' || rarity === 'gold'
+}
+
+/** Knives / gloves (Extraordinary special items) */
+export function isSpecialItemDrop(dropOrRarity) {
+  const rarity = typeof dropOrRarity === 'string' ? dropOrRarity : dropOrRarity?.rarity
+  if (rarity === 'gold') return true
+  const name = typeof dropOrRarity === 'object' ? String(dropOrRarity?.name || '') : ''
+  return /★|knife|gloves|karambit|bayonet|butterfly|talon|skeleton|nomad|paracord|survival|ursus|stiletto|navaja|shadow daggers|huntsman|falchion|bowie|classic knife|gut knife|flip knife|m9/i.test(
+    name,
+  )
+}
+
 export function listCases() {
   return catalog.cases || []
 }
@@ -88,13 +104,24 @@ export function openCase(caseId, seed = `${Date.now()}`) {
   }
 }
 
-export function openBattleRound({ caseId, players, battleSeed, roundIndex }) {
+export function openBattleRound({ caseId, caseIds, players, battleSeed, roundIndex }) {
+  const id = (Array.isArray(caseIds) && caseIds[roundIndex]) || caseId
   return players.map((p) => ({
     playerId: p.id,
     nickname: p.nickname,
     isBot: Boolean(p.isBot),
-    drop: openCase(caseId, `${battleSeed}:${p.id}:r${roundIndex}`),
+    caseId: id,
+    drop: openCase(id, `${battleSeed}:${p.id}:r${roundIndex}`),
   }))
+}
+
+/** Pick `count` case ids (with replacement) from the catalog. */
+export function autoPickCases(count = 3, seed = `${Date.now()}`) {
+  const all = listCases()
+  if (!all.length) return []
+  const rng = mulberry32(hashString(String(seed)))
+  const n = Math.max(1, Math.min(10, Number(count) || 3))
+  return Array.from({ length: n }, () => all[Math.floor(rng() * all.length)].id)
 }
 
 export function sumDrops(drops) {

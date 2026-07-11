@@ -190,13 +190,20 @@ insert into public.badge_defs (id, category, threshold, icon, sort_order) values
   ('gauntlet_15', 'max_streak', 15, 'mountain', 150),
   ('daily_3', 'daily_wins', 3, 'sun', 160),
   ('party_king', 'party_wins', 5, 'party', 170),
+  ('box_first', 'box_wins', 1, 'package', 171),
   ('box_3', 'box_wins', 3, 'package', 175),
   ('box_10', 'box_wins', 10, 'gem', 176),
   ('box_whale', 'box_wins', 25, 'crown', 177),
-  ('perfect_major', 'perfect_majors', 1, 'star', 180),
-  ('almanac_win', 'almanac_wins', 1, 'book', 190),
-  ('social', 'party_games', 1, 'handshake', 200),
-  ('completionist', 'meta_all', 20, 'sparkles', 210)
+  ('box_gold', 'box_gold_hits', 1, 'sparkles', 178),
+  ('box_gold_3', 'box_gold_hits', 3, 'gem', 179),
+  ('box_covert', 'box_covert_hits', 1, 'flame', 181),
+  ('box_covert_10', 'box_covert_hits', 10, 'skull', 182),
+  ('box_jackpot', 'box_best_value', 500, 'star', 183),
+  ('box_opener', 'box_opens', 50, 'dices', 184),
+  ('perfect_major', 'perfect_majors', 1, 'star', 190),
+  ('almanac_win', 'almanac_wins', 1, 'book', 200),
+  ('social', 'party_games', 1, 'handshake', 210),
+  ('completionist', 'meta_all', 20, 'sparkles', 999)
 on conflict (id) do update set
   category = excluded.category,
   threshold = excluded.threshold,
@@ -218,8 +225,24 @@ create table if not exists public.user_stats (
   almanac_wins integer not null default 0,
   max_streak integer not null default 0,
   box_wins integer not null default 0,
+  box_gold_hits integer not null default 0,
+  box_covert_hits integer not null default 0,
+  box_opens integer not null default 0,
+  box_best_value numeric not null default 0,
+  best_drop jsonb,
   updated_at timestamptz not null default now()
 );
+
+alter table public.user_stats
+  add column if not exists box_gold_hits integer not null default 0;
+alter table public.user_stats
+  add column if not exists box_covert_hits integer not null default 0;
+alter table public.user_stats
+  add column if not exists box_opens integer not null default 0;
+alter table public.user_stats
+  add column if not exists box_best_value numeric not null default 0;
+alter table public.user_stats
+  add column if not exists best_drop jsonb;
 
 -- ─── Harden RLS ───────────────────────────────────────────
 alter table public.profiles enable row level security;
@@ -397,6 +420,10 @@ begin
       when 'almanac_wins' then s.almanac_wins
       when 'max_streak' then s.max_streak
       when 'box_wins' then coalesce(s.box_wins, 0)
+      when 'box_gold_hits' then coalesce(s.box_gold_hits, 0)
+      when 'box_covert_hits' then coalesce(s.box_covert_hits, 0)
+      when 'box_opens' then coalesce(s.box_opens, 0)
+      when 'box_best_value' then floor(coalesce(s.box_best_value, 0))::integer
       else 0
     end;
     if metric >= b.threshold then
@@ -503,6 +530,20 @@ begin
     party_wins = party_wins + case when p_mode = 'party' and p_won then 1 else 0 end,
     party_games = party_games + case when p_mode = 'party' then 1 else 0 end,
     box_wins = coalesce(box_wins, 0) + case when p_mode = 'box' and p_won then 1 else 0 end,
+    box_gold_hits = coalesce(box_gold_hits, 0) + case when p_mode = 'box' then greatest(0, coalesce((p_meta->>'roundGold')::integer, 0)) else 0 end,
+    box_covert_hits = coalesce(box_covert_hits, 0) + case when p_mode = 'box' then greatest(0, coalesce((p_meta->>'roundCovert')::integer, 0)) else 0 end,
+    box_opens = coalesce(box_opens, 0) + case when p_mode = 'box' then greatest(0, coalesce((p_meta->>'roundOpens')::integer, 0)) else 0 end,
+    box_best_value = case
+      when p_mode = 'box' and coalesce((p_meta->'bestDrop'->>'value')::numeric, 0) > coalesce(box_best_value, 0)
+        then coalesce((p_meta->'bestDrop'->>'value')::numeric, 0)
+      else coalesce(box_best_value, 0)
+    end,
+    best_drop = case
+      when p_mode = 'box' and coalesce((p_meta->'bestDrop'->>'value')::numeric, 0) > coalesce(box_best_value, 0)
+        then p_meta->'bestDrop'
+      when p_mode = 'box' and best_drop is null and p_meta ? 'bestDrop' then p_meta->'bestDrop'
+      else best_drop
+    end,
     perfect_majors = perfect_majors + case when p_mode = 'major' and p_won and p_wins >= 3 and p_losses = 0 then 1 else 0 end,
     almanac_wins = almanac_wins + case when p_won and coalesce(p_meta->>'difficulty', '') = 'almanac' then 1 else 0 end,
     max_streak = greatest(max_streak, case when p_mode = 'gauntlet' then p_streak else 0 end),
@@ -932,6 +973,8 @@ begin
     'wins', case when can_see then coalesce(stats.wins, 0) else null end,
     'games', case when can_see then coalesce(stats.games, 0) else null end,
     'badgeCount', case when can_see then badge_count else null end,
+    'boxWins', case when can_see then coalesce(stats.box_wins, 0) else null end,
+    'bestDrop', case when can_see then stats.best_drop else null end,
     'ultra', exists (
       select 1 from public.user_badges ub
       where ub.user_id = p.id and ub.badge_id = 'completionist'

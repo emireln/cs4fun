@@ -10,6 +10,7 @@ import {
   Flame,
   Calendar,
   Download,
+  Package,
 } from 'lucide-react'
 import docsCopy from './docsCopy'
 import LogoMark from './LogoMark'
@@ -20,7 +21,7 @@ const WINDOWS_URL =
 const SUPPORT_URL = 'https://buymeacoffee.com/emireln'
 
 function reportMailto(t) {
-  const subject = encodeURIComponent(t.reportMailSubject || 'cs4fun report')
+  const subject = encodeURIComponent(t.reportMailSubject || 'CS4FUN report')
   const body = encodeURIComponent(t.reportMailBody || '')
   return `mailto:contact.cs4fun@gmail.com?subject=${subject}&body=${body}`
 }
@@ -29,6 +30,7 @@ const MODE_ICONS = {
   major: Trophy,
   duel: Swords,
   party: Users,
+  box: Package,
   daily: Calendar,
   gauntlet: Flame,
 }
@@ -38,9 +40,9 @@ export default function DocsPage({ lang, onNavigate, onToggleLang, langLabel }) 
   const [active, setActive] = useState(t.sections[0]?.id)
 
   useEffect(() => {
-    document.title = `cs4fun — ${t.title}`
+    document.title = `CS4FUN — ${t.title}`
     return () => {
-      document.title = 'cs4fun'
+      document.title = 'CS4FUN'
     }
   }, [t.title])
 
@@ -121,7 +123,7 @@ export default function DocsPage({ lang, onNavigate, onToggleLang, langLabel }) 
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45 }}
           >
-            <LogoMark className="mb-4 h-14 w-14 cursor-pointer" />
+            <LogoMark className="mb-4 h-44 w-44 cursor-pointer sm:h-52 sm:w-52" />
             <h1 className="font-display text-3xl font-extrabold tracking-tight sm:text-4xl">
               <span className="gold-text">{t.title}</span>
             </h1>

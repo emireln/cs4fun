@@ -2,7 +2,7 @@
  * Brand mark — public/logo.png
  */
 export default function LogoMark({ className = '', title, decorative = true }) {
-  const alt = title || (decorative ? '' : 'cs4fun')
+  const alt = title || (decorative ? '' : 'CS4FUN')
 
   return (
     <img

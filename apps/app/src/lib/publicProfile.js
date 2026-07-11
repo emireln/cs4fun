@@ -3,6 +3,7 @@ import { loadProfile } from './profile'
 import { sanitizeAvatarUrl } from './avatarImage'
 import { sanitizeSteamUrl } from './steam'
 import { fetchUserStats, fetchUserBadges, ULTRA_BADGE_ID } from './history'
+import { readBoxStats } from './boxBattle'
 
 const LOCAL_DIR = 'cs4fun_local_directory_v1'
 
@@ -46,6 +47,8 @@ export async function fetchPublicProfile(userId, { viewerId } = {}) {
         wins: data.wins,
         games: data.games,
         badgeCount: data.badgeCount,
+        boxWins: data.boxWins ?? null,
+        bestDrop: data.bestDrop || null,
         ultra: Boolean(data.ultra),
       }
     }
@@ -85,6 +88,8 @@ export async function fetchPublicProfile(userId, { viewerId } = {}) {
         wins,
         games,
         badgeCount,
+        boxWins: canSee ? stats?.box_wins ?? 0 : null,
+        bestDrop: canSee ? stats?.best_drop || readBoxStats(userId)?.bestDrop || null : null,
         ultra,
       }
     }
@@ -109,6 +114,8 @@ export async function fetchPublicProfile(userId, { viewerId } = {}) {
       wins: stats?.wins ?? 0,
       games: stats?.games ?? 0,
       badgeCount: badges?.length ?? 0,
+      boxWins: stats?.box_wins ?? 0,
+      bestDrop: stats?.best_drop || readBoxStats(userId)?.bestDrop || null,
       ultra: hasUltra(badges),
     }
   }
@@ -127,6 +134,8 @@ export async function fetchPublicProfile(userId, { viewerId } = {}) {
       wins: null,
       games: null,
       badgeCount: null,
+      boxWins: null,
+      bestDrop: null,
       ultra: false,
     }
   }
@@ -145,6 +154,8 @@ export async function fetchPublicProfile(userId, { viewerId } = {}) {
     wins: null,
     games: null,
     badgeCount: isPublic ? badges.length : null,
+    boxWins: null,
+    bestDrop: isPublic ? readBoxStats(userId)?.bestDrop || null : null,
     ultra: isPublic ? hasUltra(badges) : false,
   }
 }

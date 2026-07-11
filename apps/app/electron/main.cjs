@@ -66,7 +66,7 @@ function createWindow() {
     minWidth: 480,
     minHeight: 560,
     backgroundColor: '#0a0c10',
-    title: 'cs4fun',
+    title: 'CS4FUN',
     autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
@@ -113,11 +113,11 @@ function createWindow() {
 function createTray(win) {
   const image = trayIconImage()
   tray = new Tray(image.isEmpty() ? nativeImage.createEmpty() : image)
-  tray.setToolTip('cs4fun')
+  tray.setToolTip('CS4FUN')
   tray.setContextMenu(
     Menu.buildFromTemplate([
       {
-        label: 'Show cs4fun',
+        label: 'Show CS4FUN',
         click: () => {
           win.show()
           win.focus()

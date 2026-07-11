@@ -1,4 +1,4 @@
-# cs4fun
+# CS4FUN
 
 Addictive Counter-Strike draft arena — play solo or with friends.
 
@@ -90,10 +90,10 @@ In Supabase Auth, add redirect URL `https://app.cs4fun.online` (and local `http:
 
 User-facing documentation lives on the landing site at **`/docs`** (EN + PT-BR):
 
-- What cs4fun is
+- What CS4FUN is
 - Core loop (draft → veto → simulation → score)
-- All five modes
-- Friends / multiplayer / H2H
+- All six modes
+- Friends / multiplayer / H2H / Box vault compare
 - Account, ranks, sounds, desktop app
 - Quick tips
 
@@ -106,12 +106,13 @@ Source: [`apps/web/src/docsCopy.js`](apps/web/src/docsCopy.js) + [`apps/web/src/
 | **Major Run** | Draft a dream five, win an 8-team MD3 bracket |
 | **1v1 Duel** | Shared rolls vs CPU or a friend — BO3 showmatch |
 | **Party Race** | Same scouts for the whole room — highest team power wins |
+| **Box Battle** | Queue up to 10 real CS cases; highest vault value wins |
 | **Daily Challenge** | Global UTC seed, pick timer, worldwide leaderboard |
 | **Gauntlet** | Survive escalating BO1 waves |
 
 ## Friends
 
-Add friends by tag and invite them to a match — no room code required. Code lobby still available.
+Add friends by tag and invite them to a duel, party, or Box Battle — no room code required. Code lobby still available. Friend cards compare career best Box drops.
 
 Without Supabase, rooms sync on the same browser/device via `localStorage` + `BroadcastChannel`. With Supabase, rooms, friends, and leaderboards go global.
 

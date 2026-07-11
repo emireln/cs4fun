@@ -364,6 +364,77 @@ canvas {
   75% { transform: translateX(4px); }
 }
 
+/* Box Battle — rare drop FX (classified / covert / gold) */
+@keyframes boxRareSpin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes boxRareRingPulse {
+  0%, 100% {
+    opacity: 0.85;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes boxRareShake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-3px) rotate(-0.4deg); }
+  40% { transform: translateX(3px) rotate(0.4deg); }
+  60% { transform: translateX(-2px); }
+  80% { transform: translateX(2px); }
+}
+
+@keyframes boxDropRingPulse {
+  0%, 100% {
+    opacity: 0.7;
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--drop-glow, #e4ae39) 45%, transparent);
+  }
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 14px 2px color-mix(in srgb, var(--drop-glow, #e4ae39) 55%, transparent);
+  }
+}
+
+.box-rare-spin {
+  animation: boxRareSpin 2.8s linear infinite;
+}
+
+.box-rare-ring {
+  border: 2px solid;
+  animation: boxRareRingPulse 1.1s ease-in-out infinite;
+}
+
+.box-rare-shake {
+  animation: boxRareShake 0.55s ease-in-out;
+}
+
+.box-rare-shake-gold {
+  animation: boxRareShake 0.7s ease-in-out;
+}
+
+.box-drop-ring {
+  border: 1px solid;
+  animation: boxDropRingPulse 1.6s ease-in-out infinite;
+}
+
+.box-drop-aura-gold {
+  z-index: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .box-rare-spin,
+  .box-rare-ring,
+  .box-rare-shake,
+  .box-rare-shake-gold,
+  .box-drop-ring {
+    animation: none !important;
+  }
+}
+
 /* Brand logo mark (PNG) */
 .logo-mark {
   display: block;

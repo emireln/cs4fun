@@ -1,22 +1,22 @@
 const docsCopy = {
   en: {
     title: 'Docs',
-    subtitle: 'How cs4fun works — modes, draft, friends, and ranks.',
+    subtitle: 'How CS4FUN works — modes, draft, friends, and ranks.',
     back: 'Home',
     play: 'Play now',
     windows: 'Download for Windows',
     toc: 'On this page',
     support: 'Support the project',
     report: 'Submit a report',
-    reportMailSubject: 'cs4fun report',
+    reportMailSubject: 'CS4FUN report',
     reportMailBody: 'Type: bug / suggestion / other\n\nDescribe:\n',
     langAria: 'Language',
     sections: [
       {
         id: 'what',
-        title: 'What is cs4fun?',
+        title: 'What is CS4FUN?',
         body: [
-          'cs4fun is a Counter-Strike draft arena. You build a dream five from historical lineups, ban and pick maps, then watch a simulated series play out — solo or with friends.',
+          'CS4FUN is a Counter-Strike draft arena. You build a dream five from historical lineups, ban and pick maps, then watch a simulated series play out — solo or with friends.',
           'It is a browser game and an optional Windows desktop app. Guests can play immediately; signing in syncs history, badges, and cloud ranks.',
           'Not affiliated with Valve or HLTV. Player names and events are used for fun, nostalgic drafting — not as an official product.',
         ],
@@ -69,6 +69,11 @@ const docsCopy = {
             text: 'Everyone in the room gets the same scouts. Build the strongest five; highest team power wins. Quick lobbies, no series sim.',
           },
           {
+            id: 'box',
+            title: 'Box Battle',
+            text: 'Queue up to 10 real CS cases (manual or auto), open them on a reel, and race for the highest vault value. Solo vs BOT or invite a friend. Wins and rare pulls unlock Box badges; your career best drop shows on your profile.',
+          },
+          {
             id: 'daily',
             title: 'Blind Daily',
             text: 'One UTC seed for the world. Ratings stay hidden (always almanac), matches are BO1, and the global board resets each day.',
@@ -84,9 +89,10 @@ const docsCopy = {
         id: 'friends',
         title: 'Friends & multiplayer',
         body: [
-          'Open Friends from the hub to add people by nickname/tag, accept requests, and invite them to a 1v1 or party — no room code required. A private room is created under the hood when you invite.',
+          'Open Friends from the hub to add people by nickname/tag, accept requests, and invite them to a 1v1, party, or Box Battle — no room code required. A private room is created under the hood when you invite.',
           'You can still use the classic code lobby if you prefer sharing a 6-character code.',
-          'Each friend shows head-to-head stats: matches played, wins, and losses. After a friend duel finishes, those numbers update automatically.',
+          'Each friend shows head-to-head stats: matches played, wins, and losses. After a friend duel or Box Battle finishes, those numbers update automatically.',
+          'On each friend card you can also compare Box vaults — your career best drop versus theirs.',
           'Without an account, friends and rooms work locally on the same browser/device. With Supabase sign-in, invites and ranks sync across devices.',
         ],
       },
@@ -94,8 +100,9 @@ const docsCopy = {
         id: 'account',
         title: 'Account, ranks & extras',
         body: [
-          'Set a tag and avatar on your profile. Guests play fully offline for drafts and sims; sign in to sync history, badges, and public ranks.',
-          'Leaderboards cover daily and duel boards (auth users). Showcase a badge on your profile once you unlock them.',
+          'Set a tag, avatar, and optional Steam profile link on your profile. Guests play fully offline for drafts and sims; sign in to sync history, badges, and public ranks.',
+          'Your profile shows career best Box drop when you have one. Badges cover Majors, duels, dailies, gauntlets, and Box Battle (wins, golds, Coverts, jackpots, and open volume).',
+          'Leaderboards cover daily, duel, box, and more (auth users). Showcase a badge on your profile once you unlock them.',
           'Optional low-volume match sounds (shots, bomb beeps, radio cues) can be toggled in Account.',
           'Support the project anytime via Buy Me a Coffee — linked from the landing page, game footer, and result screen.',
         ],
@@ -115,7 +122,8 @@ const docsCopy = {
         body: [
           'Role fit and map pool matter — a stacked AWPer on the wrong map still loses rounds.',
           'In shared-roll modes, the edge is veto and role assignment, not who got lucky on the scout.',
-          'Finish friend duels to grow your H2H record; rematch from the results screen when both players are ready.',
+          'Finish friend duels and Box Battles to grow your H2H record; rematch from the results screen when both players are ready.',
+          'Chase Box badges — Extraordinary pulls, Coverts, and a $500+ best drop all count.',
           'Switch language anytime from Profile (EN / PT).',
         ],
       },
@@ -123,22 +131,22 @@ const docsCopy = {
   },
   pt: {
     title: 'Documentação',
-    subtitle: 'Como o cs4fun funciona — modos, draft, amigos e rankings.',
+    subtitle: 'Como o CS4FUN funciona — modos, draft, amigos e rankings.',
     back: 'Início',
     play: 'Jogar agora',
     windows: 'Baixar para Windows',
     toc: 'Nesta página',
     support: 'Apoiar o projeto',
     report: 'Enviar um relatório',
-    reportMailSubject: 'Relatório cs4fun',
+    reportMailSubject: 'Relatório CS4FUN',
     reportMailBody: 'Tipo: bug / sugestão / outro\n\nDescreva:\n',
     langAria: 'Idioma',
     sections: [
       {
         id: 'what',
-        title: 'O que é o cs4fun?',
+        title: 'O que é o CS4FUN?',
         body: [
-          'cs4fun é uma arena de draft de Counter-Strike. Você monta um time dos sonhos com lineups históricas, bane e escolhe mapas, e assiste a uma série simulada — solo ou com amigos.',
+          'CS4FUN é uma arena de draft de Counter-Strike. Você monta um time dos sonhos com lineups históricas, bane e escolhe mapas, e assiste a uma série simulada — solo ou com amigos.',
           'É um jogo no navegador e, opcionalmente, um app Windows. Convidados jogam na hora; ao entrar na conta, histórico, conquistas e rankings na nuvem sincronizam.',
           'Não afiliado à Valve ou HLTV. Nomes e eventos existem para o draft nostálgico — não é um produto oficial.',
         ],
@@ -191,6 +199,11 @@ const docsCopy = {
             text: 'Todo mundo na sala recebe os mesmos scouts. Monte o time mais forte; maior poder vence. Salas rápidas, sem simulação de série.',
           },
           {
+            id: 'box',
+            title: 'Box Battle',
+            text: 'Monte até 10 cases reais do CS (manual ou automático), abra no reel e dispute o maior valor de vault. Solo vs BOT ou convide um amigo. Vitórias e drops raros desbloqueiam conquistas de Box; o melhor drop da carreira aparece no perfil.',
+          },
+          {
             id: 'daily',
             title: 'Diário Cego',
             text: 'Uma seed UTC para o mundo. Ratings ficam ocultos (sempre almanaque), partidas são BO1, e o ranking global reinicia todo dia.',
@@ -206,9 +219,10 @@ const docsCopy = {
         id: 'friends',
         title: 'Amigos e multiplayer',
         body: [
-          'Abra Amigos no hub para adicionar por tag, aceitar pedidos e convidar para 1v1 ou party — sem código de sala. Uma sala privada é criada automaticamente no convite.',
+          'Abra Amigos no hub para adicionar por tag, aceitar pedidos e convidar para 1v1, party ou Box Battle — sem código de sala. Uma sala privada é criada automaticamente no convite.',
           'Ainda dá para usar a sala clássica com código de 6 caracteres se preferir.',
-          'Cada amigo mostra estatísticas de confronto direto: partidas, vitórias e derrotas. Depois de um duelo entre amigos, os números atualizam sozinhos.',
+          'Cada amigo mostra estatísticas de confronto direto: partidas, vitórias e derrotas. Depois de um duelo ou Box Battle entre amigos, os números atualizam sozinhos.',
+          'No card de cada amigo você também compara os vaults de Box — seu melhor drop da carreira contra o deles.',
           'Sem conta, amigos e salas funcionam localmente no mesmo navegador/dispositivo. Com login no Supabase, convites e rankings sincronizam entre aparelhos.',
         ],
       },
@@ -216,8 +230,9 @@ const docsCopy = {
         id: 'account',
         title: 'Conta, rankings e extras',
         body: [
-          'Defina tag e avatar no perfil. Convidados jogam drafts e sims offline; entre na conta para sincronizar histórico, conquistas e rankings públicos.',
-          'Os rankings incluem tabelas diárias e de duelo (usuários autenticados). Exiba uma conquista no perfil quando desbloquear.',
+          'Defina tag, avatar e um link opcional do perfil Steam. Convidados jogam drafts e sims offline; entre na conta para sincronizar histórico, conquistas e rankings públicos.',
+          'O perfil mostra o melhor drop de Box da carreira quando houver um. Conquistas cobrem Majors, duelos, diários, gauntlets e Box Battle (vitórias, golds, Coverts, jackpots e volume de opens).',
+          'Os rankings incluem tabelas diárias, de duelo, box e mais (usuários autenticados). Exiba uma conquista no perfil quando desbloquear.',
           'Sons de partida em volume baixo (tiros, beep da bomba, rádio) podem ser ligados em Conta.',
           'Apoie o projeto pelo Buy Me a Coffee — link na landing, no rodapé do jogo e na tela de resultado.',
         ],
@@ -237,7 +252,8 @@ const docsCopy = {
         body: [
           'O encaixe de função e o pool de mapas importam — AWPer monstro no mapa errado ainda perde rounds.',
           'Em modos de revelação compartilhada, a vantagem está no veto e nas funções, não em quem teve sorte no scout.',
-          'Termine duelos com amigos para crescer o placar de confronto direto; peça uma revanche na tela de resultado quando os dois estiverem prontos.',
+          'Termine duelos e Box Battles com amigos para crescer o placar de confronto direto; peça uma revanche na tela de resultado quando os dois estiverem prontos.',
+          'Busque conquistas de Box — pulls Extraordinary, Coverts e um melhor drop de $500+ contam.',
           'Troque o idioma a qualquer momento no Perfil (EN / PT).',
         ],
       },

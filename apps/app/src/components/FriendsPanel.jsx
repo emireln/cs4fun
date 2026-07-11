@@ -5,6 +5,7 @@ import { useI18n } from '../i18n'
 import { useAuth } from '../lib/auth'
 import ProfileAvatar from './ProfileAvatar'
 import PublicProfileModal from './PublicProfileModal'
+import BestDropCard from './BestDropCard'
 import {
   acceptFriendRequest,
   acceptInvite,
@@ -24,6 +25,18 @@ import {
   subscribeInvites,
 } from '../lib/friends'
 import { displayName } from '../lib/profile'
+import { formatUsd, readBoxStats } from '../lib/boxBattle'
+import { fetchPublicProfile } from '../lib/publicProfile'
+import { fetchUserStats } from '../lib/history'
+
+function pickBestDrop(...candidates) {
+  return candidates
+    .filter(Boolean)
+    .reduce((best, drop) => {
+      if (!best) return drop
+      return Number(drop.value) > Number(best.value) ? drop : best
+    }, null)
+}
 
 /**
  * Friends social panel — search, list, incoming/outgoing requests, match invites.
@@ -48,31 +61,40 @@ export default function FriendsPanel({
   const [results, setResults] = useState([])
   const [msg, setMsg] = useState('')
   const [h2h, setH2h] = useState({})
+  const [friendDrops, setFriendDrops] = useState({})
+  const [myBestDrop, setMyBestDrop] = useState(() => readBoxStats(profile?.id)?.bestDrop || null)
   const [selected, setSelected] = useState(null)
   const [busy, setBusy] = useState(false)
   const [viewProfileId, setViewProfileId] = useState(null)
 
   const refresh = async () => {
     registerLocalPlayer({ ...profile, nickname: displayName(profile) })
-    const [f, r, out, inv] = await Promise.all([
+    const [f, r, out, inv, mine] = await Promise.all([
       listFriends(profile.id),
       listIncomingRequests(profile.id),
       listOutgoingRequests(profile.id),
       listIncomingInvites(profile.id),
+      fetchUserStats(profile.id).catch(() => null),
     ])
     setFriends(f)
     setRequests(r)
     setOutgoing(out)
     setInvites(inv)
     onPendingChange?.(r.length)
+    setMyBestDrop(pickBestDrop(mine?.best_drop, readBoxStats(profile.id)?.bestDrop))
 
     const stats = {}
+    const drops = {}
     await Promise.all(
       f.map(async (friend) => {
         stats[friend.id] = await getFriendH2H(profile.id, friend.id)
+        const local = readBoxStats(friend.id)?.bestDrop
+        const pub = await fetchPublicProfile(friend.id, { viewerId: profile.id })
+        drops[friend.id] = pickBestDrop(local, pub?.bestDrop)
       }),
     )
     setH2h(stats)
+    setFriendDrops(drops)
   }
 
   useEffect(() => {
@@ -389,6 +411,38 @@ export default function FriendsPanel({
                       <Stat label={t('friends.matches')} value={stats.matches} />
                       <Stat label={t('friends.wins')} value={stats.wins} accent="text-cs-win" />
                       <Stat label={t('friends.losses')} value={stats.losses} accent="text-cs-loss" />
+                    </div>
+                    <div>
+                      <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-cs-gold">
+                        {t('friends.boxDropDuel')}
+                      </p>
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        <BestDropCard
+                          drop={myBestDrop}
+                          title={t('friends.yourBestDrop')}
+                          emptyLabel={t('box.noBestDrop')}
+                          compact
+                        />
+                        <BestDropCard
+                          drop={friendDrops[friend.id] || null}
+                          title={t('friends.theirBestDrop')}
+                          emptyLabel={t('box.noBestDrop')}
+                          compact
+                        />
+                      </div>
+                      {myBestDrop && friendDrops[friend.id] && (
+                        <p className="mt-2 text-center text-[11px] text-cs-muted">
+                          {Number(myBestDrop.value) === Number(friendDrops[friend.id].value)
+                            ? t('friends.boxDropTie')
+                            : Number(myBestDrop.value) > Number(friendDrops[friend.id].value)
+                              ? t('friends.boxDropYouLead', {
+                                  value: formatUsd(myBestDrop.value),
+                                })
+                              : t('friends.boxDropTheyLead', {
+                                  value: formatUsd(friendDrops[friend.id].value),
+                                })}
+                        </p>
+                      )}
                     </div>
                     <div className="flex flex-wrap gap-2">
                       <button

@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { motion } from 'framer-motion'
-import { Crown, Home, Package, Swords, Trophy } from 'lucide-react'
+import { Home, Package, Swords } from 'lucide-react'
 import { useI18n } from '../../i18n'
 import {
   bestDropOf,
@@ -8,33 +7,40 @@ import {
   formatUsd,
   getCase,
   openBattleRound,
-  RARITY_META,
   recordBoxBattle,
   scoreBoxBattle,
   sumDrops,
 } from '../../lib/boxBattle'
 import { saveGameResult } from '../../lib/history'
+import { recordFriendMatch } from '../../lib/friends'
 import { subscribeRoom, updateRoom } from '../../lib/rooms'
 import { unlockAudio } from '../../lib/sound'
 import BoxDropCard from '../box/BoxDropCard'
 import BoxOpenReel from '../box/BoxOpenReel'
+import BoxResults from '../box/BoxResults'
 import BoxSetup from '../box/BoxSetup'
-import GameOver from '../GameOver'
 
 export default function BoxGame({ profile, room, onHome, onStatus, onNeedFriends }) {
   const { t } = useI18n()
   const [localRoom, setLocalRoom] = useState(room)
   const [step, setStep] = useState(room ? 'lobby' : 'setup')
-  const [cfg, setCfg] = useState(() => ({
-    caseId: room?.caseId || room?.payload?.caseId || null,
-    rounds: room?.rounds || room?.payload?.rounds || 3,
-    vsBot: !room,
-  }))
+  const [cfg, setCfg] = useState(() => {
+    const caseIds =
+      room?.caseIds ||
+      room?.payload?.caseIds ||
+      (room?.caseId || room?.payload?.caseId ? [room.caseId || room.payload.caseId] : null)
+    return {
+      caseId: caseIds?.[0] || room?.caseId || room?.payload?.caseId || null,
+      caseIds: caseIds || [],
+      rounds: caseIds?.length || room?.rounds || room?.payload?.rounds || 3,
+      vsBot: !room,
+    }
+  })
   const [battleSeed, setBattleSeed] = useState(
     () => room?.seed || `box-${profile.id}-${Date.now()}`,
   )
   const [roundIndex, setRoundIndex] = useState(0)
-  const [revealing, setRevealing] = useState(null) // current round opens
+  const [revealing, setRevealing] = useState(null)
   const [myDrops, setMyDrops] = useState([])
   const [oppDrops, setOppDrops] = useState([])
   const [reelDone, setReelDone] = useState({ me: false, opp: false })
@@ -43,7 +49,12 @@ export default function BoxGame({ profile, room, onHome, onStatus, onNeedFriends
   const submitted = useRef(false)
   const lastBoxToken = useRef(null)
 
-  const crate = useMemo(() => getCase(cfg.caseId), [cfg.caseId])
+  const caseIds = cfg.caseIds?.length ? cfg.caseIds : cfg.caseId ? [cfg.caseId] : []
+  const rounds = caseIds.length || cfg.rounds || 1
+  const crate = useMemo(
+    () => getCase(caseIds[roundIndex] || caseIds[0] || cfg.caseId),
+    [caseIds, roundIndex, cfg.caseId],
+  )
   const botName = useMemo(() => botNickname(battleSeed), [battleSeed])
 
   const players = useMemo(() => {
@@ -81,34 +92,38 @@ export default function BoxGame({ profile, room, onHome, onStatus, onNeedFriends
       gameMode: 'box',
       extra:
         step === 'battle'
-          ? `${t('box.round')} ${Math.min(roundIndex + 1, cfg.rounds)}/${cfg.rounds}`
+          ? `${t('box.round')} ${Math.min(roundIndex + 1, rounds)}/${rounds}`
           : crate?.short || undefined,
     })
-  }, [step, roundIndex, cfg.rounds, crate?.short]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [step, roundIndex, rounds, crate?.short]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Friends room: wait until host configured case, then auto-start when status drafting
   useEffect(() => {
     if (!localRoom) return
     if (localRoom.status === 'drafting' || localRoom.status === 'reveal') {
-      const caseId = localRoom.caseId || localRoom.payload?.caseId || cfg.caseId
-      const rounds = localRoom.rounds || localRoom.payload?.rounds || cfg.rounds
-      if (caseId && step === 'lobby') {
-        setCfg({ caseId, rounds, vsBot: false })
+      const ids =
+        localRoom.caseIds ||
+        localRoom.payload?.caseIds ||
+        (localRoom.caseId || localRoom.payload?.caseId
+          ? [localRoom.caseId || localRoom.payload.caseId]
+          : null)
+      if (ids?.length && step === 'lobby') {
+        setCfg({ caseId: ids[0], caseIds: ids, rounds: ids.length, vsBot: false })
         setStep('battle')
         setRoundIndex(0)
         setMyDrops([])
         setOppDrops([])
       }
     }
-  }, [localRoom?.status, localRoom?.caseId, localRoom?.payload?.caseId]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [localRoom?.status, localRoom?.caseId, localRoom?.caseIds, localRoom?.payload?.caseId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const isFriendBox = Boolean(localRoom?.code) && !cfg.vsBot
   const isBoxHost = !localRoom || localRoom.hostId === profile.id
 
-  const startRound = (idx, caseId = cfg.caseId, { publish = true } = {}) => {
+  const startRound = (idx, { publish = true } = {}) => {
     unlockAudio()
     const opens = openBattleRound({
-      caseId,
+      caseId: caseIds[idx] || cfg.caseId,
+      caseIds,
       players: [me, opp].filter(Boolean),
       battleSeed,
       roundIndex: idx,
@@ -132,19 +147,15 @@ export default function BoxGame({ profile, room, onHome, onStatus, onNeedFriends
     }
   }
 
-  // Solo / host: drive rounds. Guest: wait for room.box.
   useEffect(() => {
     if (step !== 'battle') return
-    if (!cfg.caseId) return
+    if (!caseIds.length && !cfg.caseId) return
     if (revealing) return
-    if (roundIndex >= cfg.rounds) return
-
+    if (roundIndex >= rounds) return
     if (isFriendBox && !isBoxHost) return
-
     startRound(roundIndex)
-  }, [step, roundIndex, cfg.caseId, isFriendBox, isBoxHost]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [step, roundIndex, cfg.caseId, caseIds.join(','), isFriendBox, isBoxHost]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Guest mirrors host-published opens so both animate the same round together
   useEffect(() => {
     if (!isFriendBox || isBoxHost || step !== 'battle') return
     const remote = localRoom?.box
@@ -180,32 +191,28 @@ export default function BoxGame({ profile, room, onHome, onStatus, onNeedFriends
       }))
     }
 
-    const t = setTimeout(() => {
+    const timer = setTimeout(() => {
       setRevealing(null)
       if (!isFriendBox) {
-        if (roundIndex + 1 >= cfg.rounds) setStep('results')
+        if (roundIndex + 1 >= rounds) setStep('results')
         else setRoundIndex((i) => i + 1)
       }
-      // Friend: host advances when both reels reported (effect below)
-    }, 700)
-    return () => clearTimeout(t)
+    }, 900)
+    return () => clearTimeout(timer)
   }, [reelDone.me, reelDone.opp]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Host advances shared round when both players finished reels
   useEffect(() => {
     if (!isFriendBox || !isBoxHost || step !== 'battle' || revealing) return
-    const players = localRoom?.players || []
-    if (players.length < 2) return
-    const allDone = players.every(
-      (p) => p.boxReelDone && p.boxReelRound === roundIndex,
-    )
+    const list = localRoom?.players || []
+    if (list.length < 2) return
+    const allDone = list.every((p) => p.boxReelDone && p.boxReelRound === roundIndex)
     if (!allDone) return
-    if (roundIndex + 1 >= cfg.rounds) {
+    if (roundIndex + 1 >= rounds) {
       setStep('results')
       return
     }
     setRoundIndex((i) => i + 1)
-  }, [isFriendBox, isBoxHost, step, revealing, localRoom?.players, roundIndex, cfg.rounds]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isFriendBox, isBoxHost, step, revealing, localRoom?.players, roundIndex, rounds]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const myTotal = sumDrops(myDrops)
   const oppTotal = sumDrops(oppDrops)
@@ -225,7 +232,7 @@ export default function BoxGame({ profile, room, onHome, onStatus, onNeedFriends
     })
     const stats = recordBoxBattle(profile.id, {
       won: won && !tie,
-      caseId: cfg.caseId,
+      caseId: caseIds[0] || cfg.caseId,
       myDrops,
       myTotal,
       oppTotal,
@@ -244,16 +251,32 @@ export default function BoxGame({ profile, room, onHome, onStatus, onNeedFriends
         streak: 0,
         lineup: null,
         meta: {
-          caseId: cfg.caseId,
-          caseName: crate?.name,
-          rounds: cfg.rounds,
+          caseId: caseIds[0] || cfg.caseId,
+          caseIds,
+          caseName: caseIds.map((id) => getCase(id)?.short).filter(Boolean).join(' · '),
+          rounds,
           myTotal,
           oppTotal,
           bestDrop: myBest,
+          drops: myDrops,
+          roundGold: myDrops.filter((d) => d.rarity === 'gold').length,
+          roundCovert: myDrops.filter((d) => d.rarity === 'covert').length,
+          roundOpens: myDrops.length,
           vsBot: cfg.vsBot,
         },
       })
       setSubmitInfo(info)
+      if (isFriendBox && opp?.id && !String(opp.id).startsWith('bot-')) {
+        try {
+          await recordFriendMatch({
+            profileId: profile.id,
+            friendId: opp.id,
+            won: won && !tie,
+          })
+        } catch {
+          /* optional */
+        }
+      }
       if (localRoom?.code) {
         await updateRoom(localRoom.code, (r) => ({
           ...r,
@@ -297,6 +320,7 @@ export default function BoxGame({ profile, room, onHome, onStatus, onNeedFriends
           const next = await updateRoom(localRoom.code, (r) => ({
             ...r,
             caseId: c.caseId,
+            caseIds: c.caseIds,
             rounds: c.rounds,
             status: 'drafting',
             seed: r.seed || battleSeed,
@@ -318,16 +342,26 @@ export default function BoxGame({ profile, room, onHome, onStatus, onNeedFriends
     return (
       <div className="mx-auto max-w-5xl px-4 py-5 pb-[calc(5rem+env(safe-area-inset-bottom,0px))]">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <p className="font-display text-[10px] tracking-[0.25em] text-cs-gold uppercase">
-              {t('box.liveBattle')}
-            </p>
-            <h1 className="font-display text-2xl font-bold sm:text-3xl">
-              {crate?.short}{' '}
-              <span className="text-cs-muted">
-                · {t('box.round')} {Math.min(roundIndex + 1, cfg.rounds)}/{cfg.rounds}
-              </span>
-            </h1>
+          <div className="flex items-center gap-3">
+            {crate?.image && (
+              <img
+                src={crate.image}
+                alt=""
+                className="h-12 w-16 object-contain sm:h-14 sm:w-20"
+                referrerPolicy="no-referrer"
+              />
+            )}
+            <div>
+              <p className="font-display text-[10px] tracking-[0.25em] text-cs-gold uppercase">
+                {t('box.liveBattle')}
+              </p>
+              <h1 className="font-display text-2xl font-bold sm:text-3xl">
+                {crate?.short}{' '}
+                <span className="text-cs-muted">
+                  · {t('box.round')} {Math.min(roundIndex + 1, rounds)}/{rounds}
+                </span>
+              </h1>
+            </div>
           </div>
           <div className="flex items-center gap-4 font-mono text-sm">
             <span className="text-cs-gold">{formatUsd(myTotal)}</span>
@@ -369,7 +403,7 @@ export default function BoxGame({ profile, room, onHome, onStatus, onNeedFriends
               <BoxOpenReel
                 drop={oppReveal}
                 label={t('box.theirDrop')}
-                delay={180}
+                delay={280}
                 onDone={() => onReelFinished('opp')}
               />
             )}
@@ -384,125 +418,31 @@ export default function BoxGame({ profile, room, onHome, onStatus, onNeedFriends
     )
   }
 
-  // Results
   return (
-    <div className="mx-auto max-w-4xl px-4 py-6 pb-[calc(5rem+env(safe-area-inset-bottom,0px))]">
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-6 text-center">
-        <div
-          className={`inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-bold uppercase tracking-wider ${
-            tie
-              ? 'border-cs-border text-cs-muted'
-              : won
-                ? 'border-cs-win/50 bg-cs-win/10 text-cs-win'
-                : 'border-cs-loss/50 bg-cs-loss/10 text-cs-loss'
-          }`}
-        >
-          {tie ? t('box.tie') : won ? t('box.youWin') : t('box.youLose')}
-        </div>
-        <h1 className="mt-3 font-display text-3xl font-bold gold-text sm:text-4xl">
-          {formatUsd(myTotal)} <span className="text-cs-muted text-xl">{t('common.vs')}</span>{' '}
-          {formatUsd(oppTotal)}
-        </h1>
-        <p className="mt-2 text-sm text-cs-muted">
-          {crate?.name} · {cfg.rounds} {t('box.opens')}
-        </p>
-      </motion.div>
-
-      <div className="mb-6 grid gap-4 sm:grid-cols-2">
-        <BestPullPanel title={t('box.yourBest')} drop={myBest} />
-        <BestPullPanel title={t('box.theirBest')} drop={oppBest} />
-      </div>
-
-      {statsSnapshot?.bestDrop && (
-        <div className="mb-6 rounded-xl border border-cs-gold/30 bg-cs-gold/5 p-4">
-          <div className="mb-2 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-cs-gold">
-            <Crown className="h-3.5 w-3.5" /> {t('box.careerBest')}
-          </div>
-          <div className="flex items-center gap-3">
-            <img
-              src={statsSnapshot.bestDrop.image}
-              alt=""
-              className="h-14 w-20 object-contain"
-              referrerPolicy="no-referrer"
-            />
-            <div className="min-w-0">
-              <div className="truncate font-display font-bold">{statsSnapshot.bestDrop.name}</div>
-              <div className="font-mono text-cs-gold">{formatUsd(statsSnapshot.bestDrop.value)}</div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="mb-4 grid grid-cols-3 gap-2 sm:grid-cols-5">
-        {myDrops.map((d) => (
-          <BoxDropCard key={d.id} drop={d} highlight={myBest?.id === d.id} />
-        ))}
-      </div>
-
-      <GameOver
-        title={tie ? t('box.tie') : won ? t('box.victory') : t('box.defeat')}
-        subtitle={`${formatUsd(myTotal)} vs ${formatUsd(oppTotal)}`}
-        blurb={t('box.resultBlurb')}
-        won={won && !tie}
-        wins={won && !tie ? 1 : 0}
-        losses={!won && !tie ? 1 : 0}
-        score={scoreBoxBattle({ won: won && !tie, totalValue: myTotal, bestDrop: myBest, rounds: myDrops })}
-        lineup={null}
-        submitInfo={submitInfo}
-        onHome={onHome}
-        onRetry={() => {
-          submitted.current = false
-          setMyDrops([])
-          setOppDrops([])
-          setRoundIndex(0)
-          setRevealing(null)
-          setStep('setup')
-        }}
-        sharePayload={{
-          mode: 'box',
-          nickname: profile.nickname,
-          won: won && !tie,
-          score: Math.round(myTotal * 10),
-        }}
-        extra={
-          <div className="mt-2 flex flex-wrap justify-center gap-2 text-[10px] uppercase tracking-wider text-cs-muted">
-            <span className="inline-flex items-center gap-1">
-              <Trophy className="h-3 w-3 text-cs-gold" /> {t('box.statGold')}:{' '}
-              {myDrops.filter((d) => d.rarity === 'gold').length}
-            </span>
-            <span>
-              {t('box.covertHits')}: {myDrops.filter((d) => d.rarity === 'covert').length}
-            </span>
-          </div>
-        }
-      />
-    </div>
-  )
-}
-
-function BestPullPanel({ title, drop }) {
-  const { t } = useI18n()
-  const meta = drop ? RARITY_META[drop.rarity] : null
-  return (
-    <div className="rounded-xl border border-cs-border bg-cs-panel/60 p-4">
-      <div className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-cs-muted">{title}</div>
-      {drop ? (
-        <div className="flex items-center gap-3">
-          <img src={drop.image} alt="" className="h-16 w-24 object-contain" referrerPolicy="no-referrer" />
-          <div className="min-w-0">
-            <div className="truncate font-display text-sm font-bold" style={{ color: meta?.color }}>
-              {drop.name}
-            </div>
-            <div className="mt-1 text-[11px] text-cs-muted">
-              {t(`box.rarity.${drop.rarity}`)} · {drop.wear}
-            </div>
-            <div className="font-mono text-cs-gold">{formatUsd(drop.value)}</div>
-          </div>
-        </div>
-      ) : (
-        <div className="text-sm text-cs-muted">—</div>
-      )}
-    </div>
+    <BoxResults
+      won={won}
+      tie={tie}
+      myTotal={myTotal}
+      oppTotal={oppTotal}
+      myDrops={myDrops}
+      oppDrops={oppDrops}
+      myBest={myBest}
+      oppBest={oppBest}
+      caseIds={caseIds}
+      caseName={caseIds.map((id) => getCase(id)?.short).filter(Boolean).join(' · ')}
+      profile={profile}
+      submitInfo={submitInfo}
+      statsSnapshot={statsSnapshot}
+      onHome={onHome}
+      onRetry={() => {
+        submitted.current = false
+        setMyDrops([])
+        setOppDrops([])
+        setRoundIndex(0)
+        setRevealing(null)
+        setStep('setup')
+      }}
+    />
   )
 }
 
@@ -522,11 +462,5 @@ function BoxRoomConfig({ profile, room, onHome, onConfigured }) {
       </div>
     )
   }
-  return (
-    <BoxSetup
-      profile={profile}
-      locked={false}
-      onStart={(c) => onConfigured(c)}
-    />
-  )
+  return <BoxSetup profile={profile} locked={false} onStart={(c) => onConfigured(c)} />
 }

@@ -20,7 +20,7 @@ function modeLabel(mode, locale) {
     daily: pt ? 'Diário' : 'Daily',
     gauntlet: 'Gauntlet',
   }
-  return map[mode] || mode || 'cs4fun'
+  return map[mode] || mode || 'CS4FUN'
 }
 
 function appOrigin() {
@@ -42,7 +42,7 @@ export function buildResultShareText({
   const tag = (nickname || (pt ? 'Jogador' : 'Player')).trim() || (pt ? 'Jogador' : 'Player')
   const result = won ? (pt ? 'Vitória' : 'Win') : pt ? 'Derrota' : 'Loss'
 
-  const lines = [`cs4fun — ${modeLabel(mode, locale)} · ${result}`]
+  const lines = [`CS4FUN — ${modeLabel(mode, locale)} · ${result}`]
 
   const bits = []
   if (score != null) bits.push(`${score}`)
@@ -70,7 +70,7 @@ export function buildProfileShareText({ userId, nickname } = {}) {
   return buildProfileShareUrl({ userId, nickname })
 }
 
-export async function sharePlainText({ title = 'cs4fun', text, url }) {
+export async function sharePlainText({ title = 'CS4FUN', text, url }) {
   const payload = text || url
   if (!payload) return { ok: false }
 

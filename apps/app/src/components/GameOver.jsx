@@ -32,7 +32,7 @@ export default function GameOver({
   const [shared, setShared] = useState(false)
   const [downloading, setDownloading] = useState(false)
 
-  const mode = sharePayload?.mode || 'cs4fun'
+  const mode = sharePayload?.mode || 'CS4FUN'
   const nickname = sharePayload?.nickname
   const perfectMajor = mode === 'major' && won && (losses ?? 0) === 0
 
@@ -56,6 +56,10 @@ export default function GameOver({
     lineup,
     place,
     locale,
+    boxDrops: sharePayload?.boxDrops,
+    myTotal: sharePayload?.myTotal,
+    oppTotal: sharePayload?.oppTotal,
+    caseName: sharePayload?.caseName,
   }
 
   const handleShare = async () => {

@@ -28,9 +28,16 @@ export const BADGE_DEFS = [
   { id: 'gauntlet_15', category: 'max_streak', threshold: 15, icon: 'mountain' },
   { id: 'daily_3', category: 'daily_wins', threshold: 3, icon: 'sun' },
   { id: 'party_king', category: 'party_wins', threshold: 5, icon: 'party' },
+  { id: 'box_first', category: 'box_wins', threshold: 1, icon: 'package' },
   { id: 'box_3', category: 'box_wins', threshold: 3, icon: 'package' },
   { id: 'box_10', category: 'box_wins', threshold: 10, icon: 'gem' },
   { id: 'box_whale', category: 'box_wins', threshold: 25, icon: 'crown' },
+  { id: 'box_gold', category: 'box_gold_hits', threshold: 1, icon: 'sparkles' },
+  { id: 'box_gold_3', category: 'box_gold_hits', threshold: 3, icon: 'gem' },
+  { id: 'box_covert', category: 'box_covert_hits', threshold: 1, icon: 'flame' },
+  { id: 'box_covert_10', category: 'box_covert_hits', threshold: 10, icon: 'skull' },
+  { id: 'box_jackpot', category: 'box_best_value', threshold: 500, icon: 'star' },
+  { id: 'box_opener', category: 'box_opens', threshold: 50, icon: 'dices' },
   { id: 'perfect_major', category: 'perfect_majors', threshold: 1, icon: 'star' },
   { id: 'almanac_win', category: 'almanac_wins', threshold: 1, icon: 'book' },
   { id: 'social', category: 'party_games', threshold: 1, icon: 'handshake' },
@@ -50,6 +57,11 @@ function emptyStats() {
     party_wins: 0,
     party_games: 0,
     box_wins: 0,
+    box_gold_hits: 0,
+    box_covert_hits: 0,
+    box_opens: 0,
+    box_best_value: 0,
+    best_drop: null,
     perfect_majors: 0,
     almanac_wins: 0,
     max_streak: 0,
@@ -108,6 +120,7 @@ function writeLocalBadges(playerId, badges) {
 }
 
 function metricFor(stats, category) {
+  if (category === 'box_best_value') return Math.floor(Number(stats.box_best_value) || 0)
   return stats[category] ?? 0
 }
 
@@ -219,7 +232,21 @@ export async function saveGameResult({
     stats.party_games += 1
     if (won) stats.party_wins += 1
   }
-  if (mode === 'box' && won) stats.box_wins += 1
+  if (mode === 'box') {
+    const drops = Array.isArray(meta?.drops) ? meta.drops : meta?.bestDrop ? [meta.bestDrop] : []
+    const roundGold = Number(meta?.roundGold) || drops.filter((d) => d?.rarity === 'gold').length
+    const roundCovert = Number(meta?.roundCovert) || drops.filter((d) => d?.rarity === 'covert').length
+    const roundOpens = Number(meta?.roundOpens) || drops.length || 0
+    stats.box_opens += roundOpens
+    stats.box_gold_hits += roundGold
+    stats.box_covert_hits += roundCovert
+    if (won) stats.box_wins += 1
+    const dropVal = Number(meta?.bestDrop?.value) || 0
+    if (dropVal > (stats.box_best_value || 0)) {
+      stats.box_best_value = dropVal
+      stats.best_drop = meta.bestDrop
+    }
+  }
   if (mode === 'major' && won && wins >= 3 && losses === 0) stats.perfect_majors += 1
   if (won && meta.difficulty === 'almanac') stats.almanac_wins += 1
   if (mode === 'gauntlet') stats.max_streak = Math.max(stats.max_streak, streak)
@@ -315,6 +342,10 @@ export async function shareResult(payload) {
       mapPriority: payload.mapPriority,
       lineup: payload.lineup,
       locale: payload.locale,
+      boxDrops: payload.boxDrops,
+      myTotal: payload.myTotal,
+      oppTotal: payload.oppTotal,
+      caseName: payload.caseName,
     })
     if (blob) {
       file = new File([blob], 'cs4fun-result.png', { type: 'image/png' })
@@ -325,7 +356,7 @@ export async function shareResult(payload) {
 
   if (typeof navigator !== 'undefined' && navigator.share) {
     try {
-      const shareData = { title: 'cs4fun', text }
+      const shareData = { title: 'CS4FUN', text }
       if (file && navigator.canShare?.({ files: [file] })) {
         shareData.files = [file]
       }
@@ -357,22 +388,17 @@ export async function shareResult(payload) {
 
 export async function shareProfile(payload) {
   const url = buildProfileShareText(payload)
-  return sharePlainText({ title: 'cs4fun', text: url, url })
+  return sharePlainText({ title: 'CS4FUN', text: url, url })
 }
 
 /** Download the share card PNG */
 export async function downloadShareCard(payload) {
   try {
-    const { renderShareCardBlob } = await import('./shareCard')
+    const { renderShareCardBlob, triggerBlobDownload } = await import('./shareCard')
     const blob = await renderShareCardBlob(payload)
-    if (!blob) return { ok: false }
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'cs4fun-result.png'
-    a.click()
-    URL.revokeObjectURL(url)
-    return { ok: true }
+    if (!blob || blob.size < 100) return { ok: false }
+    const ok = triggerBlobDownload(blob, 'cs4fun-result.png')
+    return { ok }
   } catch {
     return { ok: false }
   }

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { BookOpen, Coffee, Mail, Swords, Users, Trophy, Flame, Calendar, Download } from 'lucide-react'
+import { BookOpen, Coffee, Mail, Swords, Users, Trophy, Flame, Calendar, Download, Package } from 'lucide-react'
 import copy from './copy'
 import DocsPage from './DocsPage'
 import LogoMark from './LogoMark'
@@ -11,7 +11,7 @@ const WINDOWS_URL =
 const SUPPORT_URL = 'https://buymeacoffee.com/emireln'
 
 function reportMailto(t) {
-  const subject = encodeURIComponent(t.reportMailSubject || 'cs4fun report')
+  const subject = encodeURIComponent(t.reportMailSubject || 'CS4FUN report')
   const body = encodeURIComponent(t.reportMailBody || '')
   return `mailto:contact.cs4fun@gmail.com?subject=${subject}&body=${body}`
 }
@@ -20,11 +20,12 @@ const MODE_ICONS = {
   major: Trophy,
   duel: Swords,
   party: Users,
+  box: Package,
   daily: Calendar,
   gauntlet: Flame,
 }
 
-const MODE_IDS = ['major', 'duel', 'party', 'daily', 'gauntlet']
+const MODE_IDS = ['major', 'duel', 'party', 'box', 'daily', 'gauntlet']
 
 function normalizePath(pathname) {
   const p = (pathname || '/').replace(/\/+$/, '') || '/'
@@ -136,7 +137,7 @@ export default function App() {
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
         >
-          <LogoMark className="h-28 w-28 cursor-pointer sm:h-36 sm:w-36" />
+          <LogoMark className="h-80 w-80 cursor-pointer sm:h-[28rem] sm:w-[28rem]" />
         </motion.div>
 
         <motion.h1
@@ -145,7 +146,7 @@ export default function App() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.65, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
         >
-          <span className="gold-text">cs4fun</span>
+          <span className="gold-text">CS4FUN</span>
         </motion.h1>
 
         <motion.p

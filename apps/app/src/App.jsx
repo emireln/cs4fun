@@ -271,10 +271,10 @@ function AppShell() {
 
   return (
     <div
-      className={`carbon-bg flex min-h-dvh flex-col overflow-x-clip sm:pt-[calc(52px+env(safe-area-inset-top,0px))] ${
+      className={`carbon-bg flex min-h-dvh flex-col overflow-x-clip sm:pt-[calc(120px+env(safe-area-inset-top,0px))] ${
         mobileStatsPad
-          ? 'pt-[calc(108px+env(safe-area-inset-top,0px))]'
-          : 'pt-[calc(76px+env(safe-area-inset-top,0px))]'
+          ? 'pt-[calc(140px+env(safe-area-inset-top,0px))]'
+          : 'pt-[calc(108px+env(safe-area-inset-top,0px))]'
       }`}
     >
       <StatusBar
@@ -421,7 +421,7 @@ function AppShell() {
               href="https://cs4fun.online"
               className="group inline-flex items-center gap-2 text-cs-muted transition hover:text-cs-gold"
             >
-              <LogoMark className="h-5 w-5 shrink-0" />
+              <LogoMark className="h-16 w-16 shrink-0" />
               <span className="font-display text-[10px] font-bold tracking-[0.22em] sm:text-[11px]">
                 {t('meta.footer')}
               </span>

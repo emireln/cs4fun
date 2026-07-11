@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { formatUsd, RARITY_META } from '../../lib/boxBattle'
+import { formatUsd, isHighTierDrop, RARITY_META } from '../../lib/boxBattle'
 import { useI18n } from '../../i18n'
 
 export default function BoxDropCard({ drop, compact = false, highlight = false }) {
@@ -7,6 +7,9 @@ export default function BoxDropCard({ drop, compact = false, highlight = false }
   if (!drop) return null
   const meta = RARITY_META[drop.rarity] || RARITY_META.milspec
   const rarityLabel = t(`box.rarity.${drop.rarity}`)
+  const isHeat = isHighTierDrop(drop)
+  const isGold = drop.rarity === 'gold'
+
   return (
     <motion.div
       layout
@@ -15,24 +18,46 @@ export default function BoxDropCard({ drop, compact = false, highlight = false }
       whileHover={{ y: -2, scale: 1.02 }}
       className={`relative overflow-hidden rounded-lg border ${
         compact ? 'p-2' : 'p-3'
-      } ${highlight ? 'border-cs-gold bg-cs-gold/10' : 'border-cs-border bg-cs-panel/70'}`}
-      style={{ boxShadow: highlight ? `0 0 20px ${meta.color}33` : undefined }}
+      } ${highlight ? 'border-cs-gold bg-cs-gold/10' : 'border-cs-border bg-cs-panel/70'} ${
+        isHeat ? 'box-drop-aura' : ''
+      } ${isGold ? 'box-drop-aura-gold' : ''}`}
+      style={{
+        borderColor: isHeat || highlight ? meta.color : undefined,
+        boxShadow: isHeat || highlight ? `0 0 18px ${meta.color}44` : undefined,
+        ['--drop-glow']: meta.color,
+      }}
     >
       <div className="absolute inset-x-0 top-0 h-0.5" style={{ background: meta.color }} />
-      {(drop.rarity === 'gold' || drop.rarity === 'covert') && (
-        <motion.div
-          className="pointer-events-none absolute inset-0 opacity-30"
-          style={{
-            background: `radial-gradient(circle at 50% 20%, ${meta.color}55, transparent 60%)`,
-          }}
-          animate={{ opacity: [0.2, 0.45, 0.2] }}
-          transition={{ duration: 1.8, repeat: Infinity }}
-        />
+      {isHeat && (
+        <>
+          <motion.div
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background: `radial-gradient(circle at 50% 20%, ${meta.color}55, transparent 62%)`,
+            }}
+            animate={{ opacity: [0.22, 0.55, 0.22] }}
+            transition={{ duration: isGold ? 1.4 : 1.8, repeat: Infinity }}
+          />
+          <span
+            className="pointer-events-none absolute inset-[-1px] rounded-lg box-drop-ring"
+            style={{ borderColor: meta.color }}
+          />
+          {isGold && (
+            <span
+              className="pointer-events-none absolute -inset-4 box-rare-spin opacity-30"
+              style={{
+                background: `conic-gradient(from 90deg, transparent, ${meta.color}88, transparent 40%)`,
+              }}
+            />
+          )}
+        </>
       )}
       <img
         src={drop.image}
         alt=""
-        className={`relative mx-auto object-contain ${compact ? 'h-12 w-16' : 'h-16 w-24 sm:h-20 sm:w-28'}`}
+        className={`relative mx-auto object-contain ${compact ? 'h-12 w-16' : 'h-16 w-24 sm:h-20 sm:w-28'} ${
+          isGold ? 'drop-shadow-[0_0_10px_rgba(228,174,57,0.7)]' : ''
+        }`}
         loading="lazy"
         referrerPolicy="no-referrer"
       />

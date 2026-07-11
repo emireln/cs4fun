@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react'
-import { ExternalLink, Lock, X } from 'lucide-react'
+import { Lock, X } from 'lucide-react'
 import { useI18n } from '../i18n'
 import { BADGE_DEFS } from '../lib/history'
 import { fetchPublicProfile } from '../lib/publicProfile'
+import { readBoxStats } from '../lib/boxBattle'
 import ProfileAvatar, { BADGE_ICONS } from './ProfileAvatar'
+import BestDropCard from './BestDropCard'
+import SteamIcon from './SteamIcon'
 import { Award } from 'lucide-react'
 
 export default function PublicProfileModal({ userId, viewerId, onClose }) {
@@ -96,8 +99,17 @@ export default function PublicProfileModal({ userId, viewerId, onClose }) {
                     {data.badgeCount != null && (
                       <Chip label={t('profile.statBadges')} value={data.badgeCount} />
                     )}
+                    {data.boxWins != null && data.boxWins > 0 && (
+                      <Chip label={t('profile.statBox')} value={data.boxWins} />
+                    )}
                   </div>
                 )}
+
+                <BestDropCard
+                  drop={data.bestDrop || readBoxStats(data.id)?.bestDrop || null}
+                  emptyLabel={t('box.noBestDrop')}
+                  compact
+                />
 
                 {data.showcaseBadge && (
                   <div className="flex items-center gap-2 rounded-lg border border-cs-gold/30 bg-cs-gold/10 px-3 py-2 text-sm">
@@ -115,7 +127,7 @@ export default function PublicProfileModal({ userId, viewerId, onClose }) {
                     rel="noopener noreferrer"
                     className="btn-ghost inline-flex w-full items-center justify-center gap-2 rounded px-3 py-2.5 text-xs uppercase tracking-wider"
                   >
-                    <ExternalLink className="h-3.5 w-3.5 text-cs-gold" aria-hidden />
+                    <SteamIcon className="h-4 w-4 text-[#66c0f4]" />
                     {t('profile.openSteam')}
                   </a>
                 ) : (

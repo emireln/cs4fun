@@ -25,7 +25,7 @@ export default function ResultCard({
     >
       <div className="flex items-center justify-between border-b border-cs-border/60 px-4 py-3">
         <div>
-          <div className="font-display text-xs font-bold tracking-[0.2em] text-cs-gold uppercase">cs4fun</div>
+          <div className="font-display text-xs font-bold tracking-[0.2em] text-cs-gold uppercase">CS4FUN</div>
           <div className="text-[10px] uppercase tracking-widest text-cs-muted">{mode}</div>
         </div>
         <div className={`font-display text-lg font-extrabold ${won ? 'gold-text' : 'text-cs-loss'}`}>

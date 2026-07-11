@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Package, Sparkles, Swords, Users } from 'lucide-react'
+import { Dices, Package, Sparkles, Swords, Trash2, Users, X } from 'lucide-react'
 import { useI18n } from '../../i18n'
-import { formatUsd, listCases, readBoxStats, RARITY_META } from '../../lib/boxBattle'
+import { autoPickCases, formatUsd, getCase, listCases, readBoxStats, RARITY_META } from '../../lib/boxBattle'
+
+const MAX_OPENS = 10
 
 export default function BoxSetup({
   profile,
@@ -14,10 +16,35 @@ export default function BoxSetup({
   const { t } = useI18n()
   const cases = useMemo(() => listCases(), [])
   const stats = useMemo(() => readBoxStats(profile?.id), [profile?.id])
-  const [caseId, setCaseId] = useState(initialCaseId || cases[0]?.id)
-  const [rounds, setRounds] = useState(3)
+  const [queue, setQueue] = useState(() =>
+    initialCaseId ? [initialCaseId] : cases[0] ? [cases[0].id] : [],
+  )
   const [vsBot, setVsBot] = useState(true)
-  const selected = cases.find((c) => c.id === caseId) || cases[0]
+  const preview = getCase(queue[queue.length - 1] || cases[0]?.id)
+
+  const addCase = (id) => {
+    if (locked) return
+    setQueue((q) => (q.length >= MAX_OPENS ? q : [...q, id]))
+  }
+
+  const removeAt = (idx) => {
+    if (locked) return
+    setQueue((q) => q.filter((_, i) => i !== idx))
+  }
+
+  const autoFill = () => {
+    if (locked) return
+    const need = MAX_OPENS - queue.length
+    if (need <= 0) return
+    const picked = autoPickCases(need, `${profile?.id || 'p'}-fill-${Date.now()}`)
+    setQueue((q) => [...q, ...picked].slice(0, MAX_OPENS))
+  }
+
+  const surprise = () => {
+    if (locked) return
+    const n = Math.max(3, queue.length || 5)
+    setQueue(autoPickCases(n, `${profile?.id || 'p'}-surprise-${Date.now()}`))
+  }
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-6 pb-[calc(5rem+env(safe-area-inset-bottom,0px))]">
@@ -58,36 +85,11 @@ export default function BoxSetup({
                   {RARITY_META[stats.bestDrop.rarity]?.label}
                 </span>
                 <span className="font-mono text-cs-gold">{formatUsd(stats.bestDrop.value)}</span>
-                {stats.bestDrop.caseName && <span>· {stats.bestDrop.caseName}</span>}
-              </div>
-            </div>
-            <div className="hidden shrink-0 text-right sm:block">
-              <div className="font-mono text-xs text-cs-muted">{t('box.record')}</div>
-              <div className="font-display text-lg text-cs-gold">
-                {stats.wins}–{stats.losses}
               </div>
             </div>
           </div>
         </motion.div>
       )}
-
-      <div className="mb-4 flex flex-wrap gap-2">
-        {[3, 5, 7].map((n) => (
-          <button
-            key={n}
-            type="button"
-            disabled={locked}
-            onClick={() => setRounds(n)}
-            className={`rounded border px-3 py-2 text-xs font-bold uppercase tracking-wider transition ${
-              rounds === n
-                ? 'border-cs-gold bg-cs-gold/15 text-cs-gold'
-                : 'border-cs-border text-cs-muted hover:border-cs-gold/40'
-            }`}
-          >
-            {t('box.rounds', { n })}
-          </button>
-        ))}
-      </div>
 
       {!locked && (
         <div className="mb-5 flex flex-wrap gap-2">
@@ -113,24 +115,107 @@ export default function BoxSetup({
         </div>
       )}
 
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <h2 className="font-display text-xs font-bold tracking-[0.22em] text-cs-gold uppercase">
+          {t('box.queueLabel', { n: queue.length })}
+        </h2>
+        {!locked && (
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={autoFill}
+              disabled={queue.length >= MAX_OPENS}
+              className="inline-flex items-center gap-1.5 rounded border border-cs-border px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-cs-muted hover:border-cs-gold/40 disabled:opacity-40"
+            >
+              <Dices className="h-3.5 w-3.5" /> {t('box.autoFill')}
+            </button>
+            <button
+              type="button"
+              onClick={surprise}
+              className="inline-flex items-center gap-1.5 rounded border border-cs-gold/40 bg-cs-gold/10 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-cs-gold"
+            >
+              <Sparkles className="h-3.5 w-3.5" /> {t('box.autoFillAll')}
+            </button>
+            <button
+              type="button"
+              onClick={() => setQueue([])}
+              disabled={!queue.length}
+              className="inline-flex items-center gap-1.5 rounded border border-cs-border px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-cs-muted hover:border-cs-loss/40 disabled:opacity-40"
+            >
+              <Trash2 className="h-3.5 w-3.5" /> {t('box.clearQueue')}
+            </button>
+          </div>
+        )}
+      </div>
+      <p className="mb-3 text-xs text-cs-muted">{t('box.pickCaseHint')}</p>
+
+      <div className="mb-5 flex gap-2 overflow-x-auto pb-1">
+        {Array.from({ length: MAX_OPENS }).map((_, i) => {
+          const id = queue[i]
+          const c = id ? getCase(id) : null
+          return (
+            <div
+              key={`slot-${i}`}
+              className={`relative flex h-24 w-20 shrink-0 flex-col items-center justify-center rounded-lg border sm:h-28 sm:w-24 ${
+                c ? 'border-cs-gold/50 bg-cs-gold/10' : 'border-dashed border-cs-border bg-cs-bg/40'
+              }`}
+            >
+              {c ? (
+                <>
+                  <img
+                    src={c.image}
+                    alt=""
+                    className="h-12 w-16 object-contain sm:h-14 sm:w-20"
+                    referrerPolicy="no-referrer"
+                  />
+                  <div className="mt-1 truncate px-1 text-[9px] text-cs-gold">{c.short}</div>
+                  {!locked && (
+                    <button
+                      type="button"
+                      onClick={() => removeAt(i)}
+                      className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full border border-cs-border bg-cs-panel text-cs-muted hover:text-cs-loss"
+                      title={t('box.removeSlot')}
+                      aria-label={t('box.removeSlot')}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  )}
+                </>
+              ) : (
+                <span className="px-1 text-center text-[9px] uppercase tracking-wider text-cs-muted">
+                  {i === queue.length ? t('box.addCase') : t('box.queueEmpty')}
+                </span>
+              )}
+              <span className="absolute bottom-1 left-1 font-mono text-[9px] text-cs-muted/70">{i + 1}</span>
+            </div>
+          )
+        })}
+      </div>
+
       <h2 className="mb-3 font-display text-xs font-bold tracking-[0.22em] text-cs-gold uppercase">
         {t('box.pickCase')}
       </h2>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         {cases.map((c) => {
-          const active = c.id === selected?.id
+          const inQueue = queue.filter((id) => id === c.id).length
+          const full = queue.length >= MAX_OPENS
           return (
             <button
               key={c.id}
               type="button"
-              disabled={locked}
-              onClick={() => setCaseId(c.id)}
+              disabled={locked || full}
+              onClick={() => addCase(c.id)}
               className={`group relative overflow-hidden rounded-xl border p-3 text-left transition ${
-                active
-                  ? 'border-cs-gold bg-cs-gold/10 shadow-[0_0_24px_rgba(232,197,71,0.18)]'
+                inQueue
+                  ? 'border-cs-gold bg-cs-gold/10 shadow-[0_0_24px_rgba(232,197,71,0.12)]'
                   : 'border-cs-border bg-cs-panel/80 hover:border-cs-gold/40'
-              }`}
+              } disabled:opacity-50`}
             >
+              {inQueue > 0 && (
+                <span className="absolute right-2 top-2 rounded bg-cs-gold px-1.5 py-0.5 font-mono text-[10px] font-bold text-cs-bg">
+                  ×{inQueue}
+                </span>
+              )}
               <img
                 src={c.image}
                 alt=""
@@ -145,27 +230,33 @@ export default function BoxSetup({
         })}
       </div>
 
-      {selected && (
+      {preview && (
         <div className="mt-6 flex flex-col items-center gap-4 rounded-xl border border-cs-border bg-cs-panel/60 p-4 sm:flex-row sm:p-5">
           <img
-            src={selected.image}
+            src={preview.image}
             alt=""
             className="h-28 w-40 object-contain sm:h-32 sm:w-44"
             referrerPolicy="no-referrer"
           />
           <div className="min-w-0 flex-1 text-center sm:text-left">
-            <div className="font-display text-xl font-bold text-cs-gold">{selected.name}</div>
+            <div className="font-display text-xl font-bold text-cs-gold">
+              {t('box.opensCount', { n: queue.length || 0 })}
+            </div>
             <p className="mt-1 text-sm text-cs-muted">
-              {t('box.caseMeta', { n: selected.items.length, rounds })}
+              {queue.length
+                ? t('box.caseMeta', { n: preview.items.length, rounds: queue.length })
+                : t('box.needOneCase')}
             </p>
           </div>
           <button
             type="button"
-            className="btn-gold inline-flex w-full items-center justify-center gap-2 rounded px-8 py-3 text-xs uppercase tracking-[0.18em] sm:w-auto"
+            disabled={!queue.length}
+            className="btn-gold inline-flex w-full items-center justify-center gap-2 rounded px-8 py-3 text-xs uppercase tracking-[0.18em] disabled:opacity-40 sm:w-auto"
             onClick={() =>
               onStart({
-                caseId: selected.id,
-                rounds,
+                caseId: queue[0],
+                caseIds: queue,
+                rounds: queue.length,
                 vsBot,
               })
             }
@@ -217,30 +308,6 @@ function BoxCareerStats({ stats }) {
         <p className="text-center text-xs text-cs-muted">
           {t('box.favoriteCase')}: <span className="text-cs-gold">{fav.name}</span>
         </p>
-      )}
-      {stats.recentDrops?.length > 0 && (
-        <div>
-          <h3 className="mb-2 text-center font-display text-[10px] font-bold tracking-[0.2em] text-cs-gold uppercase">
-            {t('box.recentPulls')}
-          </h3>
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
-            {stats.recentDrops.slice(0, 6).map((d, i) => (
-              <div
-                key={`${d.name}-${i}`}
-                className="rounded border border-cs-border bg-cs-panel/50 p-2 text-center"
-              >
-                <img
-                  src={d.image}
-                  alt=""
-                  className="mx-auto h-10 w-14 object-contain"
-                  referrerPolicy="no-referrer"
-                />
-                <div className="mt-1 truncate text-[9px] text-cs-muted">{d.name}</div>
-                <div className="font-mono text-[10px] text-cs-gold">{formatUsd(d.value)}</div>
-              </div>
-            ))}
-          </div>
-        </div>
       )}
     </div>
   )

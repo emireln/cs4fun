@@ -2,8 +2,8 @@
   "name": "@cs4fun/app",
   "private": true,
   "version": "1.1.2",
-  "description": "cs4fun — Counter-Strike draft arena",
-  "author": "cs4fun",
+  "description": "CS4FUN — Counter-Strike draft arena",
+  "author": "CS4FUN",
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
@@ -37,8 +37,8 @@
   },
   "build": {
     "appId": "online.cs4fun.app",
-    "productName": "cs4fun",
-    "copyright": "Copyright © cs4fun",
+    "productName": "CS4FUN",
+    "copyright": "Copyright © CS4FUN",
     "electronVersion": "39.8.10",
     "directories": {
       "output": "release",
@@ -78,7 +78,7 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "cs4fun",
+      "shortcutName": "CS4FUN",
       "installerIcon": "icon.ico",
       "uninstallerIcon": "icon.ico",
       "installerHeader": "installerHeader.bmp",

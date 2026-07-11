@@ -5,9 +5,9 @@ export default function BrandWordmark({ className = '', size = 'sm' }) {
   return (
     <span
       className={`inline-flex font-display font-bold tracking-[0.14em] text-cs-gold ${text} ${className}`}
-      aria-label="cs4fun"
+      aria-label="CS4FUN"
     >
-      cs4fun
+      CS4FUN
     </span>
   )
 }
