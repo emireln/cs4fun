@@ -121,15 +121,6 @@ function paintAtmosphere(ctx, W, H, won) {
   ctx.lineWidth = 3
   roundRect(ctx, 28, 28, W - 56, H - 56, 28)
   ctx.stroke()
-
-  // Top accent bar
-  const bar = ctx.createLinearGradient(0, 0, W, 0)
-  bar.addColorStop(0, 'transparent')
-  bar.addColorStop(0.2, won ? '#e8c547' : '#e85d5d')
-  bar.addColorStop(0.8, won ? '#e8c547' : '#e85d5d')
-  bar.addColorStop(1, 'transparent')
-  ctx.fillStyle = bar
-  ctx.fillRect(80, 28, W - 160, 4)
 }
 
 function modeLabel(mode, locale) {
@@ -230,12 +221,6 @@ export async function renderShareCardBlob({
   const hero = fitText(ctx, String(resultWord).toUpperCase(), W - pad * 2)
   const heroW = ctx.measureText(hero).width
   ctx.fillText(hero, (W - heroW) / 2, 260)
-
-  // Thin gold underline under hero
-  ctx.fillStyle = accent
-  ctx.globalAlpha = 0.55
-  ctx.fillRect((W - Math.min(heroW, 420)) / 2, 280, Math.min(heroW, 420), 3)
-  ctx.globalAlpha = 1
 
   // Player identity
   ctx.fillStyle = text
@@ -368,20 +353,16 @@ async function drawBoxVault(ctx, boxDrops, topY, bottomY, W, locale, fmt, accent
     ctx.fillStyle = '#10141c'
     ctx.fillRect(x, y, cellW, cellH)
 
-    // Top rarity accent (clipped — no sharp overhang)
-    ctx.fillStyle = color
-    ctx.fillRect(x, y, cellW, 6)
-
     const imgPad = 16
     const textH = 56
     if (images[i]) {
-      drawContain(ctx, images[i], x + imgPad, y + 20, cellW - imgPad * 2, cellH - textH - 30)
+      drawContain(ctx, images[i], x + imgPad, y + 14, cellW - imgPad * 2, cellH - textH - 24)
     } else {
       // Rarity placeholder when CDN/proxy fails
       const pw = cellW - imgPad * 2
-      const ph = cellH - textH - 30
+      const ph = cellH - textH - 24
       const px = x + imgPad
-      const py = y + 20
+      const py = y + 14
       const g = ctx.createRadialGradient(px + pw / 2, py + ph / 2, 8, px + pw / 2, py + ph / 2, pw * 0.55)
       g.addColorStop(0, `${color}55`)
       g.addColorStop(1, `${color}12`)

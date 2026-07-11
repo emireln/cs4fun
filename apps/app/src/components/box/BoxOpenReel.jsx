@@ -251,9 +251,7 @@ export default function BoxOpenReel({ drop, label, delay = 0, onDone }) {
                   width: TILE_PX,
                   height: TILE_PX + 8,
                   borderColor: highlight ? meta.color : `${itemMeta.color}aa`,
-                  boxShadow: highlight
-                    ? `0 0 28px ${meta.color}77`
-                    : `inset 0 -3px 0 ${itemMeta.color}`,
+                  boxShadow: highlight ? `0 0 28px ${meta.color}77` : undefined,
                 }}
               >
                 {highlight && isHeat && (
@@ -299,10 +297,6 @@ export default function BoxOpenReel({ drop, label, delay = 0, onDone }) {
                     {(item.name || '?').split('|').pop()?.trim().slice(0, 14) || '•'}
                   </span>
                 )}
-                <span
-                  className="absolute inset-x-1 bottom-1 z-[1] h-0.5 rounded-full"
-                  style={{ background: itemMeta.color, opacity: highlight ? 1 : 0.85 }}
-                />
               </div>
             )
           })}

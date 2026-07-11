@@ -27,7 +27,6 @@ export default function BoxDropCard({ drop, compact = false, highlight = false }
         ['--drop-glow']: meta.color,
       }}
     >
-      <div className="absolute inset-x-0 top-0 h-0.5" style={{ background: meta.color }} />
       {isHeat && (
         <>
           <motion.div
@@ -37,10 +36,6 @@ export default function BoxDropCard({ drop, compact = false, highlight = false }
             }}
             animate={{ opacity: [0.22, 0.55, 0.22] }}
             transition={{ duration: isGold ? 1.4 : 1.8, repeat: Infinity }}
-          />
-          <span
-            className="pointer-events-none absolute inset-[-1px] rounded-lg box-drop-ring"
-            style={{ borderColor: meta.color }}
           />
           {isGold && (
             <span
@@ -55,9 +50,10 @@ export default function BoxDropCard({ drop, compact = false, highlight = false }
       <img
         src={drop.image}
         alt=""
-        className={`relative mx-auto object-contain ${compact ? 'h-12 w-16' : 'h-16 w-24 sm:h-20 sm:w-28'} ${
+        className={`box-reel-skin relative mx-auto object-contain ${compact ? 'h-12 w-16' : 'h-16 w-24 sm:h-20 sm:w-28'} ${
           isGold ? 'drop-shadow-[0_0_10px_rgba(228,174,57,0.7)]' : ''
         }`}
+        style={compact ? { width: 64, height: 48, maxWidth: 64 } : { width: 112, height: 80, maxWidth: 112 }}
         loading="lazy"
         referrerPolicy="no-referrer"
       />

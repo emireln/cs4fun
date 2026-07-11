@@ -48,7 +48,6 @@ export default function PlayerCard({
         !onClick ? 'cursor-default' : 'cursor-pointer'
       } ${disabled ? 'opacity-50' : ''}`}
     >
-      <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-transparent via-cs-gold/70 to-transparent opacity-70" />
       <div className={`flex min-w-0 items-start justify-between gap-1.5 ${compact ? 'mb-1' : 'mb-1.5'}`}>
         <div className="min-w-0 flex-1 overflow-hidden">
           <div
