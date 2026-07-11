@@ -65,9 +65,53 @@ export function buildProfileShareUrl({ userId, nickname } = {}) {
   return base
 }
 
-/** Share profile as a link only (no stats dump). */
-export function buildProfileShareText({ userId, nickname } = {}) {
-  return buildProfileShareUrl({ userId, nickname })
+/**
+ * Share profile text — optional public stats (respects visibility sections).
+ */
+export function buildProfileShareText({
+  userId,
+  nickname,
+  locale,
+  profilePublic = true,
+  sections,
+  wins,
+  games,
+  careerMajorsWon,
+  careerBestSeason,
+  careerSeasons,
+  boxWins,
+} = {}) {
+  const pt = isPt(locale)
+  const tag = (nickname || (pt ? 'Jogador' : 'Player')).trim() || (pt ? 'Jogador' : 'Player')
+  const url = buildProfileShareUrl({ userId, nickname: tag })
+  const lines = [`CS4FUN · @${tag}`]
+
+  if (profilePublic !== false) {
+    const sec = sections || {}
+    const bits = []
+    if (sec.stats !== false) {
+      if (wins != null) bits.push(pt ? `${wins}V` : `${wins}W`)
+      if (games != null) bits.push(pt ? `${games}J` : `${games}G`)
+    }
+    if (sec.career !== false) {
+      if (careerMajorsWon != null && careerMajorsWon > 0) {
+        bits.push(pt ? `${careerMajorsWon} majors carreira` : `${careerMajorsWon} career majors`)
+      }
+      if (careerBestSeason != null && careerBestSeason > 0) {
+        bits.push(pt ? `melhor season ${careerBestSeason}` : `best season ${careerBestSeason}`)
+      }
+      if (careerSeasons != null && careerSeasons > 0) {
+        bits.push(pt ? `${careerSeasons} seasons` : `${careerSeasons} seasons`)
+      }
+    }
+    if (sec.box !== false && boxWins != null && boxWins > 0) {
+      bits.push(pt ? `${boxWins} box` : `${boxWins} box`)
+    }
+    if (bits.length) lines.push(bits.join(' · '))
+  }
+
+  lines.push(url)
+  return lines.join('\n')
 }
 
 export async function sharePlainText({ title = 'CS4FUN', text, url }) {

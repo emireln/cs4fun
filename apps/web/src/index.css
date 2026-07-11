@@ -174,17 +174,15 @@ canvas {
   object-fit: contain;
   object-position: center;
   cursor: pointer;
-  /* Alpha-aware glow (follows the gold mark, not the transparent box) */
-  filter: drop-shadow(0 0 10px rgba(232, 197, 71, 0.35))
-    drop-shadow(0 0 22px rgba(232, 197, 71, 0.2));
+  /* Soft alpha-aware glow (match gold-text, keep it subtle) */
+  filter: drop-shadow(0 0 8px rgba(232, 197, 71, 0.22));
   transition: transform 0.2s ease, filter 0.2s ease;
 }
 
 .logo-mark:hover,
 .group:hover .logo-mark {
   transform: scale(1.04);
-  filter: drop-shadow(0 0 12px rgba(232, 197, 71, 0.45))
-    drop-shadow(0 0 28px rgba(232, 197, 71, 0.28));
+  filter: drop-shadow(0 0 10px rgba(232, 197, 71, 0.3));
 }
 
 .logo-mark:active,

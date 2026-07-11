@@ -32,6 +32,7 @@ import { isSoundEnabled, setSoundEnabled, unlockAudio, playShot } from '../lib/s
 import { compressAvatarFile } from '../lib/avatarImage'
 import { ACTIVE_MAP_POOL, MENTALITIES } from '../data/constants'
 import { normalizeSetupPresetFields } from '../lib/setupPreset'
+import { normalizePublicSections, PUBLIC_SECTION_KEYS } from '../lib/publicSections'
 import { countIncomingFriendRequests } from '../lib/friends'
 import BestDropCard from './BestDropCard'
 import SteamIcon from './SteamIcon'
@@ -53,6 +54,9 @@ export default function ProfilePage({ onBack, onNeedAuth, onStartMatch, onInvite
   const [showcaseBadge, setShowcaseBadge] = useState(profile.showcaseBadge || null)
   const [steamUrl, setSteamUrl] = useState(profile.steamUrl || '')
   const [profilePublic, setProfilePublic] = useState(profile.profilePublic !== false)
+  const [publicSections, setPublicSections] = useState(() =>
+    normalizePublicSections(profile.publicSections),
+  )
   const presetInit = normalizeSetupPresetFields(profile)
   const [setupPresetEnabled, setSetupPresetEnabled] = useState(presetInit.setupPresetEnabled)
   const [setupPresetMode, setSetupPresetMode] = useState(presetInit.setupPresetMode)
@@ -91,6 +95,7 @@ export default function ProfilePage({ onBack, onNeedAuth, onStartMatch, onInvite
     setShowcaseBadge(profile.showcaseBadge || null)
     setSteamUrl(profile.steamUrl || '')
     setProfilePublic(profile.profilePublic !== false)
+    setPublicSections(normalizePublicSections(profile.publicSections))
     const preset = normalizeSetupPresetFields(profile)
     setSetupPresetEnabled(preset.setupPresetEnabled)
     setSetupPresetMode(preset.setupPresetMode)
@@ -164,6 +169,7 @@ export default function ProfilePage({ onBack, onNeedAuth, onStartMatch, onInvite
             showcaseBadge: showcaseBadge && ownedIds.has(showcaseBadge) ? showcaseBadge : null,
             steamUrl: steamUrl.trim() || null,
             profilePublic,
+            publicSections,
             setupPresetEnabled,
             setupPresetMode,
             setupPresetMentality,
@@ -201,14 +207,31 @@ export default function ProfilePage({ onBack, onNeedAuth, onStartMatch, onInvite
   }
 
   const handleShareProfile = async () => {
+    const sections = normalizePublicSections(publicSections)
     const res = await shareProfile({
       userId: profile.id,
       nickname: nickname.trim() || displayName,
+      locale,
+      profilePublic,
+      sections,
+      wins: sections.stats ? stats?.wins : null,
+      games: sections.stats ? stats?.games : null,
+      careerMajorsWon: sections.career ? stats?.career_majors_won : null,
+      careerBestSeason: sections.career ? stats?.career_best_season : null,
+      careerSeasons: sections.career ? stats?.career_seasons : null,
+      boxWins: sections.box ? stats?.box_wins : null,
     })
     if (res.ok) {
       setShared(true)
       setTimeout(() => setShared(false), 1800)
     }
+  }
+
+  const toggleSection = (key) => {
+    setPublicSections((prev) => ({
+      ...normalizePublicSections(prev),
+      [key]: !normalizePublicSections(prev)[key],
+    }))
   }
 
   const openPasswordModal = () => {
@@ -357,8 +380,27 @@ export default function ProfilePage({ onBack, onNeedAuth, onStartMatch, onInvite
                       { k: 'statDuel', v: stats.duel_wins },
                       { k: 'statParty', v: stats.party_wins },
                       { k: 'statDaily', v: stats.daily_wins },
-                      { k: 'statCareer', v: stats.career_majors_won },
                       { k: 'statBox', v: stats.box_wins },
+                    ].map((row) => (
+                      <span
+                        key={row.k}
+                        className="inline-flex items-center gap-1 rounded border border-cs-border/70 bg-cs-bg/40 px-2 py-1"
+                      >
+                        <span className="text-cs-muted">{t(`profile.${row.k}`)}</span>
+                        <span className="font-mono font-bold text-cs-gold">{row.v || 0}</span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-cs-muted">
+                    {t('profile.careerStats')}
+                  </p>
+                  <div className="flex flex-wrap gap-1.5 text-[10px] sm:text-xs">
+                    {[
+                      { k: 'statCareerMajors', v: stats.career_majors_won },
+                      { k: 'statCareerBest', v: stats.career_best_season },
+                      { k: 'statCareerSeasons', v: stats.career_seasons },
                     ].map((row) => (
                       <span
                         key={row.k}
@@ -505,7 +547,42 @@ export default function ProfilePage({ onBack, onNeedAuth, onStartMatch, onInvite
                       {t('profile.visibilityPrivate')}
                     </button>
                   </div>
+                  <p className="mt-1.5 text-[11px] text-cs-muted">
+                    {profilePublic
+                      ? t('profile.visibilityPublicHint')
+                      : t('profile.visibilityPrivateHint')}
+                  </p>
                 </div>
+
+                {profilePublic && (
+                  <div>
+                    <label className="mb-1.5 block text-[10px] font-bold tracking-wider text-cs-muted uppercase">
+                      {t('profile.publicSections')}
+                    </label>
+                    <p className="mb-2 text-[11px] text-cs-muted">{t('profile.publicSectionsHint')}</p>
+                    <div className="grid gap-1.5 sm:grid-cols-2">
+                      {PUBLIC_SECTION_KEYS.map((key) => (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => toggleSection(key)}
+                          className={`flex items-center justify-between gap-2 rounded-lg border px-3 py-2 text-left text-xs ${
+                            publicSections[key]
+                              ? 'border-cs-gold/50 bg-cs-gold/10 text-cs-gold'
+                              : 'border-cs-border text-cs-muted'
+                          }`}
+                        >
+                          <span className="font-semibold tracking-wide">
+                            {t(`profile.section.${key}`)}
+                          </span>
+                          <span className="font-mono text-[10px] uppercase">
+                            {publicSections[key] ? t('profile.sectionOn') : t('profile.sectionOff')}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </div>

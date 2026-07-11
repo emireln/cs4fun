@@ -1,5 +1,6 @@
 import { DEFAULT_AVATAR_ID } from '../data/avatars'
 import { DEFAULT_SETUP_PRESET, normalizeSetupPresetFields } from './setupPreset'
+import { DEFAULT_PUBLIC_SECTIONS, normalizePublicSections } from './publicSections'
 
 const KEY = 'cs4fun_profile'
 
@@ -9,7 +10,11 @@ export function loadProfile() {
     if (raw) {
       const p = JSON.parse(raw)
       if (!p.avatarId) p.avatarId = DEFAULT_AVATAR_ID
-      return { ...p, ...normalizeSetupPresetFields(p) }
+      return {
+        ...p,
+        ...normalizeSetupPresetFields(p),
+        publicSections: normalizePublicSections(p.publicSections),
+      }
     }
   } catch {
     /* ignore */
@@ -23,6 +28,7 @@ export function loadProfile() {
     showcaseBadge: null,
     steamUrl: null,
     profilePublic: true,
+    publicSections: { ...DEFAULT_PUBLIC_SECTIONS },
     ...DEFAULT_SETUP_PRESET,
     createdAt: Date.now(),
   }
@@ -31,14 +37,18 @@ export function loadProfile() {
 }
 
 export function saveProfile(profile) {
+  const next = {
+    ...profile,
+    publicSections: normalizePublicSections(profile?.publicSections),
+  }
   try {
-    localStorage.setItem(KEY, JSON.stringify(profile))
+    localStorage.setItem(KEY, JSON.stringify(next))
   } catch {
     /* ignore */
   }
-  return profile
+  return next
 }
 
 export function displayName(profile) {
-  return profile?.nickname?.trim() || 'Guest'
+  return profile?.nickname?.trim() || 'Player'
 }

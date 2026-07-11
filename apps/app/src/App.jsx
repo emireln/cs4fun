@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Coffee } from 'lucide-react'
+import { Coffee, BookOpen } from 'lucide-react'
 import { I18nProvider, useI18n } from './i18n'
 import { AuthProvider, useAuth } from './lib/auth'
 import { unlockAudio } from './lib/sound'
@@ -27,7 +27,7 @@ import DailyGame from './components/modes/DailyGame'
 import CareerGame from './components/modes/CareerGame'
 import BoxGame from './components/modes/BoxGame'
 import DesktopUpdateOverlay from './components/DesktopUpdateOverlay'
-import LogoMark from './components/LogoMark'
+import AppDocs from './components/AppDocs'
 import MatchInvitePopup from './components/MatchInvitePopup'
 import AppToast from './components/AppToast'
 import ConnectionLostModal from './components/ConnectionLostModal'
@@ -274,7 +274,7 @@ function AppShell() {
     return <AdminShell />
   }
 
-  const quietPhase = ['hub', 'leaderboard', 'friends', 'history', 'setup', 'profile'].includes(
+  const quietPhase = ['hub', 'leaderboard', 'friends', 'history', 'setup', 'profile', 'docs'].includes(
     status.phase || (screen === 'hub' ? 'hub' : screen),
   )
   const showFooter = ['hub', 'leaderboard', 'friends', 'profile'].includes(screen)
@@ -328,6 +328,15 @@ function AppShell() {
               onSelectMode={openMode}
               onOpenFriends={() => openFriends('party')}
               onNeedAuth={() => setAuthOpen(true)}
+            />
+          )}
+
+          {screen === 'docs' && (
+            <AppDocs
+              onBack={() => {
+                setScreen('hub')
+                setStatus({ phase: 'hub' })
+              }}
             />
           )}
 
@@ -435,16 +444,21 @@ function AppShell() {
 
       {showFooter && (
         <footer className="mt-auto shrink-0 border-t border-cs-border/40 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] sm:py-3.5">
-          <div className="mx-auto flex max-w-lg flex-col items-center gap-2.5 sm:gap-3">
-            <a
-              href="https://cs4fun.online"
-              className="group inline-flex items-center gap-2 text-cs-muted transition hover:text-cs-gold"
+          <div className="mx-auto flex max-w-lg flex-wrap items-center justify-center gap-2 sm:gap-2.5">
+            <span className="font-display text-[10px] font-bold tracking-[0.22em] text-cs-muted sm:text-[11px]">
+              {t('meta.footer')}
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                setScreen('docs')
+                setStatus({ phase: 'docs' })
+              }}
+              className="inline-flex items-center gap-1.5 rounded border border-cs-border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-cs-muted transition hover:border-cs-gold/40 hover:text-cs-gold"
             >
-              <LogoMark className="h-8 w-auto max-h-8 shrink-0" />
-              <span className="font-display text-[10px] font-bold tracking-[0.22em] sm:text-[11px]">
-                {t('meta.footer')}
-              </span>
-            </a>
+              <BookOpen className="h-3 w-3" aria-hidden />
+              {t('meta.docs')}
+            </button>
             <a
               href="https://buymeacoffee.com/emireln"
               target="_blank"

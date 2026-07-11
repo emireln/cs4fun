@@ -1,6 +1,6 @@
 import { isSupabaseConfigured, supabase } from './supabase'
 import { utcDayKey } from './leaderboard'
-import { buildResultShareText, buildProfileShareText, sharePlainText } from './shareText'
+import { buildResultShareText, buildProfileShareText, buildProfileShareUrl, sharePlainText } from './shareText'
 
 const LOCAL_HISTORY = 'cs4fun_history_v1'
 const LOCAL_BADGES = 'cs4fun_badges_v1'
@@ -396,8 +396,9 @@ export async function shareResult(payload) {
 }
 
 export async function shareProfile(payload) {
-  const url = buildProfileShareText(payload)
-  return sharePlainText({ title: 'CS4FUN', text: url, url })
+  const text = buildProfileShareText(payload)
+  const url = buildProfileShareUrl(payload)
+  return sharePlainText({ title: 'CS4FUN', text, url })
 }
 
 /** Download the share card PNG */

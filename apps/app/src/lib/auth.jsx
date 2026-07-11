@@ -5,6 +5,7 @@ import { sanitizeAvatarUrl } from './avatarImage'
 import { sanitizeSteamUrl } from './steam'
 import { fetchMyAccess } from './admin'
 import { DEFAULT_SETUP_PRESET, normalizeSetupPresetFields } from './setupPreset'
+import { normalizePublicSections } from './publicSections'
 
 const AuthContext = createContext(null)
 
@@ -67,6 +68,7 @@ function mergeUserProfile(user, local = loadProfile()) {
     showcaseBadge: user.user_metadata?.showcaseBadge ?? local.showcaseBadge ?? null,
     steamUrl: sanitizeSteamUrl(local.steamUrl).url,
     profilePublic: local.profilePublic !== false,
+    publicSections: normalizePublicSections(local.publicSections),
   })
 }
 
@@ -107,7 +109,7 @@ export function AuthProvider({ children }) {
       const { data } = await supabase
         .from('profiles')
         .select(
-          'nickname, avatar_id, avatar_url, showcase_badge, email, steam_url, profile_public, setup_preset_enabled, setup_preset_mode, setup_preset_mentality, setup_preset_map',
+          'nickname, avatar_id, avatar_url, showcase_badge, email, steam_url, profile_public, public_sections, setup_preset_enabled, setup_preset_mode, setup_preset_mentality, setup_preset_map',
         )
         .eq('id', user.id)
         .maybeSingle()
@@ -122,6 +124,7 @@ export function AuthProvider({ children }) {
           showcaseBadge: data.showcase_badge ?? next.showcaseBadge ?? null,
           steamUrl: sanitizeSteamUrl(data.steam_url).url,
           profilePublic: data.profile_public !== false,
+          publicSections: normalizePublicSections(data.public_sections),
           ...normalizeSetupPresetFields({
             setupPresetEnabled: data.setup_preset_enabled,
             setupPresetMode: data.setup_preset_mode,
@@ -237,6 +240,10 @@ export function AuthProvider({ children }) {
       avatarUrl,
       steamUrl,
       profilePublic: patch.profilePublic !== undefined ? Boolean(patch.profilePublic) : prev.profilePublic !== false,
+      publicSections:
+        patch.publicSections !== undefined
+          ? normalizePublicSections(patch.publicSections)
+          : normalizePublicSections(prev.publicSections),
     })
     profileRef.current = next
     setProfile(next)
@@ -271,6 +278,7 @@ export function AuthProvider({ children }) {
       showcase_badge: next.showcaseBadge || null,
       steam_url: next.steamUrl || null,
       profile_public: next.profilePublic !== false,
+      public_sections: normalizePublicSections(next.publicSections),
       setup_preset_enabled: next.setupPresetEnabled,
       setup_preset_mode: next.setupPresetMode,
       setup_preset_mentality: next.setupPresetMentality,
