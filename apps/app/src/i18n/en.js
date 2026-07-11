@@ -374,6 +374,7 @@ export default {
     unranked: 'Play a match to get ranked',
     accountsOnly: 'Only signed-in players appear on ranks. Sign in to climb.',
     needCloud: 'Connect Supabase to enable global ranks',
+    player: 'Player',
   },
   history: {
     title: 'History',

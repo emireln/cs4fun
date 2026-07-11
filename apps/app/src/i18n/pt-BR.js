@@ -374,6 +374,7 @@ export default {
     unranked: 'Jogue uma partida para entrar no ranking',
     accountsOnly: 'Só jogadores com conta aparecem no ranking. Entre para subir.',
     needCloud: 'Conecte o Supabase para o ranking global',
+    player: 'Jogador',
   },
   history: {
     title: 'Histórico',

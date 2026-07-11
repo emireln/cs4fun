@@ -54,6 +54,12 @@
       "build/tray.png",
       "package.json"
     ],
+    "asarUnpack": [
+      "build/icon.ico",
+      "build/icon.png",
+      "build/tray.ico",
+      "build/tray.png"
+    ],
     "win": {
       "target": [
         {

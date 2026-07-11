@@ -1,27 +1,48 @@
 const { app, BrowserWindow, shell, Tray, Menu, nativeImage, dialog } = require('electron')
 const path = require('node:path')
+const fs = require('node:fs')
 
 const isDev = Boolean(process.env.ELECTRON_DEV) || !app.isPackaged
 
+/** Resolve packaged assets (unpacked from asar so .ico loads on Windows). */
+function assetPath(...parts) {
+  if (app.isPackaged) {
+    const unpacked = path.join(process.resourcesPath, 'app.asar.unpacked', ...parts)
+    if (fs.existsSync(unpacked)) return unpacked
+    return path.join(process.resourcesPath, 'app.asar', ...parts)
+  }
+  return path.join(__dirname, '..', ...parts)
+}
+
 /** Styled desktop icon (bg + rounded) — taskbar / window */
-function desktopIconPath() {
-  return path.join(__dirname, '..', 'build', 'icon.ico')
+function desktopIconImage() {
+  const ico = assetPath('build', 'icon.ico')
+  const png = assetPath('build', 'icon.png')
+  const fromIco = fs.existsSync(ico) ? nativeImage.createFromPath(ico) : null
+  if (fromIco && !fromIco.isEmpty()) return fromIco
+  const fromPng = fs.existsSync(png) ? nativeImage.createFromPath(png) : null
+  if (fromPng && !fromPng.isEmpty()) return fromPng
+  return nativeImage.createEmpty()
 }
 
 /** Transparent logo — tray */
-function trayIconPath() {
-  const ico = path.join(__dirname, '..', 'build', 'tray.ico')
-  const png = path.join(__dirname, '..', 'build', 'tray.png')
-  const fs = require('node:fs')
-  if (fs.existsSync(ico)) return ico
-  if (fs.existsSync(png)) return png
-  return path.join(__dirname, '..', 'public', 'logo.png')
+function trayIconImage() {
+  const ico = assetPath('build', 'tray.ico')
+  const png = assetPath('build', 'tray.png')
+  const logo = assetPath('public', 'logo.png')
+  for (const p of [ico, png, logo]) {
+    if (!fs.existsSync(p)) continue
+    const img = nativeImage.createFromPath(p)
+    if (!img.isEmpty()) return img
+  }
+  return nativeImage.createEmpty()
 }
 
 let tray = null
 let mainWindow = null
 
 function createWindow() {
+  const icon = desktopIconImage()
   const win = new BrowserWindow({
     width: 1280,
     height: 800,
@@ -36,7 +57,7 @@ function createWindow() {
       nodeIntegration: false,
       sandbox: true,
     },
-    icon: desktopIconPath(),
+    ...(icon.isEmpty() ? {} : { icon }),
   })
 
   win.webContents.setWindowOpenHandler(({ url }) => {
@@ -69,7 +90,7 @@ function createWindow() {
 }
 
 function createTray(win) {
-  const image = nativeImage.createFromPath(trayIconPath())
+  const image = trayIconImage()
   tray = new Tray(image.isEmpty() ? nativeImage.createEmpty() : image)
   tray.setToolTip('cs4fun')
   tray.setContextMenu(
@@ -202,6 +223,10 @@ function checkForUpdates({ manual }) {
 }
 
 app.whenReady().then(() => {
+  // Windows taskbar grouping / correct icon association
+  if (process.platform === 'win32') {
+    app.setAppUserModelId('online.cs4fun.app')
+  }
   mainWindow = createWindow()
   createTray(mainWindow)
   setupAutoUpdater()

@@ -36,8 +36,8 @@ export default function LeaderboardPanel({ profile, onBack, onNeedAuth }) {
   }, [board, isAuthed, profile?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8">
-      <div className="mb-6 flex items-center justify-between gap-3">
+    <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
+      <div className="mb-6 flex items-center justify-between gap-3 lg:mb-8">
         <button type="button" className="btn-ghost inline-flex items-center gap-2 rounded px-3 py-2 text-sm" onClick={onBack}>
           <ArrowLeft className="h-4 w-4" /> {t('nav.back')}
         </button>
@@ -46,94 +46,110 @@ export default function LeaderboardPanel({ profile, onBack, onNeedAuth }) {
         </button>
       </div>
 
-      <h1 className="mb-2 font-display text-3xl font-bold gold-text">{t('leaderboard.title')}</h1>
-      <p className="mb-6 text-sm text-cs-muted">{t('leaderboard.topN', { n: TOP_LIMIT })}</p>
-
-      <div className="mb-4 flex flex-wrap gap-2">
-        {BOARDS.map((b) => (
-          <button
-            key={b}
-            type="button"
-            onClick={() => setBoard(b)}
-            className={`rounded border px-3 py-1.5 text-sm font-semibold ${
-              board === b ? 'border-cs-gold bg-cs-gold/15 text-cs-gold' : 'border-cs-border text-cs-muted'
-            }`}
-          >
-            {t(`leaderboard.${b}`)}
-          </button>
-        ))}
+      <div className="mb-6 flex flex-col gap-4 lg:mb-8 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <h1 className="mb-2 font-display text-3xl font-bold gold-text lg:text-4xl">{t('leaderboard.title')}</h1>
+          <p className="text-sm text-cs-muted lg:text-base">{t('leaderboard.topN', { n: TOP_LIMIT })}</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {BOARDS.map((b) => (
+            <button
+              key={b}
+              type="button"
+              onClick={() => setBoard(b)}
+              className={`rounded border px-3 py-1.5 text-sm font-semibold sm:px-4 sm:py-2 ${
+                board === b ? 'border-cs-gold bg-cs-gold/15 text-cs-gold' : 'border-cs-border text-cs-muted'
+              }`}
+            >
+              {t(`leaderboard.${b}`)}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Your global position */}
-      <div className="panel mb-4 rounded-xl px-4 py-3">
-        {!isSupabaseConfigured ? (
-          <p className="text-sm text-cs-muted">{t('leaderboard.needCloud')}</p>
-        ) : !isAuthed ? (
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-cs-muted">{t('leaderboard.accountsOnly')}</p>
-            {onNeedAuth && (
-              <button
-                type="button"
-                className="btn-gold inline-flex items-center gap-2 rounded px-3 py-1.5 text-xs uppercase tracking-wider"
-                onClick={onNeedAuth}
-              >
-                <LogIn className="h-3.5 w-3.5" /> {t('nav.signIn')}
-              </button>
-            )}
-          </div>
-        ) : myRank?.rank != null ? (
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <p className="font-display text-[10px] tracking-[0.2em] text-cs-muted uppercase">
-                {t('leaderboard.yourRank')}
-              </p>
-              <p className="font-display text-2xl font-bold text-cs-gold">
-                #{myRank.rank}
-                <span className="ml-2 text-sm font-normal text-cs-muted">
-                  {t('leaderboard.ofTotal', { total: myRank.total })}
-                </span>
-              </p>
-            </div>
-            <div className="text-right font-mono text-sm">
-              <div className="text-cs-gold">{myRank.score}</div>
-              {!myRank.inTop && (
-                <div className="text-[10px] text-cs-muted">{t('leaderboard.outsideTop')}</div>
+      <div className="grid gap-4 lg:grid-cols-[minmax(240px,280px)_minmax(0,1fr)] lg:gap-6">
+        {/* Your global position */}
+        <div className="panel h-fit rounded-xl px-4 py-4 sm:px-5 sm:py-5">
+          {!isSupabaseConfigured ? (
+            <p className="text-sm text-cs-muted">{t('leaderboard.needCloud')}</p>
+          ) : !isAuthed ? (
+            <div className="flex flex-col gap-3">
+              <p className="text-sm text-cs-muted">{t('leaderboard.accountsOnly')}</p>
+              {onNeedAuth && (
+                <button
+                  type="button"
+                  className="btn-gold inline-flex items-center justify-center gap-2 rounded px-3 py-2 text-xs uppercase tracking-wider"
+                  onClick={onNeedAuth}
+                >
+                  <LogIn className="h-3.5 w-3.5" /> {t('nav.signIn')}
+                </button>
               )}
             </div>
-          </div>
-        ) : (
-          <p className="text-sm text-cs-muted">{t('leaderboard.unranked')}</p>
-        )}
-      </div>
+          ) : myRank?.rank != null ? (
+            <div className="flex flex-wrap items-end justify-between gap-3 lg:flex-col lg:items-stretch">
+              <div>
+                <p className="font-display text-[10px] tracking-[0.2em] text-cs-muted uppercase">
+                  {t('leaderboard.yourRank')}
+                </p>
+                <p className="font-display text-3xl font-bold text-cs-gold lg:text-4xl">
+                  #{myRank.rank}
+                </p>
+                <p className="mt-1 text-sm text-cs-muted">
+                  {t('leaderboard.ofTotal', { total: myRank.total })}
+                </p>
+              </div>
+              <div className="text-right lg:mt-4 lg:border-t lg:border-cs-border/60 lg:pt-4 lg:text-left">
+                <div className="font-mono text-lg text-cs-gold lg:text-xl">{myRank.score}</div>
+                {!myRank.inTop && (
+                  <div className="text-[10px] text-cs-muted">{t('leaderboard.outsideTop')}</div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-cs-muted">{t('leaderboard.unranked')}</p>
+          )}
+        </div>
 
-      <div className="panel overflow-hidden rounded-xl">
-        {rows.length === 0 ? (
-          <p className="p-8 text-center text-cs-muted">{t('leaderboard.empty')}</p>
-        ) : (
-          <ul>
-            {rows.map((row, i) => {
-              const isYou = isAuthed && row.player_id === profile.id
-              return (
-                <motion.li
-                  key={`${row.player_id}-${i}`}
-                  initial={{ opacity: 0, x: -8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: Math.min(i, 20) * 0.02 }}
-                  className={`flex items-center gap-3 border-b border-cs-border/60 px-4 py-3 ${
-                    isYou ? 'bg-cs-gold/10' : ''
-                  }`}
-                >
-                  <span className="w-10 font-mono text-sm text-cs-muted">#{i + 1}</span>
-                  <span className={`min-w-0 flex-1 truncate font-semibold ${isYou ? 'text-cs-gold' : 'text-cs-text'}`}>
-                    {row.nickname}
-                    {isYou ? ` · ${t('leaderboard.you')}` : ''}
-                  </span>
-                  <span className="shrink-0 font-mono text-cs-gold">{row.score}</span>
-                </motion.li>
-              )
-            })}
-          </ul>
-        )}
+        <div className="panel overflow-hidden rounded-xl">
+          {rows.length === 0 ? (
+            <p className="p-8 text-center text-cs-muted lg:p-12">{t('leaderboard.empty')}</p>
+          ) : (
+            <>
+              <div className="hidden grid-cols-[3.5rem_minmax(0,1fr)_6rem] gap-3 border-b border-cs-border/60 px-5 py-2.5 text-[10px] font-bold tracking-wider text-cs-muted uppercase sm:grid lg:px-6">
+                <span>#</span>
+                <span>{t('leaderboard.player') || 'Player'}</span>
+                <span className="text-right">{t('leaderboard.score') || 'Score'}</span>
+              </div>
+              <ul>
+                {rows.map((row, i) => {
+                  const isYou = isAuthed && row.player_id === profile.id
+                  return (
+                    <motion.li
+                      key={`${row.player_id}-${i}`}
+                      initial={{ opacity: 0, x: -8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: Math.min(i, 20) * 0.02 }}
+                      className={`flex items-center gap-3 border-b border-cs-border/60 px-4 py-3 sm:grid sm:grid-cols-[3.5rem_minmax(0,1fr)_6rem] sm:gap-3 lg:px-6 lg:py-3.5 ${
+                        isYou ? 'bg-cs-gold/10' : ''
+                      }`}
+                    >
+                      <span className="w-10 font-mono text-sm text-cs-muted sm:w-auto">#{i + 1}</span>
+                      <span
+                        className={`min-w-0 flex-1 truncate font-semibold sm:flex-none ${
+                          isYou ? 'text-cs-gold' : 'text-cs-text'
+                        }`}
+                      >
+                        {row.nickname}
+                        {isYou ? ` · ${t('leaderboard.you')}` : ''}
+                      </span>
+                      <span className="shrink-0 font-mono text-cs-gold sm:text-right">{row.score}</span>
+                    </motion.li>
+                  )
+                })}
+              </ul>
+            </>
+          )}
+        </div>
       </div>
     </div>
   )

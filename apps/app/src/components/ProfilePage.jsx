@@ -206,7 +206,7 @@ export default function ProfilePage({ onBack, onNeedAuth }) {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8">
+    <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
       <button
         type="button"
         className="btn-ghost mb-6 inline-flex items-center gap-2 rounded px-3 py-2 text-sm"
@@ -215,8 +215,8 @@ export default function ProfilePage({ onBack, onNeedAuth }) {
         <ArrowLeft className="h-4 w-4" /> {t('nav.back')}
       </button>
 
-      <div className="panel mb-5 rounded-xl p-5">
-        <div className="flex flex-wrap items-center gap-4">
+      <div className="panel mb-5 rounded-xl p-5 lg:mb-6 lg:p-6">
+        <div className="flex flex-wrap items-center gap-4 lg:gap-6">
           <ProfileAvatar
             avatarId={avatarId}
             avatarUrl={avatarUrl}
@@ -228,20 +228,20 @@ export default function ProfilePage({ onBack, onNeedAuth }) {
             size="xl"
           />
           <div className="min-w-0 flex-1">
-            <h1 className="truncate font-display text-2xl font-bold text-cs-gold">
+            <h1 className="truncate font-display text-2xl font-bold text-cs-gold lg:text-3xl">
               {isAuthed ? displayName : t('profile.guest')}
             </h1>
-            <p className="text-sm text-cs-muted">
+            <p className="text-sm text-cs-muted lg:text-base">
               {isAuthed ? profile.email : t('profile.guestBlurb')}
             </p>
             {isAuthed && (
-              <p className="mt-1 text-[11px] text-cs-muted">
+              <p className="mt-1 text-[11px] text-cs-muted lg:text-xs">
                 {profilePublic ? t('profile.visibilityPublic') : t('profile.visibilityPrivate')}
                 {steamUrl ? ` · ${t('profile.steam')}` : ''}
               </p>
             )}
             {isAuthed && stats && (
-              <div className="mt-2 flex flex-wrap gap-2 text-xs">
+              <div className="mt-2 flex flex-wrap gap-2 text-xs lg:mt-3 lg:gap-3 lg:text-sm">
                 <Chip label={t('profile.statWins')} value={stats.wins} />
                 <Chip label={t('profile.statGames')} value={stats.games} />
                 <Chip label={t('profile.statBadges')} value={ownedIds.size} />
@@ -298,8 +298,11 @@ export default function ProfilePage({ onBack, onNeedAuth }) {
       )}
 
       {tab === 'edit' && (
-        <div className="space-y-4">
-          <div className="panel space-y-5 rounded-xl p-5">
+        <div className="grid gap-4 lg:grid-cols-2 lg:gap-6 lg:items-start">
+          <div className="panel space-y-5 rounded-xl p-5 lg:p-6">
+            {!isAuthed && (
+              <p className="text-sm text-cs-muted">{t('profile.guestUnlock')}</p>
+            )}
             {isAuthed && (
               <>
                 <div>
@@ -363,7 +366,9 @@ export default function ProfilePage({ onBack, onNeedAuth }) {
                 </div>
               </>
             )}
+          </div>
 
+          <div className="panel space-y-5 rounded-xl p-5 lg:p-6">
             <div>
               <label className="mb-2 block text-[10px] font-bold tracking-wider text-cs-muted uppercase">
                 {t('profile.avatar')}
@@ -400,7 +405,7 @@ export default function ProfilePage({ onBack, onNeedAuth }) {
               </div>
               <p className="mb-3 text-[11px] text-cs-muted">{t('profile.uploadHint')}</p>
               {uploadError && <p className="mb-3 text-xs text-cs-loss">{uploadError}</p>}
-              <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
+              <div className="grid grid-cols-4 gap-2 sm:grid-cols-6 lg:grid-cols-5 xl:grid-cols-6">
                 {AVATARS.map((a) => (
                   <button
                     key={a.id}
@@ -595,7 +600,7 @@ export default function ProfilePage({ onBack, onNeedAuth }) {
       )}
 
       {isAuthed && tab === 'badges' && (
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 lg:gap-4">
           {defs.map((def) => {
             const unlocked = ownedIds.has(def.id)
             const Icon = BADGE_ICONS[def.icon] || Award
