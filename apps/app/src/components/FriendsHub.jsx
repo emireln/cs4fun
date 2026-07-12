@@ -37,11 +37,12 @@ export default function FriendsHub({
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:py-8">
-      <div className="mb-5 flex items-stretch gap-2 sm:gap-3">
+      {/* Same column as RoomLobby code card (max-w-3xl) so Back lines up with the panel */}
+      <div className="mx-auto mb-5 flex w-full max-w-3xl items-stretch gap-2 sm:gap-3">
         <button type="button" className={`btn-ghost shrink-0 ${NAV_BTN}`} onClick={onBack}>
           <ArrowLeft className="h-3.5 w-3.5 shrink-0" /> {t('nav.back')}
         </button>
-        <div className="grid min-w-0 flex-1 grid-cols-2 gap-2 sm:max-w-md">
+        <div className="grid min-w-0 flex-1 grid-cols-2 gap-2">
           <TabBtn active={tab === 'lobby'} onClick={() => setTab('lobby')}>
             {t('friends.tabLobby')}
           </TabBtn>
