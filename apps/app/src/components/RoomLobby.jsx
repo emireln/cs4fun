@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { ArrowLeft, Copy, Users, Swords, Package } from 'lucide-react'
 import { useI18n } from '../i18n'
 import { useAuth } from '../lib/auth'
-import { createRoom, joinRoom, subscribeRoom, updateRoom } from '../lib/rooms'
+import { createRoom, joinRoom, subscribeRoom, updateRoom, samePlayerId } from '../lib/rooms'
 import { displayName, ensureGuestNickname, randomGuestTag } from '../lib/profile'
 import { equippedTitleLabel, titleLoadout } from '../lib/cosmetics'
 import { PROP_OPTIONS, readProps, setPropPick } from '../lib/props'
@@ -23,7 +23,15 @@ export default function RoomLobby({ profile, initialMode = 'party', onBack, onSt
 
   useEffect(() => {
     if (!room?.code) return undefined
-    return subscribeRoom(room.code, (next) => setRoom({ ...next }))
+    return subscribeRoom(room.code, (next) => {
+      setRoom((prev) => {
+        // Don't let a stale poll wipe a newer local ready/status flip.
+        if (prev?.updatedAt && next?.updatedAt && Number(next.updatedAt) < Number(prev.updatedAt)) {
+          return prev
+        }
+        return { ...next }
+      })
+    })
   }, [room?.code])
 
   useEffect(() => {
@@ -67,7 +75,7 @@ export default function RoomLobby({ profile, initialMode = 'party', onBack, onSt
       setError(mapped !== key ? mapped : res.error)
       return
     }
-    setRoom(res.room)
+    setRoom({ ...res.room, updatedAt: Date.now() })
   }
 
   const handleJoin = async () => {
@@ -84,36 +92,57 @@ export default function RoomLobby({ profile, initialMode = 'party', onBack, onSt
       setError(mapped !== key ? mapped : res.error)
       return
     }
-    setRoom(res.room)
+    setRoom({ ...res.room, updatedAt: Date.now() })
     setMode(res.room.mode)
   }
 
   const toggleReady = async () => {
     if (!room) return
-    await updateRoom(
+    const pid = profile.id
+    const meNow = (room.players || []).find((p) => samePlayerId(p.id, pid))
+    const desiredReady = !Boolean(meNow?.ready)
+    const optimistic = {
+      ...room,
+      updatedAt: Date.now(),
+      players: (room.players || []).map((p) =>
+        samePlayerId(p.id, pid) ? { ...p, ready: desiredReady } : p,
+      ),
+    }
+    setRoom(optimistic)
+    const next = await updateRoom(
       room.code,
       (r) => ({
         ...r,
-        players: r.players.map((p) =>
-          p.id === profile.id ? { ...p, ready: !p.ready } : p,
+        updatedAt: Date.now(),
+        players: (Array.isArray(r.players) && r.players.length ? r.players : optimistic.players).map((p) =>
+          samePlayerId(p.id, pid) ? { ...p, ready: desiredReady } : p,
         ),
       }),
-      { guestId: !isAuthed ? profile.id : null },
+      { guestId: !isAuthed ? profile.id : null, base: optimistic },
     )
+    if (next) setRoom({ ...next, updatedAt: next.updatedAt || Date.now() })
   }
 
   const startGame = async () => {
-    if (!room || room.hostId !== profile.id) return
+    if (!room || !samePlayerId(room.hostId, profile.id)) return
+    const drafting = {
+      ...room,
+      status: 'drafting',
+      seed: room.seed || `${room.mode}-${room.code}-${Date.now()}`,
+      updatedAt: Date.now(),
+    }
     const next = await updateRoom(
       room.code,
       (r) => ({
         ...r,
         status: 'drafting',
-        seed: r.seed || `${r.mode}-${r.code}-${Date.now()}`,
+        seed: r.seed || drafting.seed,
+        updatedAt: Date.now(),
       }),
-      { guestId: !isAuthed ? profile.id : null },
+      { guestId: !isAuthed ? profile.id : null, base: drafting },
     )
-    onStart(next)
+    if (next) onStart(next)
+    else onStart(drafting)
   }
 
   // Guests auto-forward when host starts; host already navigates via startGame
@@ -230,8 +259,8 @@ export default function RoomLobby({ profile, initialMode = 'party', onBack, onSt
     )
   }
 
-  const isHost = room.hostId === profile.id
-  const me = room.players.find((p) => p.id === profile.id)
+  const isHost = samePlayerId(room.hostId, profile.id)
+  const me = room.players.find((p) => samePlayerId(p.id, profile.id))
 
   return (
     <div className={shell}>
@@ -284,7 +313,7 @@ export default function RoomLobby({ profile, initialMode = 'party', onBack, onSt
                 <span className="block truncate">
                   {p.nickname}
                   {p.isHost ? ` · ${t('room.host')}` : ''}
-                  {p.id === profile.id ? ` (${t('room.you')})` : ''}
+                  {p.id && samePlayerId(p.id, profile.id) ? ` (${t('room.you')})` : ''}
                 </span>
                 {title ? (
                   <span className="mt-0.5 block truncate text-[10px] uppercase tracking-wider text-cs-gold/80">

@@ -100,14 +100,7 @@ export async function createRoom({ profile, mode }) {
         p_payload: local,
       })
         if (!error && data) {
-          const room =
-            typeof data.payload === 'object'
-              ? { ...data.payload, code: data.code, seed: data.seed, status: data.status, hostId: data.host_id }
-              : local
-          room.code = data.code
-          room.seed = data.seed
-          room.status = data.status
-          room.hostId = data.host_id
+          const room = roomFromRow(data, local)
           writeActiveGuestId(null)
           return { room, global: true }
         }
@@ -240,69 +233,126 @@ export async function joinRoom({ code, profile }) {
   return { room, global: false }
 }
 
-export async function updateRoom(code, updater, { guestId = null } = {}) {
+function samePlayerId(a, b) {
+  return String(a ?? '').toLowerCase() === String(b ?? '').toLowerCase()
+}
+
+/** Normalize a rooms row / RPC result into the client room shape. */
+function roomFromRow(data, fallback = null) {
+  if (!data && !fallback) return null
+  const payload =
+    data?.payload && typeof data.payload === 'object' && !Array.isArray(data.payload)
+      ? data.payload
+      : {}
+  const base = fallback && typeof fallback === 'object' ? fallback : {}
+  const players = Array.isArray(payload.players)
+    ? payload.players
+    : Array.isArray(base.players)
+      ? base.players
+      : []
+  return {
+    ...base,
+    ...payload,
+    players,
+    code: data?.code || payload.code || base.code,
+    seed: data?.seed || payload.seed || base.seed,
+    status: data?.status || payload.status || base.status || 'lobby',
+    hostId: data?.host_id || data?.hostId || payload.hostId || base.hostId,
+    mode: data?.mode || payload.mode || base.mode,
+    maxPlayers: payload.maxPlayers || base.maxPlayers,
+    updatedAt: data?.updated_at || base.updatedAt || Date.now(),
+  }
+}
+
+/** Persist only lobby state in payload — strip row mirrors that confuse later merges. */
+function toRoomPayload(room) {
+  if (!room || typeof room !== 'object') return {}
+  const {
+    code: _code,
+    seed: _seed,
+    status: _status,
+    hostId: _hostId,
+    host_id: _host_id,
+    updatedAt: _updatedAt,
+    updated_at: _updated_at,
+    ...rest
+  } = room
+  return {
+    ...rest,
+    mode: room.mode,
+    maxPlayers: room.maxPlayers,
+    players: Array.isArray(room.players) ? room.players : [],
+    createdAt: room.createdAt,
+  }
+}
+
+export async function updateRoom(code, updater, { guestId = null, base = null } = {}) {
   const normalized = code.trim().toUpperCase()
   const resolvedGuestId = guestId || readActiveGuestId()
+
+  const buildNext = (current) => {
+    const src = current || base
+    if (!src) return null
+    return typeof updater === 'function' ? updater({ ...src, players: src.players || [] }) : updater
+  }
 
   if (isSupabaseConfigured) {
     const { data: sessionData } = await supabase.auth.getSession()
     if (sessionData?.session?.user) {
-      const current = await fetchRoom(normalized)
+      const current = (await fetchRoom(normalized)) || base
       if (current) {
-        const room = typeof updater === 'function' ? updater(current) : updater
-        const { data, error } = await supabase.rpc('update_room_payload', {
-          p_code: normalized,
-          p_payload: room,
-          p_status: room.status,
-        })
-        if (!error && data) {
-          return { ...(data.payload || room), code: data.code, seed: data.seed, status: data.status, hostId: data.host_id }
+        const room = buildNext(current)
+        if (room) {
+          const { data, error } = await supabase.rpc('update_room_payload', {
+            p_code: normalized,
+            p_payload: toRoomPayload(room),
+            p_status: room.status || current.status || 'lobby',
+          })
+          if (!error && data) {
+            return roomFromRow(data, room)
+          }
         }
       }
     } else if (isGuestLocalId(resolvedGuestId)) {
-      const current = await fetchRoom(normalized)
-      if (current?.players?.some((p) => String(p.id).toLowerCase() === String(resolvedGuestId).toLowerCase())) {
-        const room = typeof updater === 'function' ? updater(current) : updater
-        const { data, error } = await supabase.rpc('update_room_guest', {
-          p_code: normalized,
-          p_guest_id: String(resolvedGuestId),
-          p_payload: room,
-          p_status: room.status,
-        })
-        if (!error && data) {
-          return { ...(data.payload || room), code: data.code, seed: data.seed, status: data.status, hostId: data.host_id }
+      const current = (await fetchRoom(normalized)) || base
+      if (current?.players?.some((p) => samePlayerId(p.id, resolvedGuestId))) {
+        const room = buildNext(current)
+        if (room) {
+          const { data, error } = await supabase.rpc('update_room_guest', {
+            p_code: normalized,
+            p_guest_id: String(resolvedGuestId),
+            p_payload: toRoomPayload(room),
+            p_status: room.status || current.status || 'lobby',
+          })
+          if (!error && data) {
+            return roomFromRow(data, room)
+          }
         }
       }
     }
   }
 
   const rooms = readRooms()
-  const current = rooms[normalized]
+  const current = rooms[normalized] || base
   if (!current) return null
-  const room = typeof updater === 'function' ? updater(current) : updater
-  rooms[normalized] = room
+  const room = buildNext(current)
+  if (!room) return null
+  rooms[normalized] = { ...room, code: normalized }
   writeRooms(rooms)
-  broadcastLocal(normalized, room)
-  return room
+  broadcastLocal(normalized, rooms[normalized])
+  return rooms[normalized]
 }
 
 export async function fetchRoom(code) {
   const normalized = code.trim().toUpperCase()
   if (isSupabaseConfigured) {
     const { data } = await supabase.from('rooms').select('*').eq('code', normalized).maybeSingle()
-    if (data) {
-      return {
-        ...(data.payload || {}),
-        code: data.code,
-        seed: data.seed,
-        status: data.status,
-        hostId: data.host_id,
-        mode: data.mode,
-      }
-    }
+    if (data) return roomFromRow(data)
   }
   return readRooms()[normalized] || null
 }
+
+export { samePlayerId }
 
 export function subscribeRoom(code, onRoom) {
   const normalized = code.trim().toUpperCase()
@@ -317,14 +367,7 @@ export function subscribeRoom(code, onRoom) {
         { event: '*', schema: 'public', table: 'rooms', filter: `code=eq.${normalized}` },
         (payload) => {
           if (payload.new) {
-            onRoom({
-              ...(payload.new.payload || {}),
-              code: payload.new.code,
-              seed: payload.new.seed,
-              status: payload.new.status,
-              hostId: payload.new.host_id,
-              mode: payload.new.mode,
-            })
+            onRoom(roomFromRow(payload.new))
           }
         },
       )
