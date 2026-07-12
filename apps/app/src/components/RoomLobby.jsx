@@ -7,6 +7,7 @@ import { createRoom, joinRoom, subscribeRoom, updateRoom } from '../lib/rooms'
 import { displayName, ensureGuestNickname, randomGuestTag } from '../lib/profile'
 import { equippedTitleLabel, titleLoadout } from '../lib/cosmetics'
 import { PROP_OPTIONS, readProps, setPropPick } from '../lib/props'
+import { copyText } from '../lib/clipboard'
 
 export default function RoomLobby({ profile, initialMode = 'party', onBack, onStart, embedded = false }) {
   const { t } = useI18n()
@@ -121,14 +122,11 @@ export default function RoomLobby({ profile, initialMode = 'party', onBack, onSt
   }, [room?.status]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const copyCode = async () => {
-    if (!room) return
-    try {
-      await navigator.clipboard.writeText(room.code)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 1500)
-    } catch {
-      /* ignore */
-    }
+    if (!room?.code) return
+    const res = await copyText(room.code)
+    if (!res.ok) return
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1500)
   }
 
   const shell = embedded ? 'w-full' : 'mx-auto w-full max-w-5xl px-4 py-8 sm:py-10'

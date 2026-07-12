@@ -1,4 +1,4 @@
-const { app, BrowserWindow, shell, Tray, Menu, nativeImage, ipcMain, Notification } = require('electron')
+const { app, BrowserWindow, shell, Tray, Menu, nativeImage, ipcMain, Notification, clipboard } = require('electron')
 const path = require('node:path')
 const fs = require('node:fs')
 
@@ -93,8 +93,15 @@ function createWindow() {
     }
   })
 
-  win.webContents.session.setPermissionRequestHandler((_wc, _permission, callback) => {
+  win.webContents.session.setPermissionRequestHandler((_wc, permission, callback) => {
+    if (permission === 'clipboard-sanitized-write' || permission === 'clipboard-read') {
+      callback(true)
+      return
+    }
     callback(false)
+  })
+  win.webContents.session.setPermissionCheckHandler((_wc, permission) => {
+    return permission === 'clipboard-sanitized-write' || permission === 'clipboard-read'
   })
 
   win.webContents.on('did-finish-load', () => {
@@ -295,6 +302,12 @@ app.whenReady().then(() => {
   if (process.platform === 'win32') {
     app.setAppUserModelId('online.cs4fun.app')
   }
+
+  ipcMain.handle('cs4fun:clipboard-write', (_event, text) => {
+    clipboard.writeText(String(text ?? ''))
+    return { ok: true }
+  })
+
   mainWindow = createWindow()
   createTray(mainWindow)
   setupAutoUpdater()

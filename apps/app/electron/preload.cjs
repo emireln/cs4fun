@@ -2,6 +2,9 @@ const { contextBridge, ipcRenderer } = require('electron')
 
 contextBridge.exposeInMainWorld('cs4funDesktop', {
   isDesktop: true,
+  copyText(text) {
+    return ipcRenderer.invoke('cs4fun:clipboard-write', String(text ?? ''))
+  },
   onUpdateEvent(callback) {
     if (typeof callback !== 'function') return () => {}
     const handler = (_event, payload) => callback(payload)
