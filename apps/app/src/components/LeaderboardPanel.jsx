@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { ArrowLeft, RefreshCw, LogIn } from 'lucide-react'
 import { useI18n } from '../i18n'
@@ -17,20 +17,29 @@ export default function LeaderboardPanel({ profile, onBack, onNeedAuth }) {
   const [myRank, setMyRank] = useState(null)
   const [loading, setLoading] = useState(false)
   const [scope, setScope] = useState('allTime')
+  const seqRef = useRef(0)
 
   const load = async () => {
+    const seq = ++seqRef.current
     setLoading(true)
     const dayKey = board === 'daily' ? utcDayKey() : undefined
-    const data = await fetchLeaderboard(board, { dayKey, limit: TOP_LIMIT })
-    setRows(scope === 'season' ? filterSeasonRows(data) : data)
+    try {
+      const data = await fetchLeaderboard(board, { dayKey, limit: TOP_LIMIT })
+      if (seq !== seqRef.current) return
+      setRows(scope === 'season' ? filterSeasonRows(data) : data)
 
-    if (isAuthed && profile?.id) {
-      const rank = await fetchMyRank(board, profile.id, { dayKey })
-      setMyRank(rank)
-    } else {
-      setMyRank(null)
+      if (isAuthed && profile?.id) {
+        const rank = await fetchMyRank(board, profile.id, { dayKey })
+        if (seq !== seqRef.current) return
+        setMyRank(rank)
+      } else {
+        setMyRank(null)
+      }
+    } catch {
+      /* keep previous rows on failure */
+    } finally {
+      if (seq === seqRef.current) setLoading(false)
     }
-    setLoading(false)
   }
 
   useEffect(() => {
@@ -136,7 +145,9 @@ export default function LeaderboardPanel({ profile, onBack, onNeedAuth }) {
         </div>
 
         <div className="panel overflow-hidden rounded-xl">
-          {rows.length === 0 ? (
+          {loading && rows.length === 0 ? (
+            <p className="p-8 text-center text-cs-muted lg:p-12">{t('admin.loading')}</p>
+          ) : rows.length === 0 ? (
             <p className="p-8 text-center text-cs-muted lg:p-12">{t('leaderboard.empty')}</p>
           ) : (
             <>

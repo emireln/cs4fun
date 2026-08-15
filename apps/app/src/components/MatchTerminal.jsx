@@ -3,6 +3,17 @@ import { motion, AnimatePresence } from 'framer-motion'
 
 export default function MatchTerminal({ logs, title = 'Match Terminal' }) {
   const bottomRef = useRef(null)
+  // Stable per-log keys so appends don't remount the whole feed.
+  const feedSeq = useRef(0)
+  const feedIds = useRef(new WeakMap())
+  const keyForLog = (log) => {
+    let id = feedIds.current.get(log)
+    if (id == null) {
+      id = feedSeq.current++
+      feedIds.current.set(log, id)
+    }
+    return id
+  }
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -20,9 +31,9 @@ export default function MatchTerminal({ logs, title = 'Match Terminal' }) {
       </div>
       <div className="terminal scrollbar-thin flex-1 overflow-y-auto p-3 text-[12px] leading-relaxed sm:text-[13px]">
         <AnimatePresence initial={false}>
-          {logs.map((log, i) => (
+          {logs.map((log) => (
             <motion.div
-              key={`${i}-${log.text.slice(0, 24)}`}
+              key={keyForLog(log)}
               initial={{ opacity: 0, x: -6 }}
               animate={{ opacity: 1, x: 0 }}
               className={`terminal-line-${log.type || 'round'} mb-1`}

@@ -115,8 +115,7 @@ export default function HomeHub({ onSelectMode, onOpenFriends, onNeedAuth }) {
                 )}
               </div>
 
-              <DailyStrip streak={streak} onPlay={() => handleSelect('daily')} t={t} />
-
+              <DailyStrip streak={streak} playedToday={Boolean(streak.playedToday)} onPlay={() => handleSelect('daily')} t={t} />
               <ModeSections
                 t={t}
                 streak={streak}
@@ -314,7 +313,7 @@ function ArcadeCard({ mode, index, t, onSelect }) {
   )
 }
 
-function DailyStrip({ streak, onPlay, t }) {
+function DailyStrip({ streak, playedToday = false, onPlay, t }) {
   const [msLeft, setMsLeft] = useState(() => msUntilUtcMidnight())
   useEffect(() => {
     const id = setInterval(() => setMsLeft(msUntilUtcMidnight()), 30000)
@@ -359,9 +358,10 @@ function DailyStrip({ streak, onPlay, t }) {
             <button
               type="button"
               onClick={onPlay}
-              className="btn-gold rounded px-4 py-2 text-[10px] uppercase tracking-[0.14em]"
+              disabled={playedToday}
+              className="btn-gold rounded px-4 py-2 text-[10px] uppercase tracking-[0.14em] disabled:opacity-45"
             >
-              {t('daily.playToday')}
+              {playedToday ? t('daily.playedToday') : t('daily.playToday')}
             </button>
           </div>
         </div>

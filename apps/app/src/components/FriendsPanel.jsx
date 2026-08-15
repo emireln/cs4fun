@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { UserPlus, Swords, Users, Check, X, Trash2, UserRound, Package } from 'lucide-react'
 import { useI18n } from '../i18n'
@@ -22,6 +22,7 @@ import {
   removeFriend,
   searchPlayersByTagLocalAware,
   sendFriendRequest,
+  subscribeGraphPings,
   subscribeInvites,
 } from '../lib/friends'
 import { displayName } from '../lib/profile'
@@ -81,6 +82,7 @@ export default function FriendsPanel({
       listIncomingInvites(profile.id),
       fetchUserStats(profile.id).catch(() => null),
     ])
+    if (!aliveRef.current) return
     setFriends(f)
     setRequests(r)
     setOutgoing(out)
@@ -90,21 +92,30 @@ export default function FriendsPanel({
 
     const stats = {}
     const drops = {}
-    await Promise.all(
+    await Promise.allSettled(
       f.map(async (friend) => {
-        stats[friend.id] = await getFriendH2H(profile.id, friend.id)
-        const local = readBoxStats(friend.id)?.bestDrop
-        const pub = await fetchPublicProfile(friend.id, { viewerId: profile.id })
-        drops[friend.id] = pickBestDrop(local, pub?.bestDrop)
+        const [h2h, pub] = await Promise.all([
+          getFriendH2H(profile.id, friend.id).catch(() => null),
+          fetchPublicProfile(friend.id, { viewerId: profile.id }).catch(() => null),
+        ])
+        if (!aliveRef.current) return
+        stats[friend.id] = h2h
+        drops[friend.id] = pickBestDrop(readBoxStats(friend.id)?.bestDrop, pub?.bestDrop)
       }),
     )
-    setH2h(stats)
-    setFriendDrops(drops)
+    if (!aliveRef.current) return
+    setH2h((prev) => ({ ...prev, ...stats }))
+    setFriendDrops((prev) => ({ ...prev, ...drops }))
     setMyClan(getMyClan(profile.id))
   }
 
+  const aliveRef = useRef(true)
   useEffect(() => {
+    aliveRef.current = true
     refresh()
+    return () => {
+      aliveRef.current = false
+    }
   }, [profile.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -115,6 +126,11 @@ export default function FriendsPanel({
       })
     })
   }, [profile.id])
+
+  // Same-browser guest graph changes (requests accepted/declined elsewhere) refresh live.
+  useEffect(() => {
+    return subscribeGraphPings(() => refresh())
+  }, [profile.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (search.trim().length < 2) {
@@ -135,6 +151,7 @@ export default function FriendsPanel({
       to: player,
     })
     if (res.error === 'exists') setMsg(t('friends.already'))
+    else if (res.error === 'auth_required') setMsg(t('friends.addAuthRequired'))
     else if (res.error) setMsg(res.error)
     else {
       setMsg(t('friends.requestSent'))

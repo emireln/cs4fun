@@ -5,6 +5,7 @@ const LOCAL_FRIENDS = 'cs4fun_friends_v1'
 const LOCAL_H2H = 'cs4fun_friend_h2h_v1'
 const LOCAL_INVITES = 'cs4fun_friend_invites_v1'
 const INVITE_CHANNEL = 'cs4fun_friend_invite_'
+const GRAPH_CHANNEL = 'cs4fun_friend_graph_'
 
 function readJson(key, fallback) {
   try {
@@ -33,6 +34,42 @@ function localGraph() {
 
 function saveLocalGraph(g) {
   writeJson(LOCAL_FRIENDS, g)
+  broadcastGraphPing()
+}
+
+/** Same-browser tabs: tell open Friends panels the local graph changed. */
+export function broadcastGraphPing() {
+  try {
+    const ch = new BroadcastChannel(GRAPH_CHANNEL + 'ping')
+    ch.postMessage({ type: 'graph' })
+    ch.close()
+  } catch {
+    /* ignore */
+  }
+  try {
+    localStorage.setItem(`${GRAPH_CHANNEL}ping`, String(Date.now()))
+  } catch {
+    /* ignore */
+  }
+}
+
+export function subscribeGraphPings(onPing) {
+  const cleanups = []
+  try {
+    const ch = new BroadcastChannel(GRAPH_CHANNEL + 'ping')
+    ch.onmessage = (e) => {
+      if (e.data?.type === 'graph') onPing?.()
+    }
+    cleanups.push(() => ch.close())
+  } catch {
+    /* ignore */
+  }
+  const onStorage = (e) => {
+    if (e.key === `${GRAPH_CHANNEL}ping` || e.key === LOCAL_FRIENDS) onPing?.()
+  }
+  window.addEventListener('storage', onStorage)
+  cleanups.push(() => window.removeEventListener('storage', onStorage))
+  return () => cleanups.forEach((fn) => fn())
 }
 
 function localInvites() {
@@ -107,6 +144,8 @@ export async function searchPlayersByTag(tag, { excludeId } = {}) {
     .slice(0, 12)
 }
 
+const GUEST_ID_RE = /^p_[a-z0-9]{4,24}$/i
+
 export async function sendFriendRequest({ from, to }) {
   if (!from?.id || !to?.id || from.id === to.id) return { error: 'invalid' }
 
@@ -124,6 +163,9 @@ export async function sendFriendRequest({ from, to }) {
       }
       return { ok: true, global: true }
     }
+    // Guest with Supabase configured: cloud profiles can't receive local-only
+    // requests — ask for an account instead of silently dropping them.
+    if (!GUEST_ID_RE.test(String(to.id || ''))) return { error: 'auth_required' }
   }
 
   const g = localGraph()
@@ -499,6 +541,11 @@ export async function listIncomingInvites(profileId) {
 }
 
 export async function acceptInvite({ profile, invite }) {
+  const res = await joinRoom({ code: invite.roomCode, profile })
+  if (res.error) return { error: res.error }
+
+  // Mark the invite accepted only after the join succeeded so a failed join
+  // (e.g. room_full) leaves the invite pending and retryable.
   if (isSupabaseConfigured) {
     const { data: session } = await supabase.auth.getSession()
     if (session?.session?.user && typeof invite.id === 'number') {
@@ -508,7 +555,7 @@ export async function acceptInvite({ profile, invite }) {
         .eq('id', invite.id)
         .eq('to_id', profile.id)
         .eq('status', 'pending')
-      if (error) return { error: error.message }
+      if (error) return { error: error.message, room: res.room }
     }
   } else {
     const list = localInvites().map((i) =>
@@ -517,8 +564,6 @@ export async function acceptInvite({ profile, invite }) {
     saveLocalInvites(list)
   }
 
-  const res = await joinRoom({ code: invite.roomCode, profile })
-  if (res.error) return { error: res.error }
   return { ok: true, room: res.room }
 }
 

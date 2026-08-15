@@ -13,7 +13,7 @@ import {
 } from '../../lib/boxBattle'
 import { saveGameResult } from '../../lib/history'
 import { recordFriendMatch } from '../../lib/friends'
-import { subscribeRoom, updateRoom } from '../../lib/rooms'
+import { samePlayerId, subscribeRoom, updateRoom } from '../../lib/rooms'
 import { unlockAudio } from '../../lib/sound'
 import BoxDropCard from '../box/BoxDropCard'
 import BoxOpenReel from '../box/BoxOpenReel'
@@ -22,6 +22,9 @@ import BoxSetup from '../box/BoxSetup'
 
 export default function BoxGame({ profile, room, onHome, onStatus, onNeedFriends, onNeedAuth }) {
   const { t, money } = useI18n()
+  // Room writes carry the caller's id explicitly so guest updates never resolve
+  // against a stale shared guest key (signed-in users hit the session branch first).
+  const roomUpdate = (code, updater, opts = {}) => updateRoom(code, updater, { guestId: profile.id, ...opts })
   const [localRoom, setLocalRoom] = useState(room)
   const [step, setStep] = useState(room ? 'lobby' : 'setup')
   const [cfg, setCfg] = useState(() => {
@@ -91,6 +94,7 @@ export default function BoxGame({ profile, room, onHome, onStatus, onNeedFriends
 
   useEffect(() => {
     if (!localRoom || localRoom.status !== 'rematch') return
+    if (step === 'battle' && !localRoom.box && myDrops.length === 0) return
     const ids =
       localRoom.caseIds ||
       localRoom.payload?.caseIds ||
@@ -113,10 +117,10 @@ export default function BoxGame({ profile, room, onHome, onStatus, onNeedFriends
       setCfg({ caseId: nextCaseIds[0], caseIds: nextCaseIds, rounds: nextCaseIds.length, vsBot: false })
       setStep('battle')
     } else {
-      setStep(localRoom.hostId === profile.id ? 'lobby' : 'lobby')
+      setStep('lobby')
     }
     if (localRoom.hostId === profile.id) {
-      updateRoom(localRoom.code, (r) => ({
+      roomUpdate(localRoom.code, (r) => ({
         ...r,
         status: nextCaseIds?.length ? 'drafting' : 'drafting',
         box: null,
@@ -128,6 +132,7 @@ export default function BoxGame({ profile, room, onHome, onStatus, onNeedFriends
           boxTotal: null,
           boxDrops: null,
           boxBest: null,
+          wantRematch: false,
         })),
       }))
     }
@@ -180,7 +185,7 @@ export default function BoxGame({ profile, room, onHome, onStatus, onNeedFriends
     setRevealing(opens)
     setReelDone({ me: false, opp: false })
     if (publish && isFriendBox && isBoxHost && localRoom?.code) {
-      updateRoom(localRoom.code, (r) => ({
+      roomUpdate(localRoom.code, (r) => ({
         ...r,
         box: {
           roundIndex: idx,
@@ -242,7 +247,7 @@ export default function BoxGame({ profile, room, onHome, onStatus, onNeedFriends
       })
 
       if (isFriendBox && localRoom?.code) {
-        updateRoom(localRoom.code, (r) => ({
+        roomUpdate(localRoom.code, (r) => ({
           ...r,
           players: r.players.map((p) =>
             p.id === profile.id
@@ -343,7 +348,7 @@ export default function BoxGame({ profile, room, onHome, onStatus, onNeedFriends
         }
       }
       if (localRoom?.code) {
-        await updateRoom(localRoom.code, (r) => ({
+        await roomUpdate(localRoom.code, (r) => ({
           ...r,
           status: 'finished',
           players: r.players.map((p) =>
@@ -383,7 +388,7 @@ export default function BoxGame({ profile, room, onHome, onStatus, onNeedFriends
         onHome={onHome}
         onConfigured={async (c) => {
           setCfg({ ...c, vsBot: false })
-          const next = await updateRoom(localRoom.code, (r) => ({
+          const next = await roomUpdate(localRoom.code, (r) => ({
             ...r,
             caseId: c.caseId,
             caseIds: c.caseIds,
@@ -573,11 +578,22 @@ export default function BoxGame({ profile, room, onHome, onStatus, onNeedFriends
       onRematch={
         isFriendBox && localRoom?.code
           ? () => {
-              updateRoom(localRoom.code, (r) => ({
-                ...r,
-                status: 'rematch',
-                seed: `${r.mode}-${r.code}-${Date.now()}`,
-              }))
+              if (samePlayerId(localRoom.hostId, profile.id)) {
+                roomUpdate(localRoom.code, (r) => ({
+                  ...r,
+                  status: 'rematch',
+                  seed: `${r.mode}-${r.code}-${Date.now()}`,
+                  players: (r.players || []).map((p) => ({ ...p, wantRematch: false })),
+                }))
+              } else {
+                // Guests send intent; only the host flips status — prevents double-fire
+                roomUpdate(localRoom.code, (r) => ({
+                  ...r,
+                  players: (r.players || []).map((p) =>
+                    samePlayerId(p.id, profile.id) ? { ...p, wantRematch: true } : p,
+                  ),
+                }))
+              }
             }
           : null
       }

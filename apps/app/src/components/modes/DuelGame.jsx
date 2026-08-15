@@ -17,7 +17,7 @@ import { recordFriendMatch } from '../../lib/friends'
 import { pickMatchHighlight } from '../../lib/matchHighlight'
 import { saveLastMatchLog } from '../../lib/lastMatchLog'
 import { titleLoadout } from '../../lib/cosmetics'
-import { subscribeRoom, updateRoom } from '../../lib/rooms'
+import { samePlayerId, subscribeRoom, updateRoom } from '../../lib/rooms'
 import { initialSoloSetupState, retrySoloSetupState } from '../../lib/setupPreset'
 import ModeSetup from '../ModeSetup'
 import DraftPlay from '../DraftPlay'
@@ -30,6 +30,9 @@ import TeamLogo from '../TeamLogo'
 
 export default function DuelGame({ profile, room: initialRoom = null, onHome, onStatus, onNeedFriends, onNeedAuth }) {
   const { t } = useI18n()
+  // Room writes carry the caller's id explicitly so guest updates never resolve
+  // against a stale shared guest key (signed-in users hit the session branch first).
+  const roomUpdate = (code, updater, opts = {}) => updateRoom(code, updater, { guestId: profile.id, ...opts })
   const [liveRoom, setLiveRoom] = useState(initialRoom)
   const [boot] = useState(() => {
     if (initialRoom) {
@@ -105,7 +108,7 @@ export default function DuelGame({ profile, room: initialRoom = null, onHome, on
     const filled = Object.values(draft.lineup).filter(Boolean).length
     const phase = draft.complete ? 'locked' : draft.pendingPlayer || draft.currentRoster ? 'picking' : 'scouting'
     const id = setTimeout(() => {
-      updateRoom(liveRoom.code, (r) => ({
+      roomUpdate(liveRoom.code, (r) => ({
         ...r,
         players: r.players.map((p) =>
           p.id === profile.id
@@ -157,7 +160,7 @@ export default function DuelGame({ profile, room: initialRoom = null, onHome, on
     }
     if (liveRoom.hostId === profile.id && !liveRoom.pickEndsAt) {
       const ends = Date.now() + 90_000
-      updateRoom(liveRoom.code, (r) => ({ ...r, pickEndsAt: ends, status: 'drafting' }))
+      roomUpdate(liveRoom.code, (r) => ({ ...r, pickEndsAt: ends, status: 'drafting' }))
       setPickEndsAt(ends)
     }
     return undefined
@@ -234,7 +237,7 @@ export default function DuelGame({ profile, room: initialRoom = null, onHome, on
           { bestOf: 1 },
         )
         const matchSeed = `${liveRoom.seed || seed}-live`
-        updateRoom(liveRoom.code, (r) => ({
+        roomUpdate(liveRoom.code, (r) => ({
           ...r,
           status: 'live',
           match: {
@@ -280,9 +283,10 @@ export default function DuelGame({ profile, room: initialRoom = null, onHome, on
     if (changed) callsRef.current = next
   }, [isFriend, step, liveRoom?.match?.callsByMap]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Rematch signal from room
+  // Rematch signal from room — ignore stale re-fires once we're back in a fresh draft
   useEffect(() => {
     if (!liveRoom || liveRoom.status !== 'rematch') return
+    if (step === 'draft' && !liveRoom.match && !liveRoom.playback) return
     playbackRef.current?.abort?.()
     liveRef.current = false
     draft.reset()
@@ -303,7 +307,7 @@ export default function DuelGame({ profile, room: initialRoom = null, onHome, on
     setStep('draft')
     liveRef.current = true
     if (liveRoom.hostId === profile.id) {
-      updateRoom(liveRoom.code, (r) => ({
+      roomUpdate(liveRoom.code, (r) => ({
         ...r,
         status: 'drafting',
         match: null,
@@ -315,6 +319,7 @@ export default function DuelGame({ profile, room: initialRoom = null, onHome, on
           power: 0,
           draftPhase: 'scouting',
           draftFilled: 0,
+          wantRematch: false,
         })),
       }))
     }
@@ -444,7 +449,7 @@ export default function DuelGame({ profile, room: initialRoom = null, onHome, on
       })
     }
     if (liveRoom?.code) {
-      updateRoom(liveRoom.code, (r) => ({ ...r, status: 'finished' }))
+      roomUpdate(liveRoom.code, (r) => ({ ...r, status: 'finished' }))
     }
     saveLastMatchLog({
       mode: 'duel',
@@ -471,7 +476,7 @@ export default function DuelGame({ profile, room: initialRoom = null, onHome, on
     setPendingTacticMap(target)
     setTacticalOpen(true)
     if (isFriend && liveRoom?.code) {
-      updateRoom(liveRoom.code, (r) => ({
+      roomUpdate(liveRoom.code, (r) => ({
         ...r,
         playback: {
           ...(r.playback || {}),
@@ -484,7 +489,7 @@ export default function DuelGame({ profile, room: initialRoom = null, onHome, on
 
   const clearTacticalRoom = () => {
     if (!isFriend || !liveRoom?.code) return
-    updateRoom(liveRoom.code, (r) => ({
+    roomUpdate(liveRoom.code, (r) => ({
       ...r,
       playback: {
         ...(r.playback || {}),
@@ -512,7 +517,7 @@ export default function DuelGame({ profile, room: initialRoom = null, onHome, on
     setPaused(false)
     clearTacticalRoom()
     if (isFriend && liveRoom?.code) {
-      updateRoom(liveRoom.code, (r) => ({
+      roomUpdate(liveRoom.code, (r) => ({
         ...r,
         match: {
           ...(r.match || {}),
@@ -538,7 +543,7 @@ export default function DuelGame({ profile, room: initialRoom = null, onHome, on
     setSpeed(n)
     playbackRef.current.setSpeed(n)
     if (isFriend && liveRoom?.code && isHost) {
-      updateRoom(liveRoom.code, (r) => ({
+      roomUpdate(liveRoom.code, (r) => ({
         ...r,
         playback: { ...(r.playback || {}), speed: n, tactical: r.playback?.tactical || null },
       }))
@@ -647,7 +652,7 @@ export default function DuelGame({ profile, room: initialRoom = null, onHome, on
           setUserTeam(team)
 
           if (isFriend && liveRoom?.code) {
-            await updateRoom(liveRoom.code, (r) => ({
+            await roomUpdate(liveRoom.code, (r) => ({
               ...r,
               status: 'reveal',
               players: r.players.map((p) =>
@@ -672,7 +677,7 @@ export default function DuelGame({ profile, room: initialRoom = null, onHome, on
           const cpu = buildUserTeam(cpuLineup, {
             mapPriority: sharedRolls[0]?.mapPoolBias?.[0] || 'Inferno',
             mentalityId: 'aggressive',
-            name: t('setup.cpuTeam'),
+            name: t('common.cpuTeam'),
             shortName: 'BOT',
           })
           cpu.isUser = false
@@ -807,11 +812,22 @@ export default function DuelGame({ profile, room: initialRoom = null, onHome, on
       onRematch={
         isFriend && liveRoom?.code
           ? () => {
-              updateRoom(liveRoom.code, (r) => ({
-                ...r,
-                status: 'rematch',
-                seed: `${r.mode}-${r.code}-${Date.now()}`,
-              }))
+              if (samePlayerId(liveRoom.hostId, profile.id)) {
+                roomUpdate(liveRoom.code, (r) => ({
+                  ...r,
+                  status: 'rematch',
+                  seed: `${r.mode}-${r.code}-${Date.now()}`,
+                  players: (r.players || []).map((p) => ({ ...p, wantRematch: false })),
+                }))
+              } else {
+                // Guests send intent; only the host flips status — prevents double-fire
+                roomUpdate(liveRoom.code, (r) => ({
+                  ...r,
+                  players: (r.players || []).map((p) =>
+                    samePlayerId(p.id, profile.id) ? { ...p, wantRematch: true } : p,
+                  ),
+                }))
+              }
             }
           : null
       }

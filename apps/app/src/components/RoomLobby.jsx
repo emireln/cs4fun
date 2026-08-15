@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { ArrowLeft, Copy, Users, Swords, Package } from 'lucide-react'
 import { useI18n } from '../i18n'
 import { useAuth } from '../lib/auth'
-import { createRoom, joinRoom, subscribeRoom, updateRoom, samePlayerId } from '../lib/rooms'
+import { createRoom, joinRoom, leaveRoom, subscribeRoom, updateRoom, samePlayerId } from '../lib/rooms'
 import { displayName, ensureGuestNickname, randomGuestTag } from '../lib/profile'
 import { equippedTitleLabel, titleLoadout } from '../lib/cosmetics'
 import { PROP_OPTIONS, readProps, setPropPick } from '../lib/props'
@@ -121,6 +121,7 @@ export default function RoomLobby({ profile, initialMode = 'party', onBack, onSt
       { guestId: !isAuthed ? profile.id : null, base: optimistic },
     )
     if (next) setRoom({ ...next, updatedAt: next.updatedAt || Date.now() })
+    else setError(t('room.update_failed'))
   }
 
   const startGame = async () => {
@@ -141,8 +142,11 @@ export default function RoomLobby({ profile, initialMode = 'party', onBack, onSt
       }),
       { guestId: !isAuthed ? profile.id : null, base: drafting },
     )
-    if (next) onStart(next)
-    else onStart(drafting)
+    if (next) {
+      onStart(next)
+    } else {
+      setError(t('room.update_failed'))
+    }
   }
 
   // Guests auto-forward when host starts; host already navigates via startGame
@@ -156,6 +160,18 @@ export default function RoomLobby({ profile, initialMode = 'party', onBack, onSt
     if (!res.ok) return
     setCopied(true)
     setTimeout(() => setCopied(false), 1500)
+  }
+
+  /** Clean up the server-side room when leaving the lobby (host transfer / delete). */
+  const handleLeave = () => {
+    const code = room?.code
+    setRoom(null)
+    if (code) {
+      leaveRoom(code, { profile, guestId: !isAuthed ? profile.id : null }).catch(() => {
+        /* best-effort cleanup */
+      })
+    }
+    if (!embedded) onBack?.()
   }
 
   const shell = embedded ? 'w-full' : 'mx-auto w-full max-w-5xl px-4 py-8 sm:py-10'
@@ -265,7 +281,7 @@ export default function RoomLobby({ profile, initialMode = 'party', onBack, onSt
   return (
     <div className={shell}>
       {!embedded && (
-        <button type="button" className="btn-ghost mb-6 inline-flex items-center gap-2 rounded px-3 py-2 text-sm" onClick={onBack}>
+        <button type="button" className="btn-ghost mb-6 inline-flex items-center gap-2 rounded px-3 py-2 text-sm" onClick={handleLeave}>
           <ArrowLeft className="h-4 w-4" /> {t('room.leave')}
         </button>
       )}
@@ -292,7 +308,7 @@ export default function RoomLobby({ profile, initialMode = 'party', onBack, onSt
             <button
               type="button"
               className="btn-ghost inline-flex shrink-0 items-center gap-1.5 rounded px-3 py-2 text-xs uppercase tracking-wider"
-              onClick={() => setRoom(null)}
+              onClick={handleLeave}
             >
               <ArrowLeft className="h-3.5 w-3.5" /> {t('room.leave')}
             </button>
@@ -386,6 +402,7 @@ export default function RoomLobby({ profile, initialMode = 'party', onBack, onSt
             </p>
           )}
         </div>
+        {error && <p className="mt-3 text-sm text-cs-loss">{error}</p>}
       </motion.div>
     </div>
   )

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, MotionConfig, motion } from 'framer-motion'
 import { Coffee, BookOpen } from 'lucide-react'
 import { I18nProvider, useI18n } from './i18n'
 import { AuthProvider, useAuth } from './lib/auth'
@@ -48,6 +48,7 @@ function AppShell() {
   const [authOpen, setAuthOpen] = useState(false)
   const [peekProfileId, setPeekProfileId] = useState(null)
   const [incomingInvite, setIncomingInvite] = useState(null)
+  const [inviteQueue, setInviteQueue] = useState([])
   const [inviteBusy, setInviteBusy] = useState(false)
   const [toast, setToast] = useState(null)
   const toastTimer = useRef(null)
@@ -181,10 +182,22 @@ function AppShell() {
       const key = String(inv.id ?? inv.roomCode)
       if (!key || seenInviteKeys.current.has(key)) return
       seenInviteKeys.current.add(key)
-      setIncomingInvite((prev) => prev || inv)
+      // Queue invites so a popup already on screen doesn't swallow later ones.
+      setInviteQueue((q) => [...q, inv])
     },
     [profile?.id],
   )
+
+  // Show at most one popup at a time; dequeue the next after the current closes.
+  useEffect(() => {
+    if (incomingInvite || !inviteQueue.length) return
+    setIncomingInvite(inviteQueue[0])
+  }, [incomingInvite, inviteQueue])
+
+  const dismissCurrentInvite = useCallback(() => {
+    setIncomingInvite(null)
+    setInviteQueue((q) => q.slice(1))
+  }, [])
 
   useEffect(() => {
     try {
@@ -238,28 +251,27 @@ function AppShell() {
         invite,
       })
       setInviteBusy(false)
+      dismissCurrentInvite()
       if (res.error) {
         const mapped = t(`room.${res.error}`)
         showToast(mapped !== `room.${res.error}` ? mapped : res.error)
-        setIncomingInvite(null)
         return
       }
-      setIncomingInvite(null)
       startMatchRoom(res.room)
     },
-    [profile, showToast, startMatchRoom, t],
+    [profile, showToast, startMatchRoom, t, dismissCurrentInvite],
   )
 
   const handleDeclineInvite = useCallback(
     async (invite) => {
       if (!invite || !profile) {
-        setIncomingInvite(null)
+        dismissCurrentInvite()
         return
       }
-      setIncomingInvite(null)
+      dismissCurrentInvite()
       await declineInvite({ profileId: profile.id, invite })
     },
-    [profile],
+    [profile, dismissCurrentInvite],
   )
 
   if (loading) {
@@ -495,11 +507,13 @@ function AppShell() {
 
 export default function App() {
   return (
-    <I18nProvider>
-      <AuthProvider>
-        <AppShell />
-        <DesktopUpdateOverlay />
-      </AuthProvider>
-    </I18nProvider>
+    <MotionConfig reducedMotion="user">
+      <I18nProvider>
+        <AuthProvider>
+          <AppShell />
+          <DesktopUpdateOverlay />
+        </AuthProvider>
+      </I18nProvider>
+    </MotionConfig>
   )
 }

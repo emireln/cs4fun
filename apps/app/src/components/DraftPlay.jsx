@@ -43,12 +43,13 @@ export default function DraftPlay({
       {!hideReroll && !usingShared && (
         <button
           type="button"
+          aria-label={t('draft.rescout')}
           className="btn-ghost inline-flex min-h-[44px] items-center gap-2 rounded px-3 py-2 text-sm"
           onClick={reroll}
           disabled={!currentRoster || rerolls <= 0 || scouting || waitingAssign}
         >
           <RefreshCw className="h-4 w-4" />
-          <span className="hidden xs:inline sm:inline">{t('draft.rescout')}</span>
+          <span className="hidden sm:inline">{t('draft.rescout')}</span>
           <span>({rerolls})</span>
         </button>
       )}
@@ -59,7 +60,11 @@ export default function DraftPlay({
         disabled={!canRoll || scouting}
       >
         <Dices className="h-4 w-4" />
-        {currentRoster ? t('draft.nextScout') : t('draft.scout')}
+        {currentRoster && !waitingAssign
+          ? t('draft.pickPlayer')
+          : currentRoster
+            ? t('draft.nextScout')
+            : t('draft.scout')}
       </button>
       {complete && (
         <motion.button

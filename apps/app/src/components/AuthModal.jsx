@@ -1,9 +1,17 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { X } from 'lucide-react'
 import { useI18n } from '../i18n'
 import { useAuth } from '../lib/auth'
 import { isSupabaseConfigured } from '../lib/supabase'
 import LogoMark from './LogoMark'
+
+function mapAuthError(raw) {
+  const msg = String(raw || '')
+  if (/invalid_credentials|invalid login|wrong/i.test(msg)) return 'invalid_credentials'
+  if (/not confirmed|email not confirmed/i.test(msg)) return 'email_not_confirmed'
+  if (/exists|already registered/i.test(msg)) return 'email_taken'
+  return null
+}
 
 export default function AuthModal({ open, onClose }) {
   const { t } = useI18n()
@@ -15,10 +23,40 @@ export default function AuthModal({ open, onClose }) {
   const [nickname, setNickname] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const panelRef = useRef(null)
 
   useEffect(() => {
     if (open && isAuthed) onClose()
   }, [open, isAuthed, onClose])
+
+  useEffect(() => {
+    if (!open) return undefined
+    const onKey = (e) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', onKey)
+    // Simple focus trap: keep Tab cycling inside the panel
+    const panel = panelRef.current
+    const onPanelKey = (e) => {
+      if (e.key !== 'Tab' || !panel) return
+      const focusables = panel.querySelectorAll('button, input, [tabindex]:not([tabindex="-1"])')
+      if (!focusables.length) return
+      const first = focusables[0]
+      const last = focusables[focusables.length - 1]
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault()
+        last.focus()
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault()
+        first.focus()
+      }
+    }
+    panel?.addEventListener('keydown', onPanelKey)
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      panel?.removeEventListener('keydown', onPanelKey)
+    }
+  }, [open, onClose])
 
   if (!open || isAuthed) return null
 
@@ -39,7 +77,7 @@ export default function AuthModal({ open, onClose }) {
 
     setBusy(true)
     if (!isSupabaseConfigured) {
-      setError(t('auth.noSupabase'))
+      setError(t('auth.unavailable'))
       setBusy(false)
       return
     }
@@ -51,15 +89,28 @@ export default function AuthModal({ open, onClose }) {
 
     setBusy(false)
     if (res.error) {
-      setError(res.error === 'no_supabase' ? t('auth.noSupabase') : res.error)
+      const mapped = mapAuthError(res.error)
+      const key = mapped === 'email_taken' ? 'auth.error' : mapped === 'invalid_credentials' ? 'auth.invalidCredentials' : mapped === 'email_not_confirmed' ? 'auth.emailNotConfirmed' : null
+      setError(key ? t(key) : String(res.error))
       return
     }
     onClose()
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto overscroll-contain bg-black/70 p-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))] backdrop-blur-sm sm:items-center sm:pb-4">
-      <div className="panel relative my-auto w-full max-w-sm rounded-xl p-5">
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto overscroll-contain bg-black/70 p-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))] backdrop-blur-sm sm:items-center sm:pb-4"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose()
+      }}
+    >
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={t('auth.title')}
+        className="panel relative my-auto w-full max-w-sm rounded-xl p-5"
+      >
         <button
           type="button"
           className="absolute right-3 top-3 text-cs-muted hover:text-cs-text"
@@ -80,8 +131,9 @@ export default function AuthModal({ open, onClose }) {
               value={nickname}
               onChange={(e) => setNickname(e.target.value)}
               maxLength={16}
+              disabled={busy}
               placeholder={t('auth.nickname')}
-              className="w-full rounded border border-cs-border bg-cs-bg/60 px-3 py-2 text-sm outline-none focus:border-cs-gold/50"
+              className="w-full rounded border border-cs-border bg-cs-bg/60 px-3 py-2 text-sm outline-none focus:border-cs-gold/50 disabled:opacity-50"
             />
           )}
           <input
@@ -89,8 +141,9 @@ export default function AuthModal({ open, onClose }) {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            disabled={busy}
             placeholder={t('auth.email')}
-            className="w-full rounded border border-cs-border bg-cs-bg/60 px-3 py-2 text-sm outline-none focus:border-cs-gold/50"
+            className="w-full rounded border border-cs-border bg-cs-bg/60 px-3 py-2 text-sm outline-none focus:border-cs-gold/50 disabled:opacity-50"
           />
           <input
             type="password"
@@ -98,9 +151,10 @@ export default function AuthModal({ open, onClose }) {
             minLength={6}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            disabled={busy}
             placeholder={t('auth.password')}
             autoComplete={tab === 'login' ? 'current-password' : 'new-password'}
-            className="w-full rounded border border-cs-border bg-cs-bg/60 px-3 py-2 text-sm outline-none focus:border-cs-gold/50"
+            className="w-full rounded border border-cs-border bg-cs-bg/60 px-3 py-2 text-sm outline-none focus:border-cs-gold/50 disabled:opacity-50"
           />
           {tab === 'signup' && (
             <input
@@ -109,14 +163,25 @@ export default function AuthModal({ open, onClose }) {
               minLength={6}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
+              disabled={busy}
               placeholder={t('auth.confirmPassword')}
               autoComplete="new-password"
-              className="w-full rounded border border-cs-border bg-cs-bg/60 px-3 py-2 text-sm outline-none focus:border-cs-gold/50"
+              className="w-full rounded border border-cs-border bg-cs-bg/60 px-3 py-2 text-sm outline-none focus:border-cs-gold/50 disabled:opacity-50"
             />
           )}
           {error && <p className="text-xs text-cs-loss">{error}</p>}
-          <button type="submit" disabled={busy} className="btn-gold w-full rounded py-2.5 text-sm uppercase tracking-wider">
-            {tab === 'login' ? t('auth.login') : t('auth.create')}
+          <button
+            type="submit"
+            disabled={busy}
+            className="btn-gold w-full rounded py-2.5 text-sm uppercase tracking-wider disabled:opacity-50"
+          >
+            {busy
+              ? tab === 'login'
+                ? t('auth.busyLogin')
+                : t('auth.busyCreate')
+              : tab === 'login'
+                ? t('auth.login')
+                : t('auth.create')}
           </button>
           <button
             type="button"

@@ -153,7 +153,7 @@ export default function StatusBar({
               )}
               {mapPriority && <Pill>{mapPriority}</Pill>}
               {mode === 'almanac' && <Pill>{t('status.almanac')}</Pill>}
-              {phase === 'draft' && rerolls != null && rerolls < 99 && (
+              {phase === 'draft' && rerolls != null && rerolls > 0 && rerolls < 99 && (
                 <Pill accent>{t('status.rescouts', { n: rerolls })}</Pill>
               )}
               {extra}
@@ -259,7 +259,7 @@ export default function StatusBar({
           {stageLabel && <span className="shrink-0 text-cs-gold">{stageLabel}</span>}
           {mapPriority && <span className="shrink-0 text-cs-muted">{mapPriority}</span>}
           {mode === 'almanac' && <span className="shrink-0 text-cs-muted">{t('status.almanac')}</span>}
-          {phase === 'draft' && rerolls != null && rerolls < 99 && (
+          {phase === 'draft' && rerolls != null && rerolls > 0 && rerolls < 99 && (
             <span className="shrink-0 text-cs-gold">{t('status.rescouts', { n: rerolls })}</span>
           )}
           {extra}

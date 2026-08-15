@@ -102,6 +102,7 @@ export async function createRoom({ profile, mode }) {
         if (!error && data) {
           const room = roomFromRow(data, local)
           writeActiveGuestId(null)
+          sweepStaleRooms()
           return { room, global: true }
         }
       return { error: error?.message || 'create_failed' }
@@ -175,7 +176,11 @@ export async function joinRoom({ code, profile }) {
           return { room, global: true }
         }
 
-        return { error: joinError?.message || 'join_failed' }
+        const msg = String(joinError?.message || '')
+        if (/room_full/i.test(msg)) return { error: 'full' }
+        if (/room_not_found/i.test(msg)) return { error: 'invalid' }
+        if (/room_not_joinable/i.test(msg)) return { error: 'not_joinable' }
+        return { error: 'join_failed' }
       }
 
       // Guest (no account): join online room by local guest id
@@ -204,6 +209,7 @@ export async function joinRoom({ code, profile }) {
           const msg = String(guestErr.message || '')
           if (/room_full/i.test(msg)) return { error: 'full' }
           if (/room_not_found/i.test(msg)) return { error: 'invalid' }
+          if (/room_not_joinable/i.test(msg)) return { error: 'not_joinable' }
           if (/invalid_guest/i.test(msg)) return { error: 'invalid' }
         }
       }
@@ -260,7 +266,9 @@ function roomFromRow(data, fallback = null) {
     hostId: data?.host_id || data?.hostId || payload.hostId || base.hostId,
     mode: data?.mode || payload.mode || base.mode,
     maxPlayers: payload.maxPlayers || base.maxPlayers,
-    updatedAt: data?.updated_at || base.updatedAt || Date.now(),
+    updatedAt: data?.updated_at
+      ? new Date(data.updated_at).getTime()
+      : payload.updatedAt || base.updatedAt || Date.now(),
   }
 }
 
@@ -352,11 +360,76 @@ export async function fetchRoom(code) {
   return readRooms()[normalized] || null
 }
 
+/** Fire-and-forget sweep of old lobby/finished rooms (best-effort). */
+export function sweepStaleRooms() {
+  if (!isSupabaseConfigured) return
+  supabase
+    .rpc('sweep_stale_rooms', { p_hours: 2 })
+    .then(() => {
+      /* best-effort */
+    })
+    .catch(() => {
+      /* best-effort */
+    })
+}
+
+/**
+ * Leave a room: removes the player server-side (host transfers / room deletes
+ * when empty). Falls back to local storage for guest-local rooms.
+ */
+export async function leaveRoom(code, { profile, guestId = null } = {}) {
+  const normalized = (code || '').trim().toUpperCase()
+  if (!normalized) return null
+  const pid = String(guestId || profile?.id || '').trim()
+  if (!pid) return null
+  const isGuest = isGuestLocalId(pid)
+
+  if (isSupabaseConfigured) {
+    const { data: sessionData } = await supabase.auth.getSession()
+    const hasSession = Boolean(sessionData?.session?.user)
+    if (hasSession && !isGuest) {
+      const { data, error } = await supabase.rpc('leave_room', { p_code: normalized })
+      if (!error) return data ? roomFromRow(data) : null
+    } else if (isGuest) {
+      const { data, error } = await supabase.rpc('leave_room', {
+        p_code: normalized,
+        p_guest_id: pid,
+      })
+      if (!error) return data ? roomFromRow(data) : null
+    }
+  }
+
+  const rooms = readRooms()
+  const room = rooms[normalized]
+  if (!room) return null
+  room.players = (room.players || []).filter((p) => !samePlayerId(p.id, pid))
+  if (!room.players.length) {
+    delete rooms[normalized]
+    writeRooms(rooms)
+    return null
+  }
+  rooms[normalized] = room
+  writeRooms(rooms)
+  broadcastLocal(normalized, room)
+  if (isGuestLocalId(pid)) writeActiveGuestId(null)
+  return room
+}
+
 export { samePlayerId }
 
 export function subscribeRoom(code, onRoom) {
   const normalized = code.trim().toUpperCase()
   const cleanups = []
+  // Drop snapshots older than the newest room we already delivered — a poll
+  // response can otherwise clobber a fresher optimistic write mid-round-trip.
+  let lastDeliveredAt = 0
+  const deliver = (room) => {
+    if (!room) return
+    const ts = Number(room.updatedAt) || 0
+    if (ts && lastDeliveredAt && ts < lastDeliveredAt) return
+    if (ts) lastDeliveredAt = ts
+    onRoom(room)
+  }
 
   if (isSupabaseConfigured) {
     const topic = `room:${normalized}:${Math.random().toString(36).slice(2, 10)}`
@@ -367,7 +440,7 @@ export function subscribeRoom(code, onRoom) {
         { event: '*', schema: 'public', table: 'rooms', filter: `code=eq.${normalized}` },
         (payload) => {
           if (payload.new) {
-            onRoom(roomFromRow(payload.new))
+            deliver(roomFromRow(payload.new))
           }
         },
       )
@@ -385,7 +458,7 @@ export function subscribeRoom(code, onRoom) {
 
     const poll = setInterval(async () => {
       const room = await fetchRoom(normalized)
-      if (room) onRoom(room)
+      if (room) deliver(room)
     }, 800)
     cleanups.push(() => clearInterval(poll))
   }
@@ -396,7 +469,7 @@ export function subscribeRoom(code, onRoom) {
   try {
     bc = new BroadcastChannel(CHANNEL_PREFIX + normalized)
     bc.onmessage = (e) => {
-      if (e.data?.room) onRoom(e.data.room)
+      if (e.data?.room) deliver(e.data.room)
     }
     cleanups.push(() => bc.close())
   } catch {
@@ -406,7 +479,7 @@ export function subscribeRoom(code, onRoom) {
   const onStorage = (e) => {
     if (e.key === LOCAL_ROOMS || e.key === `${CHANNEL_PREFIX}${normalized}_ping`) {
       const room = readRooms()[normalized]
-      if (room) onRoom(room)
+      if (room) deliver(room)
     }
   }
   window.addEventListener('storage', onStorage)
@@ -414,7 +487,7 @@ export function subscribeRoom(code, onRoom) {
 
   const localPoll = setInterval(() => {
     const room = readRooms()[normalized]
-    if (room) onRoom(room)
+    if (room) deliver(room)
   }, 800)
   cleanups.push(() => clearInterval(localPoll))
 

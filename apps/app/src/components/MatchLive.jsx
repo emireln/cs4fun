@@ -120,6 +120,18 @@ export default function MatchLive({
     (l) => l.type !== 'system' || /OVERTIME|Side:|Connecting|MAP:/i.test(l.text || ''),
   )
 
+  // Stable per-log keys: appends and resets never remount existing rows.
+  const feedSeq = useRef(0)
+  const feedIds = useRef(new WeakMap())
+  const keyForLog = (log) => {
+    let id = feedIds.current.get(log)
+    if (id == null) {
+      id = feedSeq.current++
+      feedIds.current.set(log, id)
+    }
+    return id
+  }
+
   return (
     <div className="panel overflow-hidden rounded-xl">
       {/* Series map strip */}
@@ -263,6 +275,8 @@ export default function MatchLive({
                   type="button"
                   onClick={() => onSpeedChange(n)}
                   disabled={speedLocked}
+                  aria-pressed={speed === n}
+                  aria-label={`${t('live.speed')} ${n}x`}
                   className={`rounded px-2.5 py-1 text-xs font-bold disabled:cursor-not-allowed disabled:opacity-40 ${
                     speed === n ? 'bg-cs-gold/20 text-cs-gold' : 'text-cs-muted hover:text-cs-text'
                   }`}
@@ -292,15 +306,20 @@ export default function MatchLive({
         </div>
       )}
 
-      <div className="scrollbar-thin max-h-[340px] space-y-2 overflow-y-auto p-3 sm:p-4">
+      <div
+        role="log"
+        aria-live="polite"
+        aria-label={t('live.terminal')}
+        className="scrollbar-thin max-h-[340px] space-y-2 overflow-y-auto p-3 sm:p-4"
+      >
         <AnimatePresence initial={false}>
-          {feed.map((log, i) => {
+          {feed.map((log) => {
             const style = TYPE_STYLE[log.type] || TYPE_STYLE.round
             const Icon = style.icon
             const big = highlightTypes.has(log.type)
             return (
               <motion.div
-                key={`${i}-${(log.text || '').slice(0, 32)}`}
+                key={keyForLog(log)}
                 initial={{ opacity: 0, y: 12, scale: 0.98 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 transition={{ type: 'spring', stiffness: 380, damping: 28 }}

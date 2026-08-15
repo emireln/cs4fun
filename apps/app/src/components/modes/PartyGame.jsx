@@ -5,7 +5,7 @@ import { useDraftSession } from '../../hooks/useDraftSession'
 import { generateSharedRolls, teamPowerScore } from '../../lib/gameModes'
 import { saveGameResult } from '../../lib/history'
 import { recordFriendMatch } from '../../lib/friends'
-import { subscribeRoom, updateRoom } from '../../lib/rooms'
+import { samePlayerId, subscribeRoom, updateRoom } from '../../lib/rooms'
 import { initialSoloSetupState, retrySoloSetupState } from '../../lib/setupPreset'
 import DraftPlay from '../DraftPlay'
 import GameOver from '../GameOver'
@@ -13,6 +13,9 @@ import ModeSetup from '../ModeSetup'
 
 export default function PartyGame({ profile, room, onHome, onStatus, onNeedFriends, onNeedAuth }) {
   const { t } = useI18n()
+  // Room writes carry the caller's id explicitly so guest updates never resolve
+  // against a stale shared guest key (signed-in users hit the session branch first).
+  const roomUpdate = (code, updater, opts = {}) => updateRoom(code, updater, { guestId: profile.id, ...opts })
   const [localRoom, setLocalRoom] = useState(room)
   const [boot] = useState(() => {
     if (room) {
@@ -48,6 +51,7 @@ export default function PartyGame({ profile, room, onHome, onStatus, onNeedFrien
 
   useEffect(() => {
     if (!localRoom || localRoom.status !== 'rematch') return
+    if (step === 'draft' && ranking.length === 0 && !localRoom.match) return
     draft.reset()
     setRanking([])
     setPlace(null)
@@ -55,7 +59,7 @@ export default function PartyGame({ profile, room, onHome, onStatus, onNeedFrien
     setWaitingFriends(false)
     setStep('draft')
     if (localRoom.hostId === profile.id) {
-      updateRoom(localRoom.code, (r) => ({
+      roomUpdate(localRoom.code, (r) => ({
         ...r,
         status: 'drafting',
         players: r.players.map((p) => ({
@@ -63,6 +67,7 @@ export default function PartyGame({ profile, room, onHome, onStatus, onNeedFrien
           ready: false,
           lineup: null,
           power: 0,
+          wantRematch: false,
         })),
       }))
     }
@@ -75,7 +80,6 @@ export default function PartyGame({ profile, room, onHome, onStatus, onNeedFrien
       mode: cfg?.mode,
       mentality,
       mapPriority: cfg?.mapPriority,
-      rerolls: 0,
     })
   }, [step, cfg]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -164,7 +168,7 @@ export default function PartyGame({ profile, room, onHome, onStatus, onNeedFrien
           })
 
           if (localRoom) {
-            const updated = await updateRoom(localRoom.code, (r) => ({
+            const updated = await roomUpdate(localRoom.code, (r) => ({
               ...r,
               players: r.players.map((p) =>
                 p.id === profile.id
@@ -250,11 +254,22 @@ export default function PartyGame({ profile, room, onHome, onStatus, onNeedFrien
       onRematch={
         localRoom?.code
           ? () => {
-              updateRoom(localRoom.code, (r) => ({
-                ...r,
-                status: 'rematch',
-                seed: `${r.mode}-${r.code}-${Date.now()}`,
-              }))
+              if (samePlayerId(localRoom.hostId, profile.id)) {
+                roomUpdate(localRoom.code, (r) => ({
+                  ...r,
+                  status: 'rematch',
+                  seed: `${r.mode}-${r.code}-${Date.now()}`,
+                  players: (r.players || []).map((p) => ({ ...p, wantRematch: false })),
+                }))
+              } else {
+                // Guests send intent; only the host flips status — prevents double-fire
+                roomUpdate(localRoom.code, (r) => ({
+                  ...r,
+                  players: (r.players || []).map((p) =>
+                    samePlayerId(p.id, profile.id) ? { ...p, wantRematch: true } : p,
+                  ),
+                }))
+              }
             }
           : null
       }

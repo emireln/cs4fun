@@ -76,17 +76,26 @@ export default function GameOver({
   }
 
   const handleShare = async () => {
-    const res = await shareResult(cardPayload)
-    if (res.ok) {
-      setShared(true)
-      setTimeout(() => setShared(false), 1800)
+    try {
+      const res = await shareResult(cardPayload)
+      if (res.ok) {
+        setShared(true)
+        setTimeout(() => setShared(false), 1800)
+      }
+    } catch {
+      /* ignore share failures */
     }
   }
 
   const handleDownload = async () => {
     setDownloading(true)
-    await downloadShareCard(cardPayload)
-    setDownloading(false)
+    try {
+      await downloadShareCard(cardPayload)
+    } catch {
+      /* ignore download failures */
+    } finally {
+      setDownloading(false)
+    }
   }
 
   return (
@@ -132,7 +141,12 @@ export default function GameOver({
                 {t('common.lossesShort')}
               </span>
             )}
-            {streak != null && <span className="text-cs-warn">{streak}</span>}
+            {streak != null && (
+              <span className="inline-flex items-center gap-1 text-cs-warn">
+                <Flame className="h-3.5 w-3.5 fill-cs-warn" aria-hidden />
+                {t('daily.streakShort', { n: streak })}
+              </span>
+            )}
             {score != null && <span className="text-cs-gold">{score}</span>}
             {mapPriority && <span className="text-cs-muted">{mapPriority}</span>}
           </div>
