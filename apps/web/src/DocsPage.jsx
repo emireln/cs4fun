@@ -2,15 +2,17 @@ import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   ArrowLeft,
-  Coffee,
-  Mail,
-  Swords,
-  Users,
-  Trophy,
-  Star,
   Calendar,
+  Coffee,
   Download,
+  Mail,
   Package,
+  Skull,
+  Star,
+  Swords,
+  Trophy,
+  Users,
+  Zap,
 } from 'lucide-react'
 import docsCopy from './docsCopy'
 import LogoMark from './LogoMark'
@@ -33,6 +35,8 @@ const MODE_ICONS = {
   box: Package,
   daily: Calendar,
   career: Star,
+  gauntlet: Zap,
+  survivor: Skull,
 }
 
 export default function DocsPage({ lang, onNavigate, onToggleLang, langLabel }) {

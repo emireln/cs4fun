@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
 import { Home, Package, Swords } from 'lucide-react'
 import { useI18n } from '../../i18n'
 import {
@@ -43,6 +44,7 @@ export default function BoxGame({ profile, room, onHome, onStatus, onNeedFriends
   const [myDrops, setMyDrops] = useState([])
   const [oppDrops, setOppDrops] = useState([])
   const [reelDone, setReelDone] = useState({ me: false, opp: false })
+  const [roundResult, setRoundResult] = useState(null)
   const [submitInfo, setSubmitInfo] = useState(null)
   const [statsSnapshot, setStatsSnapshot] = useState(null)
   const submitted = useRef(false)
@@ -105,6 +107,7 @@ export default function BoxGame({ profile, room, onHome, onStatus, onNeedFriends
     setOppDrops([])
     setRoundIndex(0)
     setRevealing(null)
+    setRoundResult(null)
     setReelDone({ me: false, opp: false })
     if (nextCaseIds?.length) {
       setCfg({ caseId: nextCaseIds[0], caseIds: nextCaseIds, rounds: nextCaseIds.length, vsBot: false })
@@ -166,6 +169,7 @@ export default function BoxGame({ profile, room, onHome, onStatus, onNeedFriends
   const startRound = (idx, { publish = true } = {}) => {
     unlockAudio()
     committedRound.current = null
+    setRoundResult(null)
     const opens = openBattleRound({
       caseId: caseIds[idx] || cfg.caseId,
       caseIds,
@@ -210,6 +214,7 @@ export default function BoxGame({ profile, room, onHome, onStatus, onNeedFriends
     committedRound.current = null
     setRoundIndex(remote.roundIndex)
     setRevealing(remote.revealing)
+    setRoundResult(null)
     setReelDone({ me: false, opp: false })
     unlockAudio()
   }, [isFriendBox, isBoxHost, step, localRoom?.box?.advanceToken]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -229,6 +234,12 @@ export default function BoxGame({ profile, room, onHome, onStatus, onNeedFriends
       const theirs = revealing.find((r) => r.playerId === opp?.id)?.drop
       if (mine) setMyDrops((d) => (d.some((x) => x.id === mine.id) ? d : [...d, mine]))
       if (theirs) setOppDrops((d) => (d.some((x) => x.id === theirs.id) ? d : [...d, theirs]))
+      setRoundResult({
+        mine: mine?.value ?? 0,
+        theirs: theirs?.value ?? 0,
+        won: (mine?.value ?? 0) > (theirs?.value ?? 0),
+        tie: mine?.value != null && theirs?.value != null && mine.value === theirs.value,
+      })
 
       if (isFriendBox && localRoom?.code) {
         updateRoom(localRoom.code, (r) => ({
@@ -244,11 +255,12 @@ export default function BoxGame({ profile, room, onHome, onStatus, onNeedFriends
 
     const timer = setTimeout(() => {
       setRevealing(null)
+      setRoundResult(null)
       if (!isFriendBox) {
         if (roundIndex + 1 >= rounds) setStep('results')
         else setRoundIndex((i) => i + 1)
       }
-    }, 900)
+    }, 1600)
     return () => clearTimeout(timer)
   }, [reelDone.me, reelDone.opp]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -394,6 +406,8 @@ export default function BoxGame({ profile, room, onHome, onStatus, onNeedFriends
   if (step === 'battle') {
     const myReveal = revealing?.find((r) => r.playerId === me.id)?.drop
     const oppReveal = revealing?.find((r) => r.playerId === opp?.id)?.drop
+    const totalBar = myTotal + oppTotal || 1
+    const myPct = Math.round((myTotal / totalBar) * 100)
     return (
       <div className="mx-auto max-w-5xl px-4 py-5 pb-[calc(5rem+env(safe-area-inset-bottom,0px))]">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
@@ -418,35 +432,70 @@ export default function BoxGame({ profile, room, onHome, onStatus, onNeedFriends
               </h1>
             </div>
           </div>
-          <div className="flex items-center gap-4 font-mono text-sm">
-            <span className="text-cs-gold">{money(myTotal)}</span>
-            <span className="text-cs-muted">{t('common.vs')}</span>
-            <span className="text-cs-loss">{money(oppTotal)}</span>
+          <div className="flex items-center gap-1.5" aria-label={t('box.roundLog')}>
+            {Array.from({ length: rounds }).map((_, i) => (
+              <span
+                key={i}
+                className={`h-1.5 rounded-full transition-all duration-300 ${
+                  i < myDrops.length
+                    ? 'w-4 bg-cs-gold'
+                    : i === roundIndex
+                      ? 'w-4 animate-pulse bg-cs-gold/40'
+                      : 'w-1.5 bg-cs-border'
+                }`}
+              />
+            ))}
           </div>
         </div>
 
-        <div className="grid gap-5 lg:grid-cols-2">
-          <div className="panel rounded-xl p-3 sm:p-4">
-            <div className="mb-3 flex items-center gap-2">
-              <Swords className="h-4 w-4 text-cs-gold" />
-              <span className="font-display text-xs font-bold uppercase tracking-wider text-cs-gold">
-                {me.nickname}
-              </span>
-            </div>
-            {myReveal && (
-              <BoxOpenReel
-                drop={myReveal}
-                label={t('box.yourDrop')}
-                onDone={() => onReelFinished('me')}
-              />
-            )}
-            <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-4">
-              {myDrops.map((d) => (
-                <BoxDropCard key={d.id} drop={d} compact />
-              ))}
-            </div>
+        <div className="mb-4 rounded-lg border border-cs-border bg-cs-bg/40 px-3 py-2">
+          <div className="mb-1.5 flex items-center justify-between gap-2 text-[10px] uppercase tracking-wider">
+            <span className="min-w-0 truncate font-semibold text-cs-loss">
+              {opp?.nickname || t('common.bot')}{' '}
+              <span className="font-mono text-cs-loss">{money(oppTotal)}</span>
+            </span>
+            <span className="shrink-0 text-cs-muted">{t('box.valueBar')}</span>
+            <span className="min-w-0 truncate text-right font-semibold text-cs-gold">
+              <span className="font-mono text-cs-gold">{money(myTotal)}</span> {me.nickname}
+            </span>
           </div>
+          <div className="flex h-2 overflow-hidden rounded-full border border-cs-border bg-cs-bg">
+            <div
+              className="bg-cs-loss/80 transition-all duration-500"
+              style={{ width: `${100 - myPct}%` }}
+            />
+            <div className="bg-cs-gold transition-all duration-500" style={{ width: `${myPct}%` }} />
+          </div>
+        </div>
 
+        <AnimatePresence>
+          {roundResult && (
+            <motion.div
+              initial={{ opacity: 0, y: 10, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -6 }}
+              className="mb-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 rounded-xl border border-cs-gold/40 bg-cs-gold/10 px-4 py-3"
+            >
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-cs-muted">
+                {t('box.roundShort', { n: roundIndex + 1 })}
+              </span>
+              <span className="font-mono text-lg font-bold text-cs-loss">
+                {money(roundResult.theirs)}
+              </span>
+              <span className="text-cs-muted">vs</span>
+              <span className="font-mono text-lg font-bold text-cs-gold">{money(roundResult.mine)}</span>
+              <span
+                className={`font-display text-sm font-extrabold uppercase tracking-[0.2em] ${
+                  roundResult.tie ? 'text-cs-muted' : roundResult.won ? 'gold-text' : 'text-cs-loss'
+                }`}
+              >
+                {roundResult.tie ? t('box.tie') : roundResult.won ? t('box.youWin') : t('box.youLose')}
+              </span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <div className="grid gap-5 lg:grid-cols-2">
           <div className="panel rounded-xl p-3 sm:p-4">
             <div className="mb-3 flex items-center gap-2">
               <Package className="h-4 w-4 text-cs-loss" />
@@ -458,12 +507,34 @@ export default function BoxGame({ profile, room, onHome, onStatus, onNeedFriends
               <BoxOpenReel
                 drop={oppReveal}
                 label={t('box.theirDrop')}
-                delay={280}
                 onDone={() => onReelFinished('opp')}
               />
             )}
             <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-4">
               {oppDrops.map((d) => (
+                <BoxDropCard key={d.id} drop={d} compact />
+              ))}
+            </div>
+          </div>
+
+          <div className="panel rounded-xl p-3 sm:p-4">
+            <div className="mb-3 flex items-center gap-2">
+              <Swords className="h-4 w-4 text-cs-gold" />
+              <span className="font-display text-xs font-bold uppercase tracking-wider text-cs-gold">
+                {me.nickname}
+              </span>
+            </div>
+            {myReveal && (
+              <BoxOpenReel
+                drop={myReveal}
+                label={t('box.yourDrop')}
+                delay={1500}
+                idleBadge={t('box.openingNext')}
+                onDone={() => onReelFinished('me')}
+              />
+            )}
+            <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-4">
+              {myDrops.map((d) => (
                 <BoxDropCard key={d.id} drop={d} compact />
               ))}
             </div>

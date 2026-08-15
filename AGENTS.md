@@ -212,6 +212,14 @@ where lower(email) = lower('YOUR_ADMIN_EMAIL@example.com')
 on conflict (user_id) do nothing;
 ```
 
+## Git workflow (required)
+
+- **Always commit and push** to `https://github.com/emireln/cs4fun` (remote: `origin`, branch `main`) after completing work in this repo — do not wait to be asked.
+- Work in a clean, incremental way: stage only intended files, never commit secrets (`.env*`, keys are gitignored).
+- Write concise commit messages that describe the change (match existing style).
+- Before pushing, inspect `git status`, `git diff`, and `git log --oneline -10`; if the repo has no `.git` yet, `git init`, add the remote, commit, and push.
+- After a schema change, commit + push the migration too (CI applies it via `supabase db push`).
+
 ## Agent do / don't
 
 **Do**
@@ -220,7 +228,8 @@ on conflict (user_id) do nothing;
 - Prefer absolute paths when editing; PowerShell: use `;` not `&&`
 - After schema changes, tell the user to re-run `supabase/schema.sql`
 - Keep mobile/desktop layouts fluid; preserve the no-input-zoom CSS rules
-- Only commit / push / force-git when the user asks
+- Commit and push to `https://github.com/emireln/cs4fun` after finishing work (see Git workflow above)
+- Review diffs before push; never commit junk (build output, logs, temp files)
 
 **Don't**
 

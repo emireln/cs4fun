@@ -23,7 +23,7 @@ function easeOutQuint(t) {
   return 1 - (1 - t) ** 5
 }
 
-export default function BoxOpenReel({ drop, label, delay = 0, onDone }) {
+export default function BoxOpenReel({ drop, label, delay = 0, idleBadge = null, onDone }) {
   const { t, money } = useI18n()
   const [phase, setPhase] = useState('idle')
   const [targetX, setTargetX] = useState(0)
@@ -151,6 +151,18 @@ export default function BoxOpenReel({ drop, label, delay = 0, onDone }) {
         <span className="truncate text-xs font-semibold tracking-wider text-cs-muted uppercase">
           {label}
         </span>
+        <AnimatePresence>
+          {phase === 'idle' && idleBadge && (
+            <motion.span
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="animate-pulse rounded border border-cs-gold/40 bg-cs-gold/10 px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider text-cs-gold"
+            >
+              {idleBadge}
+            </motion.span>
+          )}
+        </AnimatePresence>
         <AnimatePresence>
           {phase === 'land' && (
             <motion.span

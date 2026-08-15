@@ -161,6 +161,52 @@ export default function BoxResults({
           </div>
         </div>
 
+        <div className="border-t border-cs-border/60 px-4 py-5 sm:px-6">
+          <h2 className="mb-2 font-display text-[10px] font-bold tracking-[0.2em] text-cs-gold uppercase">
+            {t('box.roundLog')}
+          </h2>
+          <ol className="divide-y divide-cs-border/40">
+            {myDrops.map((d, i) => {
+              const theirs = oppDrops[i]
+              const tiedRound = theirs != null && d.value === theirs.value
+              const wonRound = !theirs || d.value > theirs.value
+              return (
+                <li
+                  key={`${d.id}-${i}`}
+                  className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2"
+                >
+                  <span className="w-9 shrink-0 font-mono text-[10px] text-cs-muted">
+                    {t('box.roundShort', { n: i + 1 })}
+                  </span>
+                  <span className="min-w-0 flex-1 truncate text-xs">
+                    <span style={{ color: RARITY_META[d.rarity]?.color || undefined }}>{d.name}</span>
+                    <span className="mx-1.5 text-cs-muted">·</span>
+                    <span className="text-cs-muted">
+                      {theirs ? `vs ${theirs.name}` : '—'}
+                    </span>
+                  </span>
+                  <span className="shrink-0 font-mono text-[11px]">
+                    <span className="text-cs-gold">{money(d.value)}</span>
+                    <span className="mx-1 text-cs-muted">vs</span>
+                    <span className="text-cs-loss">{theirs ? money(theirs.value) : '—'}</span>
+                  </span>
+                  <span
+                    className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
+                      tiedRound
+                        ? 'bg-cs-border/40 text-cs-muted'
+                        : wonRound
+                          ? 'bg-cs-gold/15 text-cs-gold'
+                          : 'bg-cs-loss/15 text-cs-loss'
+                    }`}
+                  >
+                    {tiedRound ? t('box.tie') : wonRound ? t('box.youWin') : t('box.youLose')}
+                  </span>
+                </li>
+              )
+            })}
+          </ol>
+        </div>
+
         {statsSnapshot?.bestDrop && (
           <div className="mx-4 mb-4 rounded-xl border border-cs-gold/30 bg-cs-gold/5 p-4 sm:mx-6">
             <div className="mb-2 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-cs-gold">
